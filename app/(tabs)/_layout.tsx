@@ -1,59 +1,106 @@
-import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { View, Text } from 'react-native'
+import React from 'react'
+import { Tabs } from 'expo-router'
+import Colors from '@/constants/Colors'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { StyleSheet } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+const Layout = () => {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+      <Tabs screenOptions={{
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.white,
+        tabBarLabelStyle: {
+          fontFamily: 'mon-sb',
+        },      
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          elevation: 0,
+          display: 'flex',
+          height: 200,
+          flexDirection: 'row',
+          alignItems: 'flex-end', 
+          paddingBottom: 10,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+        },
+        headerShown: false,
       }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
+        <Tabs.Screen name="index" options={{
+          tabBarLabel: "Home",
+          tabBarItemStyle: tabStyles.otherTabs,
+          tabBarIcon: ({ color, size }) =>
+            <MaterialCommunityIcons name='home'
+              color={color}
+              size={35}>     
+            </MaterialCommunityIcons>
+        }}>
+        </Tabs.Screen>
+
+        <Tabs.Screen name="goals" options={{
+          tabBarLabel: "Goals",
+          tabBarItemStyle: tabStyles.otherTabs,
+          tabBarIcon: ({ color, size }) =>
+            <MaterialCommunityIcons name='bullseye-arrow'
+              color={color}
+              size={35}></MaterialCommunityIcons>
+        }}>
+        </Tabs.Screen>
+
+        <Tabs.Screen name="add" options={{
+          tabBarItemStyle: tabStyles.addButton,
+          tabBarLabel: () => null,
+          tabBarIcon: ({ color, size }) =>
+            <MaterialCommunityIcons name='plus-circle'
+              color={color}
+              size={60}></MaterialCommunityIcons>
+        }}>
+        </Tabs.Screen>
+
+        <Tabs.Screen name="map" options={{
+          tabBarItemStyle: tabStyles.otherTabs,
+          tabBarLabel: "Map",
+          tabBarIcon: ({ color, size }) =>
+            <MaterialCommunityIcons name='map'
+              color={color}
+              size={35}></MaterialCommunityIcons>
+        }}>
+        </Tabs.Screen>
+
+        <Tabs.Screen name="vault" options={{
+          tabBarItemStyle: tabStyles.otherTabs,
+          tabBarLabel: "Vault",
+          tabBarIcon: ({ color }) =>
+            <MaterialCommunityIcons name='safe-square-outline'
+              color={color}
+              size={35}></MaterialCommunityIcons>
+        }}>
+        </Tabs.Screen>
+      </Tabs>
+  )
 }
+
+const tabStyles = StyleSheet.create({
+  addButton: {
+    bottom: 0,
+    height: 70,
+    width: 70,
+    position: 'relative',
+  },
+  otherTabs: {
+    bottom: 0,
+    height: 70,
+    width: 70,
+
+  },
+
+});
+
+
+
+export default Layout
