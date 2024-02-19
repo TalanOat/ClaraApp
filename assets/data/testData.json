@@ -1,0 +1,29 @@
+[
+    {
+        "id": "1",
+        "title": "Journal Entry",
+        "time": "12:30",
+        "type": "journal"
+    },
+
+    {
+        "id": "mood1",
+        "title": "Mood Journal",
+        "time": "13:00",
+        "type": "mood",
+        "moodType1": "Happiness",
+        "moodValue1": 7,
+        "moodType2": "Anxiety",
+        "moodValue2": 5
+    },
+
+    {
+        "id": "goal1",
+        "title": "Goal",
+        "time": "13:30",
+        "type": "goal",
+        "goalName": "Walking",
+        "goalTarget": 7,
+        "goalValue": 3
+    }
+]

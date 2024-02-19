@@ -1,18 +1,44 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Stack } from 'expo-router';
-import ExpandedHeader from '@/components/expandedHeader'
+import {  useNavigation } from 'expo-router';
 import DayView from '@/components/dayView';
+import testData from '@/assets/data/testData.json';
+
 
 const Page = () => {
+  const navigation = useNavigation();
+  const [reloadAnimation, setReloadAnimation] = useState(false);
+
+  //listens for navigation changes, carries out code when this page is focused
+  useEffect(() => {
+    const navigationListener = navigation.addListener("focus", () => {
+      setReloadAnimation(true);
+      setTimeout(() => setReloadAnimation(false), 1000);
+    });
+
+    const blurListener = navigation.addListener("blur", () => {
+      console.log("Page unfocused");
+      setReloadAnimation(false); 
+    });
+
+    return () => {
+      navigation.removeListener("focus", navigationListener);
+      navigation.removeListener("blur", blurListener);
+    };
+  }, [navigation]);
+
+  useEffect(() => {
+    setReloadAnimation(true);
+    setTimeout(() => setReloadAnimation(false), 1000);
+  }, []);
+
+
   return (
     <LinearGradient
       style={styles.container}
       colors={["#20115B", "#C876FF"]}>
-      <DayView />
+      <DayView items={testData} loadAnimation={reloadAnimation}/>
     </LinearGradient>
   )
 }

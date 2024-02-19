@@ -1,4 +1,3 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,9 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors'
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Platform } from 'react-native'
+import { View, Platform, KeyboardAvoidingView } from 'react-native'
 import * as NavigationBar from 'expo-navigation-bar';
 import ExpandedHeader from '@/components/expandedHeader'
+import SmallerHeader from '@/components/smallerHeader';
 
 
 export {
@@ -27,7 +27,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    mon: require('../assets/fonts/Montserrat-Regular.ttf'),
+    'mon': require('../assets/fonts/Montserrat-Regular.ttf'),
     'mon-sb': require('../assets/fonts/Montserrat-SemiBold.ttf'),
     'mon-b': require('../assets/fonts/Montserrat-Bold.ttf'),
   });
@@ -65,11 +65,15 @@ function RootLayoutNav() {
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
-        <CustomStatusBar />
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
-        </Stack>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <CustomStatusBar />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
+            <Stack.Screen name="element/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          </Stack>
+        </KeyboardAvoidingView>
       </SafeAreaView>
+
       <View
         style={{
           position: 'absolute',

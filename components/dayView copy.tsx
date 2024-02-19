@@ -1,14 +1,9 @@
-import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, } from 'react-native'
+import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import React, { useState, useEffect, useRef } from 'react'
 import { defaultStyles } from '@/constants/Styles'
 import { Link } from 'expo-router';
 import Colors from '@/constants/Colors';
-import Animated, {
-  useSharedValue,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 
 interface UserElement {
   id: string;
@@ -31,22 +26,32 @@ const ProgressBar: React.FunctionComponent<{
   height?: number;
   textLabel?: string;
   isAnimating?: boolean;
+  focusedPage?: boolean;
 
-}> = ({ step, steps, height, textLabel, isAnimating }) => {
-  const [barWidth, setBarWidth] = useState(0);
-  const progressPercentage = (step / steps) * 100;
-  const animatedWidth = useSharedValue(0);
+}> = ({ step, steps, height, textLabel, isAnimating, focusedPage }) => {
+  const animatedValue = React.useRef(new Animated.Value(-1000)).current;
+  const destinationValue = React.useRef(new Animated.Value(-1000)).current;
+  const [width, setWidth] = React.useState(0);
 
+  //when the componeent mounts:
+  //start the animation with set values, and start only once
   useEffect(() => {
     if (isAnimating) {
-      animatedWidth.value = 0;
-      animatedWidth.value = withTiming((progressPercentage * barWidth) / 100, {
-        duration: 500,
-        easing: Easing.linear
-      });
-
+      animatedValue.setValue(-1000);
+      Animated.timing(animatedValue, {
+        toValue: destinationValue,
+        duration: 2000,
+        easing: Easing.elastic(1),
+        useNativeDriver: true,
+      }).start();
     }
   }, [isAnimating]);
+
+  React.useEffect(() => {
+    const progressWidth = (width * step) / steps;
+    destinationValue.setValue(progressWidth - width)
+  }, [step, width])
+
 
   return (
     <View>
@@ -56,7 +61,7 @@ const ProgressBar: React.FunctionComponent<{
       <View
         onLayout={e => {
           const barWidth = e.nativeEvent.layout.width;
-          setBarWidth(barWidth);
+          setWidth(barWidth);
         }}
         style={{
           height: height,
@@ -65,45 +70,45 @@ const ProgressBar: React.FunctionComponent<{
           overflow: "hidden"
         }}>
         <Animated.View
-          style={[
-            {
-              height: height,
-              width: animatedWidth,
-              borderRadius: height,
-              backgroundColor: Colors.primary,
-              position: "absolute",
-              left: 0,
-              top: 0,
-            },
-          ]}
-        />
+          style={{
+            height: height,
+            width: "100%",
+            borderRadius: height,
+            backgroundColor: Colors.primary,
+            position: "absolute",
+            left: 0,
+            top: 0,
+            transform: [
+              {
+                translateX: animatedValue,
+              }
+            ]
+          }} />
       </View>
     </View>
   )
 }
 
-const DayView = ({ items, loadAnimation }: {
+const DayView = ({ items, pageFocused }: {
   items: UserElement[];
-  loadAnimation: boolean;
+  pageFocused: boolean;
 }) => {
 
   const [loading, setLoading] = useState(false);
   const listRef = useRef<FlatList>(null);
-  const [animating, setAnimating] = useState(loadAnimation);
+  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    setAnimating(false);
-    if (loadAnimation) {
-      setTimeout(() => {
-        setAnimating(true);
-      }, 10);
-    }
-  }, [loadAnimation]);
+    if (pageFocused) {
+      console.log('animation triggered');
+      setAnimating(true)
 
-  // useEffect(() => {
-  //   console.log("animation triggered")
-  //   setAnimating(loadAnimation); 
-  // }, [loadAnimation]);
+    }
+    if (!pageFocused) {
+      console.log('animation off');
+      setAnimating(false)
+    }
+  }, [pageFocused]);
 
 
   const renderRow: ListRenderItem<UserElement> = ({ item }) => {
@@ -112,13 +117,11 @@ const DayView = ({ items, loadAnimation }: {
         return (
           <Link style={styles.linkContainer} href={`/element/${item.id}`} asChild>
             <TouchableOpacity style={styles.listElement}>
-              <Animated.View>
                 <View style={styles.topRow}>
                   <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
-                  <Text style={styles.elementTitle}>Journal Entry</Text>
+                  <Text style={styles.elementTitle}>{item.title}</Text>
                   <Text style={styles.elementTime}>{item.time}</Text>
                 </View>
-              </Animated.View>
             </TouchableOpacity>
           </Link>
         );
@@ -128,7 +131,7 @@ const DayView = ({ items, loadAnimation }: {
             <TouchableOpacity style={styles.listElement}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
-                <Text style={styles.elementTitle}>Mood Journal</Text>
+                <Text style={styles.elementTitle}>{item.title}</Text>
                 <Text style={defaultStyles.defaultFontGrey}>{item.time}</Text>
               </View>
               <View style={styles.remainingContent}>
@@ -153,7 +156,7 @@ const DayView = ({ items, loadAnimation }: {
             <TouchableOpacity style={styles.listElement}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
-                <Text style={styles.elementTitle}>Goal Activity</Text>
+                <Text style={styles.elementTitle}>{item.title}</Text>
                 <Text style={defaultStyles.defaultFontGrey}>{item.time}</Text>
               </View>
               <View style={styles.remainingContent}>
@@ -174,13 +177,13 @@ const DayView = ({ items, loadAnimation }: {
 
   return (
     <View style={defaultStyles.container}>
-      <Animated.FlatList
+      <FlatList
         renderItem={renderRow}
         ref={listRef}
         data={loading ? [] : items}
         style={styles.listContainer}
       >
-      </Animated.FlatList>
+      </FlatList>
     </View>
   )
 }
