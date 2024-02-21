@@ -1,0 +1,107 @@
+import { View, Text, TextInput, StyleSheet, Touchable, TouchableOpacity, } from 'react-native'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import React, { useEffect, useRef, useState } from 'react'
+import { LinearGradient } from 'expo-linear-gradient'
+import { defaultStyles } from '@/constants/Styles'
+
+import Animated, {
+  SlideInDown,
+} from 'react-native-reanimated';
+import { databaseService } from '@/model/databaseService'
+
+const createJournal = () => {
+  const [text, setText] = useState('');
+
+  const handleInputChange = (input: string) => {
+    setText(input);
+    //console.log(text)
+  }
+
+  const textInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 600); // Adjust the delay (in milliseconds) 
+  }, []);
+
+  const handleSubmit = ()  => {
+    //console.log(text)
+    const currentTime = new Date().toISOString()
+    //console.log(currentTime)
+    databaseService.createJournalEntry("Journal Entry", text, currentTime)
+  }
+
+
+
+  return (
+    <LinearGradient
+      style={styles.container}
+      colors={["#20115B", "#C876FF"]}
+    >
+      <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
+        <View style={styles.topRow}>
+          <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
+          <Text style={styles.elementTitle}>Title Here</Text>
+          <TouchableOpacity>
+            <MaterialCommunityIcons name="check" size={40} color="white" onPress={() => {handleSubmit();}}/>
+          </TouchableOpacity>
+
+        </View>
+        <View style={styles.contentRow}>
+          <TextInput
+            style={styles.journalInput}
+            onChangeText={handleInputChange}
+            value={text}
+            multiline={true}
+            numberOfLines={20}
+            ref={textInputRef}
+          />
+        </View>
+      </Animated.ScrollView>
+    </LinearGradient>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  journalInput: {
+    height: "100%",
+    borderColor: 'transparent',
+    color: "white",
+    fontFamily: "mon",
+    fontSize: 16,
+    textAlignVertical: 'top',
+    maxHeight: 250
+  },
+  journalContainer: {
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginBottom: 12,
+    borderRadius: 10,
+    marginRight: 15,
+    marginLeft: 15,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10
+  },
+  elementTitle: {
+    color: "white",
+    fontSize: 15,
+    fontFamily: "mon-b",
+    flex: 1
+  },
+  elementIcon: {
+    marginRight: 10
+  },
+  contentRow: {
+    padding: 20
+  },
+})
+
+
+export default createJournal

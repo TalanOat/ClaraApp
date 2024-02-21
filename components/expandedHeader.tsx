@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import React from 'react'
-import { Link } from 'expo-router'
+import { Link, useNavigation, Stack } from 'expo-router'
 import Colors from '@/constants/Colors'
 
 const ExpandedHeader = () => {
+
     return (
         <View style={styles.container}>
             <View style={styles.actionRow}>
@@ -12,14 +13,15 @@ const ExpandedHeader = () => {
                     <Text style={styles.day}>Sunday</Text>
                     <Text style={styles.date}>4th Feb</Text>
                 </View>
-                <TouchableOpacity style={styles.touchAreaButton}>
-
+                <Link href={'/element/settings'} asChild style={styles.touchAreaButton}>
+                    <TouchableOpacity >
                         <MaterialCommunityIcons name='cog'
                             color={"white"}
                             size={35}
                             style={styles.settingsButton}>
                         </MaterialCommunityIcons>
-                </TouchableOpacity>
+                    </TouchableOpacity>
+                </Link>
             </View>
 
         </View>

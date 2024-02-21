@@ -1,20 +1,42 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import { Tabs } from 'expo-router'
+import { View, Text, Touchable, TouchableOpacity } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { Tabs, useNavigation } from 'expo-router'
 import Colors from '@/constants/Colors'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { StyleSheet } from 'react-native';
 
+import Animated, {
+  useSharedValue,
+  withTiming,
+  Easing,
+  SlideInDown,
+  SlideInUp,
+} from 'react-native-reanimated';
+
+type NavigationProps = {
+  navigate: (value: string) => void;
+}
+
 const Layout = () => {
+  const [showAddMenu, setShowAddMenu] = useState(false);
+
+  function handleAddNavigation(path: string) {
+    setShowAddMenu(false) //close the add menu before navigating
+    navigate(path)
+  }
+
+  const { navigate } = useNavigation<NavigationProps>()
+
   return (
+    <View style={{ flex: 1 }}>
       <Tabs screenOptions={{
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.white,
         tabBarLabelStyle: {
           fontFamily: 'mon-sb',
-        },      
+        },
         tabBarStyle: {
           position: 'absolute',
           bottom: 0,
@@ -24,7 +46,7 @@ const Layout = () => {
           display: 'flex',
           height: 200,
           flexDirection: 'row',
-          alignItems: 'flex-end', 
+          alignItems: 'flex-end',
           paddingBottom: 10,
           backgroundColor: 'transparent',
           borderTopWidth: 0,
@@ -37,7 +59,7 @@ const Layout = () => {
           tabBarIcon: ({ color, size }) =>
             <MaterialCommunityIcons name='home'
               color={color}
-              size={35}>     
+              size={35}>
             </MaterialCommunityIcons>
         }}>
         </Tabs.Screen>
@@ -52,13 +74,19 @@ const Layout = () => {
         }}>
         </Tabs.Screen>
 
+
         <Tabs.Screen name="add" options={{
           tabBarItemStyle: tabStyles.addButton,
           tabBarLabel: () => null,
           tabBarIcon: ({ color, size }) =>
-            <MaterialCommunityIcons name='plus-circle'
-              color={color}
-              size={60}></MaterialCommunityIcons>
+            <TouchableOpacity onPress={() => {
+              setShowAddMenu(true);
+            }}>
+              <MaterialCommunityIcons name='plus-circle'
+                color={color}
+                size={60}>
+              </MaterialCommunityIcons>
+            </TouchableOpacity>
         }}>
         </Tabs.Screen>
 
@@ -81,7 +109,27 @@ const Layout = () => {
               size={35}></MaterialCommunityIcons>
         }}>
         </Tabs.Screen>
+
       </Tabs>
+      
+      {showAddMenu && (
+        <Animated.View style={popupStyles.popup} entering={SlideInDown.delay(50)}>
+          <View style={popupStyles.topRow}>
+            <TouchableOpacity style={popupStyles.topRowItem} onPress={() => handleAddNavigation("element/journal/createJournal")}>
+              <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={popupStyles.topRowItemIcon} />
+              <Text style={popupStyles.topRowItemLabel}>Text Journal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={popupStyles.topRowItem}>
+              <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={popupStyles.topRowItemIcon} />
+              <Text style={popupStyles.topRowItemLabel} >Mood Journal</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={() => setShowAddMenu(false)} style={popupStyles.closeButton}>
+          <MaterialCommunityIcons name="minus-circle" size={60} color={Colors.pink} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+    </View>
   )
 }
 
@@ -96,8 +144,40 @@ const tabStyles = StyleSheet.create({
     bottom: 0,
     height: 70,
     width: 70,
-
   },
+
+});
+
+const popupStyles = StyleSheet.create({
+  popup: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: Colors.primary,
+    padding: 15,
+    //elevation: 5,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around"
+  },
+  topRowItemIcon: {
+    paddingBottom: 10
+  },
+  topRowItem: {
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    padding: 30
+    
+  },
+  closeButton: {
+    alignItems: "center"
+  },
+  topRowItemLabel: {
+    color: Colors.white
+  }
 
 });
 

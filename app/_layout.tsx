@@ -10,6 +10,9 @@ import { View, Platform, KeyboardAvoidingView } from 'react-native'
 import * as NavigationBar from 'expo-navigation-bar';
 import ExpandedHeader from '@/components/expandedHeader'
 import SmallerHeader from '@/components/smallerHeader';
+import { databaseService } from '@/model/databaseService';
+
+
 
 
 export {
@@ -32,6 +35,10 @@ export default function RootLayout() {
     'mon-b': require('../assets/fonts/Montserrat-Bold.ttf'),
   });
 
+  useEffect(() => {
+    databaseService.initDB(); 
+  }, []);
+
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
@@ -49,6 +56,7 @@ export default function RootLayout() {
 
 
 
+
   return <RootLayoutNav />;
 }
 
@@ -62,15 +70,22 @@ function RootLayoutNav() {
   function CustomStatusBar() {
     return <StatusBar style="light" backgroundColor={Colors.primary} />;
   }
+
+  //database
+
+
+
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <CustomStatusBar />
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
-            <Stack.Screen name="element/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-          </Stack>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
+              <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+            </Stack>
         </KeyboardAvoidingView>
       </SafeAreaView>
 

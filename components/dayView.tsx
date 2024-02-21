@@ -91,6 +91,7 @@ const DayView = ({ items, loadAnimation }: {
   const listRef = useRef<FlatList>(null);
   const [animating, setAnimating] = useState(loadAnimation);
 
+  //TODO: try fixing without taking delay as the animation was smoother before
   useEffect(() => {
     setAnimating(false);
     if (loadAnimation) {
@@ -110,7 +111,7 @@ const DayView = ({ items, loadAnimation }: {
     switch (item.type) {
       case 'journal':
         return (
-          <Link style={styles.linkContainer} href={`/element/${item.id}`} asChild>
+          <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
             <TouchableOpacity style={styles.listElement}>
               <Animated.View>
                 <View style={styles.topRow}>
@@ -124,7 +125,7 @@ const DayView = ({ items, loadAnimation }: {
         );
       case 'mood':
         return (
-          <Link style={styles.linkContainer} href={`/element/${item.id}`} asChild>
+          <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
             <TouchableOpacity style={styles.listElement}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
@@ -149,7 +150,7 @@ const DayView = ({ items, loadAnimation }: {
         );
       case 'goal':
         return (
-          <Link style={styles.linkContainer} href={`/element/${item.id}`} asChild>
+          <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
             <TouchableOpacity style={styles.listElement}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
