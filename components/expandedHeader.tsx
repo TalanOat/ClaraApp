@@ -32,7 +32,7 @@ const ExpandedHeader = () => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: Colors.primary,
-        height: 120,
+        height: 90,
         justifyContent: "center"
     },
     actionRow: {

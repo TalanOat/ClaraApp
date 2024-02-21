@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Touchable, TouchableOpacity } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import testData from '@/assets/data/testData.json';
@@ -11,34 +11,86 @@ import Animated, {
   SlideInDown,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
+import moment from 'moment';
+
+interface Journal {
+  id: number;
+  title: string;
+  body: string;
+  time: string;
+}
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const journalEntry = (testData as any[]).find((item) => item.id === id)
-  //TODO: write condition if the id can't be found
-
+  const [journalEntry, setJournalEntry] = useState<Journal>();
+  const [textInputValue, setTextInputValue] = useState('');
   const [text, setText] = useState('');
 
+
   const handleInputChange = (input: string) => {
-    setText(input);
-    //console.log(text)
+    setTextInputValue(input);
   }
 
+  //the input ref is used to get a reference to the textinput component
+  //  to ensure the users keyboard is opened on the page load and their
+  //  cursor is at the top of the input box
   const textInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setTimeout(() => {
       textInputRef.current?.focus();
-    }, 600); // Adjust the delay (in milliseconds) 
+    }, 1000);
   }, []);
+
+
 
   useEffect(() => {
-    databaseService.getAllJournalEntries(); 
+    const fetchEntry = async () => {
+      try {
+        const entry = await databaseService.getJournalEntryByID(parseInt(id));
+        if (entry) {
+          setJournalEntry({
+            id: entry.id,
+            title: entry.title,
+            body: entry.body,
+            time: moment(entry.createdAt).format('HH:mm')
+          });
+          setTextInputValue(entry.body);
+        } else {
+          // TODO: entry not found
+        }
+      } catch (error) {
+        console.error('error:', error);
+      }
+    }
+    fetchEntry();
   }, []);
 
-  console.log(journalEntry)
-  return (
+  async function databaseUpdateJournalEntry() {
+    try {
+      //console.log("databae update")
+      if (journalEntry) {
+        await databaseService.updateJournalEntry(journalEntry.id, "Journal Entry", textInputValue);
+        //TODO: possibly add loading
+        //TODO: visual feedback to the user that it has worked
+      }
+      else {
+        //TODO:  (VFB) journal not loaded yet
+      }
+    } catch (error) {
+      console.error("update error:", error);
+    }
+  }
 
+  const handleUpdate = (e: any) => {
+    e.preventDefault();
+    console.log("handle submit")
+    databaseUpdateJournalEntry()
+  }
+
+
+
+  return (
     <LinearGradient
       style={styles.container}
       colors={["#20115B", "#C876FF"]}
@@ -46,14 +98,16 @@ const Page = () => {
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
-          <Text style={styles.elementTitle}>{journalEntry.title}</Text>
-          <Text style={defaultStyles.defaultFontGrey}>{journalEntry.time}</Text>
+          <Text style={styles.elementTitle}>{journalEntry?.title}</Text>
+          <TouchableOpacity onPress={(e) => { handleUpdate(e); }} >
+            <MaterialCommunityIcons name="check" size={40} color="white"  />
+          </TouchableOpacity>
         </View>
         <View style={styles.contentRow}>
           <TextInput
             style={styles.journalInput}
             onChangeText={handleInputChange}
-            value={text}
+            value={textInputValue}
             multiline={true}
             numberOfLines={20}
             ref={textInputRef}
@@ -69,7 +123,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   journalInput: {
-    height: "100%", 
+    height: "100%",
     borderColor: 'transparent',
     color: "white",
     fontFamily: "mon",

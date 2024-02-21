@@ -38,7 +38,7 @@ const Page = () => {
     <LinearGradient
       style={styles.container}
       colors={["#20115B", "#C876FF"]}>
-      <DayView items={testData} loadAnimation={reloadAnimation}/>
+      <DayView loadAnimation={reloadAnimation}/>
     </LinearGradient>
   )
 }

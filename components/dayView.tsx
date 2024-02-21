@@ -1,4 +1,4 @@
-import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, } from 'react-native'
+import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, Alert, } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import React, { useState, useEffect, useRef } from 'react'
 import { defaultStyles } from '@/constants/Styles'
@@ -8,11 +8,19 @@ import Animated, {
   useSharedValue,
   withTiming,
   Easing,
+  SlideInDown,
+  SlideInUp,
+  FadeInDown,
 } from 'react-native-reanimated';
+import { databaseService } from '@/model/databaseService';
+import moment from 'moment';
+
+
+
 
 interface UserElement {
-  id: string;
-  type: string;
+  id: number;
+  type: 'journal' | 'mood' | 'goal';
   title: string;
   time: string;
   icon?: string;
@@ -82,17 +90,28 @@ const ProgressBar: React.FunctionComponent<{
   )
 }
 
-const DayView = ({ items, loadAnimation }: {
-  items: UserElement[];
+//TODO: delete not being used
+interface Journal {
+  id: number;
+  title: string;
+  body: string;
+  createdAt: string;
+}
+
+const DayView = ({ loadAnimation }: {
   loadAnimation: boolean;
 }) => {
 
   const [loading, setLoading] = useState(false);
   const listRef = useRef<FlatList>(null);
   const [animating, setAnimating] = useState(loadAnimation);
+  const [userElements, setUserElements] = useState<UserElement[]>([]);
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   //TODO: try fixing without taking delay as the animation was smoother before
   useEffect(() => {
+    //TODO: also refresh the userElements when the page is left and joined again i.e for the back navigation
     setAnimating(false);
     if (loadAnimation) {
       setTimeout(() => {
@@ -106,13 +125,65 @@ const DayView = ({ items, loadAnimation }: {
   //   setAnimating(loadAnimation); 
   // }, [loadAnimation]);
 
+  const fetchJournalEntries = async () => {
+    setLoading(true);
+    try {
+      const databaseResult = await databaseService.getAllJournalEntries(); // Adjust function name if needed
+      const entries: UserElement[] = databaseResult.map(journal => ({
+        id: journal.id,
+        type: 'journal',
+        title: journal.title,
+        time: moment(journal.createdAt).format('HH:mm')
+      }));
+      setUserElements(entries);
+    } catch (error) {
+      console.error('Error fetching entries:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchJournalEntries();
+  }, []);
+
+  // useEffect(() => {
+  //   console.log(userElements)
+  // }, [userElements]);
+
+  const handleDeleteEntry = (title: string, id: number) => {
+    Alert.alert('Warning', `Are you sure you want to delete this entry: ${title}`, [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {
+        text: 'OK', onPress: () => {
+          databaseService.deleteJournalEntryByID(id)
+          onRefresh();
+        }
+      },
+    ]);
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchJournalEntries();
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const renderRow: ListRenderItem<UserElement> = ({ item }) => {
     switch (item.type) {
       case 'journal':
         return (
           <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
-            <TouchableOpacity style={styles.listElement}>
+            <TouchableOpacity style={styles.listElement} onLongPress={() => handleDeleteEntry(item.title, item.id)}>
               <Animated.View>
                 <View style={styles.topRow}>
                   <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
@@ -174,12 +245,15 @@ const DayView = ({ items, loadAnimation }: {
   };
 
   return (
-    <View style={defaultStyles.container}>
+    <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
       <Animated.FlatList
         renderItem={renderRow}
         ref={listRef}
-        data={loading ? [] : items}
+        data={loading ? [] : userElements}
         style={styles.listContainer}
+        entering={SlideInUp.delay(50)}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       >
       </Animated.FlatList>
     </View>
@@ -194,6 +268,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 5,
     marginLeft: 5
+
   },
   progressText: { marginBottom: 5, marginLeft: 10 },
   listContainer: {

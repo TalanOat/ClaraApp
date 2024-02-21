@@ -111,7 +111,7 @@ const Layout = () => {
         </Tabs.Screen>
 
       </Tabs>
-      
+
       {showAddMenu && (
         <Animated.View style={popupStyles.popup} entering={SlideInDown.delay(50)}>
           <View style={popupStyles.topRow}>
@@ -125,7 +125,7 @@ const Layout = () => {
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={() => setShowAddMenu(false)} style={popupStyles.closeButton}>
-          <MaterialCommunityIcons name="minus-circle" size={60} color={Colors.pink} />
+            <MaterialCommunityIcons name="minus-circle" size={60} color={Colors.pink} />
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -170,7 +170,7 @@ const popupStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-evenly",
     padding: 30
-    
+
   },
   closeButton: {
     alignItems: "center"

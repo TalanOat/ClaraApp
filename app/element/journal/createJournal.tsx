@@ -5,12 +5,16 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { defaultStyles } from '@/constants/Styles'
 
 import Animated, {
+  FadeInDown,
+  FadeOutUp,
   SlideInDown,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService'
+import Colors from '@/constants/Colors'
 
 const createJournal = () => {
   const [text, setText] = useState('');
+  const [flashNotification, setFlashNotification] = useState(false);
 
   const handleInputChange = (input: string) => {
     setText(input);
@@ -25,11 +29,25 @@ const createJournal = () => {
     }, 600); // Adjust the delay (in milliseconds) 
   }, []);
 
-  const handleSubmit = ()  => {
-    //console.log(text)
-    const currentTime = new Date().toISOString()
-    //console.log(currentTime)
-    databaseService.createJournalEntry("Journal Entry", text, currentTime)
+  async function databaseCreateJournalEntry() {
+    try {
+      const currentTime = new Date().toISOString()
+      await databaseService.createJournalEntry("Journal Entry", text, currentTime);
+    }
+
+    catch (error) {
+      console.error("update error:", error);
+    }
+  }
+
+
+  const handleSubmit = () => {
+    databaseCreateJournalEntry()
+    setFlashNotification(true); 
+
+    setTimeout(() => {
+      setFlashNotification(false); 
+    }, 1000); 
   }
 
 
@@ -43,8 +61,8 @@ const createJournal = () => {
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
           <Text style={styles.elementTitle}>Title Here</Text>
-          <TouchableOpacity>
-            <MaterialCommunityIcons name="check" size={40} color="white" onPress={() => {handleSubmit();}}/>
+          <TouchableOpacity  onPress={() => { handleSubmit(); }} >
+            <MaterialCommunityIcons name="check" size={40} color="white" />
           </TouchableOpacity>
 
         </View>
@@ -59,7 +77,13 @@ const createJournal = () => {
           />
         </View>
       </Animated.ScrollView>
+      {flashNotification && (
+        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+          <Text style={flashMessage.innerText}>Success</Text>
+        </Animated.View>
+      )}
     </LinearGradient>
+
   )
 }
 
@@ -101,6 +125,29 @@ const styles = StyleSheet.create({
   contentRow: {
     padding: 20
   },
+})
+
+const flashMessage = StyleSheet.create({
+  container: {
+    flex: 1, 
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0, 
+    bottom: 0,
+    alignItems: 'center',   
+    justifyContent: 'center',    
+  },
+  innerText: {
+    padding: 20,
+    color: "white",
+    fontFamily: "mon-b",
+    fontSize: 15,
+
+    backgroundColor: Colors.pink,
+    borderRadius: 10,
+    //margin: 50
+  }
 })
 
 

@@ -1,12 +1,12 @@
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors'
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Platform, KeyboardAvoidingView } from 'react-native'
+import { View, Platform, KeyboardAvoidingView, Keyboard } from 'react-native'
 import * as NavigationBar from 'expo-navigation-bar';
 import ExpandedHeader from '@/components/expandedHeader'
 import SmallerHeader from '@/components/smallerHeader';
@@ -36,7 +36,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    databaseService.initDB(); 
+    databaseService.initDB();
   }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -70,22 +70,49 @@ function RootLayoutNav() {
   function CustomStatusBar() {
     return <StatusBar style="light" backgroundColor={Colors.primary} />;
   }
+  //implemented as the keyboardAvoidingView was getting stuck sometimes
+  //BUG: this only partially solved the issue, sometimes on fully letting the keyboard,
+  //  load in pressing the navigation to go back means the normal view without the keyobard
+  //  is padded 
+  //TODO: edit to work
+  //TODO: UPADTE; bug gone, monitor this and take out this section if fixed
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [forceRerender, setForceRerender] = useState(false);
 
-  //database
+  useEffect(() => {
+    const showListener = Keyboard.addListener('keyboardDidShow', () => {
+      console.log("keyboard show")
+      setKeyboardVisible(true)
+    });
 
+    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+      console.log("keyboard hide")
+      setKeyboardVisible(false);
+      setForceRerender(true); 
+      setTimeout(() => setForceRerender(false), 100); 
+    });
 
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
 
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={keyboardVisible ? 'padding' : undefined}
+          //key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-render
+        >
           <CustomStatusBar />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
-              <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-              <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-              <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            </Stack>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
+            <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+            <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+            <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          </Stack>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
