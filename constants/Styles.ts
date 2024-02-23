@@ -14,6 +14,12 @@ export const defaultStyles = StyleSheet.create({
         fontSize: 15,
         fontFamily: "mon-b",
         flex: 1
+    },
+    titleHeader: {
+        color: "white",
+        fontSize: 22,
+        fontFamily: "mon-b",
+        flex: 1
     }
 
     

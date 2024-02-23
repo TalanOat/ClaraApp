@@ -59,7 +59,7 @@ const createJournal = () => {
     >
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>
-          <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
+          <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
           <Text style={styles.elementTitle}>Title Here</Text>
           <TouchableOpacity  onPress={() => { handleSubmit(); }} >
             <MaterialCommunityIcons name="check" size={40} color="white" />

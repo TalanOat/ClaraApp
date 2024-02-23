@@ -119,7 +119,7 @@ const Layout = () => {
               <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={popupStyles.topRowItemIcon} />
               <Text style={popupStyles.topRowItemLabel}>Text Journal</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={popupStyles.topRowItem}>
+            <TouchableOpacity style={popupStyles.topRowItem} onPress={() => handleAddNavigation("element/moodJournal/createMoodJournal")}>
               <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={popupStyles.topRowItemIcon} />
               <Text style={popupStyles.topRowItemLabel} >Mood Journal</Text>
             </TouchableOpacity>

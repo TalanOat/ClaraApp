@@ -54,9 +54,6 @@ export default function RootLayout() {
     return null;
   }
 
-
-
-
   return <RootLayoutNav />;
 }
 
@@ -111,6 +108,7 @@ function RootLayoutNav() {
             <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
             <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
             <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+            <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
             <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
           </Stack>
         </KeyboardAvoidingView>

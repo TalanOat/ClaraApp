@@ -90,14 +90,6 @@ const ProgressBar: React.FunctionComponent<{
   )
 }
 
-//TODO: delete not being used
-interface Journal {
-  id: number;
-  title: string;
-  body: string;
-  createdAt: string;
-}
-
 const DayView = ({ loadAnimation }: {
   loadAnimation: boolean;
 }) => {
