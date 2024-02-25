@@ -15,11 +15,8 @@ import Animated, {
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 
-
-
-
 interface UserElement {
-  id: number;
+  id: string;
   type: 'journal' | 'mood' | 'goal';
   title: string;
   time: string;
@@ -33,6 +30,8 @@ interface UserElement {
   goalValue?: number
 };
 
+
+//TODO: export this as a component
 const ProgressBar: React.FunctionComponent<{
   step: number;
   steps: number;
@@ -98,52 +97,42 @@ const DayView = ({ loadAnimation }: {
   const listRef = useRef<FlatList>(null);
   const [animating, setAnimating] = useState(loadAnimation);
   const [userElements, setUserElements] = useState<UserElement[]>([]);
-  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  //TODO: try fixing without taking delay as the animation was smoother before
   useEffect(() => {
-    //TODO: also refresh the userElements when the page is left and joined again i.e for the back navigation
-    setAnimating(false);
-    if (loadAnimation) {
-      setTimeout(() => {
-        setAnimating(true);
-      }, 10);
-    }
-  }, [loadAnimation]);
+    console.log("animation triggered")
+    setAnimating(loadAnimation);
 
-  // useEffect(() => {
-  //   console.log("animation triggered")
-  //   setAnimating(loadAnimation); 
-  // }, [loadAnimation]);
+  }, [loadAnimation]);
 
   const fetchJournalEntries = async () => {
     setLoading(true);
     try {
       const databaseResult = await databaseService.getAllJournalEntries(); // Adjust function name if needed
       const entries: UserElement[] = databaseResult.map(journal => ({
-        id: journal.id,
+        id: "journal_" + journal.id,
         type: 'journal',
         title: journal.title,
         time: moment(journal.createdAt).format('HH:mm')
       }));
       setUserElements(entries);
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error fetching entries:', error);
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    fetchJournalEntries();
-  }, []);
 
   // useEffect(() => {
   //   console.log(userElements)
   // }, [userElements]);
 
-  const handleDeleteEntry = (title: string, id: number) => {
+  const handleDeleteEntry = (title: string, id: string) => {
+    //(1) First get the id without the prefix
+    const idWithNoPreix = splitId(id).id;
+    console.log(idWithNoPreix)
     Alert.alert('Warning', `Are you sure you want to delete this entry: ${title}`, [
       {
         text: 'Cancel',
@@ -152,7 +141,7 @@ const DayView = ({ loadAnimation }: {
       },
       {
         text: 'OK', onPress: () => {
-          databaseService.deleteJournalEntryByID(id)
+          databaseService.deleteJournalEntryByID(idWithNoPreix)
           onRefresh();
         }
       },
@@ -163,18 +152,105 @@ const DayView = ({ loadAnimation }: {
     setRefreshing(true);
     try {
       await fetchJournalEntries();
-    } catch (error) {
+      await fetchMoodJournalEntries();
+    }
+    catch (error) {
       console.error("Refresh error:", error);
-    } finally {
+    }
+    finally {
       setRefreshing(false);
     }
   };
+
+  //TODO: get the moodScores and populate it as a varaible 
+  //set it to the userElelemtn array
+  const fetchTrackingValues = async () => {
+    try {
+      const tempTrackingValues = await databaseService.getAllTrackingValues();
+      return (tempTrackingValues);
+
+    }
+    catch (error) {
+      console.error("error getting values:", error);
+    }
+  };
+
+  const fetchTrackingData = async (dataValueID: number) => {
+    try {
+      const tempTrackingData = await databaseService.getAllTrackingAndData(dataValueID);
+      return (tempTrackingData);
+
+    }
+    catch (error) {
+      console.error("error getting values:", error);
+    }
+  };
+
+  const fetchMoodJournalEntries = async () => {
+    setLoading(true);
+    try {
+      //(1) Get the last row in the "tracking_values" table
+      const trackingValuesArray = await fetchTrackingValues();
+      //(2) Get the tracking data for the "trackingValuesArray"
+      if (trackingValuesArray) {
+        //console.log("tackingid: ", trackingValuesArray.id)
+        const trackingDataArray = await fetchTrackingData(trackingValuesArray.id);
+        //console.log("trackingDataArray: ", trackingDataArray) 
+        const entries: UserElement[] = trackingDataArray.map((moodJournal: any) => ({
+          id: "mood_" + moodJournal.id,
+          type: 'mood',
+          title: moodJournal.title,
+          time: moment(moodJournal.createdAt).format('HH:mm'),
+          moodType1: trackingValuesArray.value1, // How do we get "Happiness" here?
+          moodValue1: moodJournal.figure1,
+          moodType2: trackingValuesArray.value2, // How do we get "Anxiety" here?
+          moodValue2: moodJournal.figure2,
+          moodType3: trackingValuesArray.value3, // How do we get "Depression" here?
+          moodValue3: moodJournal.figure3
+        }));
+        setUserElements(prevElements => [...prevElements, ...entries]);
+        //console.log(userElements)
+      }
+      //TODO: make this work with USerElement interface. Values always the same but data is different for each
+      //console.log("trackingValuesArray: ", trackingValuesArray);
+
+      //(3) Map the tracking data to the USerElement interface object
+    }
+    catch (error) {
+      console.error('Error fetching entries:', error);
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  function splitId(prefixedId: string) {
+    const parts = prefixedId.split("_");
+    if (parts.length !== 2) {
+      throw new Error("invalid string to split");
+    }
+    const prefix = parts[0];
+    const id = parseInt(parts[1]);
+
+    return { prefix, id };
+  }
+
+  useEffect(() => {
+    fetchJournalEntries();
+    fetchMoodJournalEntries();
+    //onRefresh();
+  }, []);
+
+  //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading
+  // to false
+
+  //TODO: allow for mood Journals to be deleted
 
   const renderRow: ListRenderItem<UserElement> = ({ item }) => {
     switch (item.type) {
       case 'journal':
         return (
-          <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
+          <Link style={styles.linkContainer} href={`/element/journal/${splitId(item.id).id}`} asChild>
             <TouchableOpacity style={styles.listElement} onLongPress={() => handleDeleteEntry(item.title, item.id)}>
               <Animated.View>
                 <View style={styles.topRow}>
@@ -188,7 +264,7 @@ const DayView = ({ loadAnimation }: {
         );
       case 'mood':
         return (
-          <Link style={styles.linkContainer} href={`/element/journal/${item.id}`} asChild>
+          <Link style={styles.linkContainer} href={`/element/moodJournal/${splitId(item.id).id}`} asChild>
             <TouchableOpacity style={styles.listElement}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
@@ -198,12 +274,12 @@ const DayView = ({ loadAnimation }: {
               <View style={styles.remainingContent}>
                 <View style={styles.contentRow}>
                   {item.moodValue1 !== undefined && (
-                    <ProgressBar step={item.moodValue1} steps={10} height={25} isAnimating={animating} textLabel={item.moodType1} />
+                    <ProgressBar step={item.moodValue1} steps={100} height={25} isAnimating={animating} textLabel={item.moodType1} />
                   )}
                 </View>
                 <View style={styles.contentRow}>
                   {item.moodValue2 !== undefined && (
-                    <ProgressBar step={item.moodValue2} steps={10} height={25} isAnimating={animating} textLabel={item.moodType2} />
+                    <ProgressBar step={item.moodValue2} steps={100} height={25} isAnimating={animating} textLabel={item.moodType2} />
                   )}
                 </View>
               </View>

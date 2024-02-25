@@ -3,18 +3,27 @@ import React, { useState } from 'react'
 import { adminDatabaseService } from '@/model/adminDatabaseService'
 import { defaultStyles } from '@/constants/Styles';
 import Colors from '@/constants/Colors';
+import { databaseService } from '@/model/databaseService';
 
 const settings = () => {
     const [dropText, setDropText] = useState('');
     const [selectText, setSelectText] = useState('');
+    const [tracking1, setTracking1] = useState('');
+    const [tracking2, setTracking2] = useState('');
+    const [tracking3, setTracking3] = useState('');
 
     const handleInput1Change = (input: string) => {
         setDropText(input);
     }
     const handleDropSubmit = () => {
         createTwoButtonAlert();
-    }
+    } 
 
+    const handleTrackingSubmit = () => {
+        //console.log('values:', tracking1, tracking2, tracking3);
+        databaseService.createThreeTrackingValues(tracking1, tracking2, tracking3);
+    }
+    
     const createTwoButtonAlert = () => {
         Alert.alert('Warning', `Are you sure you want to drop this table: ${dropText}`, [
             {
@@ -35,7 +44,6 @@ const settings = () => {
     }
 
     const handleSelectSubmit = () => {
-        
         adminDatabaseService.selectAllFromTable(selectText)
     }
 
@@ -60,6 +68,30 @@ const settings = () => {
                     style={styles.basicInput}>
                 </TextInput>
                 <TouchableOpacity style={styles.button} onPress={() => { handleSelectSubmit() }}>
+                    <Text>Confirm</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={styles.firstForm}>
+                <Text style={styles.header1}>Change tracking values</Text>
+                <TextInput
+                    onChangeText={(text) => setTracking1(text)}
+                    value={tracking1}
+                    style={styles.basicInput}
+                    placeholder="Value 1"
+                />
+                <TextInput
+                    onChangeText={(text) => setTracking2(text)}
+                    value={tracking2}
+                    style={styles.basicInput}
+                    placeholder="Value 2"
+                />
+                <TextInput
+                    onChangeText={(text) => setTracking3(text)}
+                    value={tracking3}
+                    style={styles.basicInput}
+                    placeholder="Value 3"
+                />
+                <TouchableOpacity style={styles.button} onPress={() => handleTrackingSubmit()}>
                     <Text>Confirm</Text>
                 </TouchableOpacity>
             </View>

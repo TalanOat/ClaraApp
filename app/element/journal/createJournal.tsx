@@ -26,7 +26,7 @@ const createJournal = () => {
   useEffect(() => {
     setTimeout(() => {
       textInputRef.current?.focus();
-    }, 600); // Adjust the delay (in milliseconds) 
+    }, 600); 
   }, []);
 
   async function databaseCreateJournalEntry() {

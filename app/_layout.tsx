@@ -101,7 +101,7 @@ function RootLayoutNav() {
       <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={keyboardVisible ? 'padding' : undefined}
-          //key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-render
+          key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-renders
         >
           <CustomStatusBar />
           <Stack>
