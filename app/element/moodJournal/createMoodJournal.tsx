@@ -58,9 +58,6 @@ const createJournal = () => {
     useEffect(() => {
         //if to prevent for recursively calling when there is no value.
         if (userTrackingVals) {
-            console.log("second get : ", userTrackingVals.value1);
-            console.log("second get : ", userTrackingVals.value2);
-            console.log("second get : ", userTrackingVals.value3);
             setLoading(false);
         }
     }, [userTrackingVals]);
@@ -70,26 +67,13 @@ const createJournal = () => {
         fetchTrackingValues()
     }, []);
 
-    //TODO: move to another component
-    const getData = async () => {
-        console.log("in dummy")
-        try {
-            if (userTrackingVals) {
-                const tempValues = await databaseService.getAllTrackingAndData(userTrackingVals.id);
-                console.log(tempValues)
-                //setUserTrackingVals(tempValues);
-            }
-        } catch (error) {
-            console.error("error inserting values:", error);
-        }
-    }
 
-    
+
     const addDataForTrackingValues = async (figure1: number, figure2: number, figure3: number) => {
         //console.log("in tracking set")
         try {
             if (userTrackingVals) {
-                await databaseService.createTrackingDataAndLink (
+                await databaseService.createTrackingDataAndLink(
                     figure1, figure2, figure3, userTrackingVals.id);
             }
         } catch (error) {
@@ -97,9 +81,9 @@ const createJournal = () => {
         }
     }
 
-    const calculatePercentage = ( inputValue:number ) => {
+    const calculatePercentage = (inputValue: number) => {
         const formula = Math.round(inputValue * 100);
-        return(formula);
+        return (formula);
     }
 
     const handleTestSubmit = () => {
@@ -109,16 +93,81 @@ const createJournal = () => {
         const figure2 = calculatePercentage(sliderValue2);
         const figure3 = calculatePercentage(sliderValue3);
         console.log(
-         "figure 1: ", figure1,
-         "figure 2: ", figure2,
-         "figure 3: ", figure3)
+            "figure 1: ", figure1,
+            "figure 2: ", figure2,
+            "figure 3: ", figure3)
         addDataForTrackingValues(figure1, figure2, figure3);
     }
 
     //TODO: calculate the percentage value of each slider in a function to be a number between 1-10, or 1-100
     // Then set it using the function, then try to print it using the other funciton to test it working
 
+    const baseEmotionsData = [
+        { key: 1, name: 'Joyful', backgroundColor: '#D0BB01' },
+        { key: 2, name: 'Sad', backgroundColor: '#73AECF' },
+        { key: 3, name: 'Angry', backgroundColor: '#A7251E' },
+        { key: 4, name: 'Powerful', backgroundColor: '#274389' },
+        { key: 5, name: 'Scared', backgroundColor: '#BD976A' },
+        { key: 6, name: 'Peaceful', backgroundColor: '#1D681B' }
+    ]
 
+    const extendedEmotionsData = [
+        { key: "joyful_1", name: 'Energetic', backgroundColor: '#C850F2' },
+        { key: "joyful_2", name: 'Sensuous', backgroundColor: '#C850F2' },
+        { key: "joyful_3", name: 'Cheerful', backgroundColor: '#C850F2' },
+        { key: "joyful_4", name: 'Creative', backgroundColor: '#C850F2' },
+        { key: "joyful_5", name: 'Hopeful', backgroundColor: '#C850F2' },
+        { key: "joyful_6", name: 'Excited', backgroundColor: '#C850F2' }
+    ]
+
+
+    const [showEmotionOptions, setShowEmotionOptions] = useState(false);
+    const [selectedBaseEmotion, setSelectedBaseEmotion] = useState(0)
+
+    const handleEmotionPressed = (emotionKey: number) => {
+        if (showEmotionOptions && selectedBaseEmotion === emotionKey) {
+            setSelectedBaseEmotion(-1);
+            setShowEmotionOptions(false)
+        }
+        else {
+            setSelectedBaseEmotion(emotionKey);
+            setShowEmotionOptions(true)
+        }
+
+        //TODO: add functionality so that it only shows the extendedEmotions data for baseEmotion(1)
+        switch (emotionKey) {
+            case 1:
+            //console.log("first is selected")
+            //TODO: edit the base emotions array
+            default:
+            // code block
+        }
+    }
+
+    const handleExtendedEmotionPressed = (emotionKey: string) => {
+        console.log("extended emotion pressed (key): ", emotionKey)
+        //setSelectedEmotion(emotion);
+        //setShowEmotionOptions(true); 
+    }
+
+    const renderOptions = () => {
+        if (showEmotionOptions) {
+            return (
+                extendedEmotionsData.map(emotion => (
+
+                    <TouchableOpacity
+                        key={emotion.key}
+                        style={[emotionsStyles.button, { backgroundColor: emotion.backgroundColor }]} // Combined styles
+                        onPress={() => handleExtendedEmotionPressed(emotion.key)}
+                    >
+                        <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
+                    </TouchableOpacity>
+                ))
+            );
+        } else {
+            return null;
+        }
+    }
 
     return (
         <LinearGradient
@@ -181,9 +230,44 @@ const createJournal = () => {
                                 maximumTrackTintColor={Colors.primary} />
                         </View>
                     )}
-                    <TouchableOpacity style={[defaultStyles.button, styles.submitFormButton]} onPress={(e) => {handleTestSubmit()}}>
-                        <Text style={defaultStyles.buttonText}>Submit</Text>
-                    </TouchableOpacity>
+                    <View style={emotionsStyles.emotionsContainer}>
+                        {/* render emotion buttons */}
+                        {showEmotionOptions
+                            ? baseEmotionsData.filter(
+                                (emotion) => emotion.key === selectedBaseEmotion 
+                            ).map((emotion) => (
+                                <TouchableOpacity
+                                    key={emotion.key}
+                                    style={[
+                                        emotionsStyles.button,
+                                        { backgroundColor: emotion.backgroundColor },
+                                        selectedBaseEmotion === emotion.key
+                                            ? emotionsStyles.selectedButton
+                                            : null,
+                                    ]}
+                                    onPress={() => handleEmotionPressed(emotion.key)}
+                                >
+                                    <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
+                                </TouchableOpacity>
+                            ))
+                            : baseEmotionsData.map((emotion) => (
+                                <TouchableOpacity
+                                    key={emotion.key}
+                                    style={[
+                                        emotionsStyles.button,
+                                        { backgroundColor: emotion.backgroundColor },
+                                        selectedBaseEmotion === emotion.key
+                                            ? emotionsStyles.selectedButton
+                                            : null,
+                                    ]}
+                                    onPress={() => handleEmotionPressed(emotion.key)}
+                                >
+                                    <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        {renderOptions()}
+
+                    </View>
                 </View>
             </Animated.ScrollView>
             {flashNotification && (
@@ -196,9 +280,34 @@ const createJournal = () => {
     )
 }
 
+const emotionsStyles = StyleSheet.create({
+    emotionsContainer: {
+        marginTop: 25,
+        flexDirection: "row",
+        gap: 15,
+        flexWrap: "wrap"
+    },
+    button: {
+        //backgroundColor: Colors.pink,
+        padding: 15,
+        alignSelf: 'flex-start',
+        borderRadius: 10,
+        elevation: 10
+    },
+    buttonText: {
+        color: "white",
+        fontFamily: "mon-b",
+    },
+    selectedButton: {
+        backgroundColor: Colors.pink,
+        color: "black"
+    },
+})
+
+
 const styles = StyleSheet.create({
     submitFormButton: {
-        marginTop: 10
+        marginTop: 100
     },
     container: {
         flex: 1,

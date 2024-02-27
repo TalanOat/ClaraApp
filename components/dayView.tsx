@@ -2,7 +2,7 @@ import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, Ale
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import React, { useState, useEffect, useRef } from 'react'
 import { defaultStyles } from '@/constants/Styles'
-import { Link } from 'expo-router';
+import { Link, useNavigation } from 'expo-router';
 import Colors from '@/constants/Colors';
 import Animated, {
   useSharedValue,
@@ -95,15 +95,21 @@ const DayView = ({ loadAnimation }: {
 
   const [loading, setLoading] = useState(false);
   const listRef = useRef<FlatList>(null);
-  const [animating, setAnimating] = useState(loadAnimation);
+  const [animating, setAnimating] = useState(false);
   const [userElements, setUserElements] = useState<UserElement[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchComplete, setFetchComplete] = useState(false);
 
   useEffect(() => {
-    console.log("animation triggered")
-    setAnimating(loadAnimation);
+    //console.log()
+    if (loadAnimation) {
+      setAnimating(true);
+    }
+    else {
+      setAnimating(false);
+    }
+  }, [loadAnimation])
 
-  }, [loadAnimation]);
 
   const fetchJournalEntries = async () => {
     setLoading(true);
@@ -124,10 +130,6 @@ const DayView = ({ loadAnimation }: {
       setLoading(false);
     }
   }
-
-  // useEffect(() => {
-  //   console.log(userElements)
-  // }, [userElements]);
 
   const handleDeleteEntry = (title: string, id: string) => {
     //(1) First get the id without the prefix
@@ -159,6 +161,10 @@ const DayView = ({ loadAnimation }: {
     }
     finally {
       setRefreshing(false);
+      setTimeout(() => {
+        setAnimating(true);
+        setAnimating(false);
+      }, 500);
     }
   };
 
@@ -236,9 +242,26 @@ const DayView = ({ loadAnimation }: {
   }
 
   useEffect(() => {
-    fetchJournalEntries();
-    fetchMoodJournalEntries();
-    //onRefresh();
+    const fetchData = async () => {
+      try {
+        await fetchJournalEntries();
+        await fetchMoodJournalEntries();
+
+      }
+      catch (error) {
+        console.error("Error fetching data:", error);
+      }
+      finally {
+        setFetchComplete(true);
+        setTimeout(() => {
+          setAnimating(true);
+          setAnimating(false);
+        }, 1000);
+      }
+    }
+    fetchData();
+
+    // Initiate data fetching
   }, []);
 
   //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading

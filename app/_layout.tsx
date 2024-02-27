@@ -13,8 +13,6 @@ import SmallerHeader from '@/components/smallerHeader';
 import { databaseService } from '@/model/databaseService';
 
 
-
-
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -71,8 +69,6 @@ function RootLayoutNav() {
   //BUG: this only partially solved the issue, sometimes on fully letting the keyboard,
   //  load in pressing the navigation to go back means the normal view without the keyobard
   //  is padded 
-  //TODO: edit to work
-  //TODO: UPADTE; bug gone, monitor this and take out this section if fixed
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [forceRerender, setForceRerender] = useState(false);
 
