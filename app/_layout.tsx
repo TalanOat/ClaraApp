@@ -81,8 +81,8 @@ function RootLayoutNav() {
     const hideListener = Keyboard.addListener('keyboardDidHide', () => {
       console.log("keyboard hide")
       setKeyboardVisible(false);
-      setForceRerender(true); 
-      setTimeout(() => setForceRerender(false), 100); 
+      setForceRerender(true);
+      setTimeout(() => setForceRerender(false), 100);
     });
 
     return () => {
@@ -94,20 +94,16 @@ function RootLayoutNav() {
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
-      <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={keyboardVisible ? 'padding' : undefined}
-          key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-renders
-        >
-          <CustomStatusBar />
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
-            <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-          </Stack>
-        </KeyboardAvoidingView>
+
+        <CustomStatusBar />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
+          <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+        </Stack>
+
       </SafeAreaView>
 
       <View
@@ -133,5 +129,47 @@ function RootLayoutNav() {
     </Fragment>
 
   );
+  // return (
+  //   <Fragment>
+  //     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
+  //     <KeyboardAvoidingView
+  //         style={{ flex: 1 }}
+  //         behavior={keyboardVisible ? 'padding' : undefined}
+  //         key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-renders
+  //       >
+  //         <CustomStatusBar />
+  //         <Stack>
+  //           <Stack.Screen name="(tabs)" options={{ header: ExpandedHeader }} />
+  //           <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+  //           <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+  //           <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+  //           <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+  //         </Stack>
+  //       </KeyboardAvoidingView>
+  //     </SafeAreaView>
+
+  //     <View
+  //       style={{
+  //         position: 'absolute',
+  //         bottom: 0,
+  //         left: 0,
+  //         right: 0,
+  //         height: insets.bottom,
+  //         backgroundColor: Colors.pink,
+  //       }}
+  //     />
+  //     <View
+  //       style={{
+  //         position: 'absolute',
+  //         top: 0,
+  //         left: 0,
+  //         right: 0,
+  //         height: insets.top,
+  //         backgroundColor: Colors.primary,
+  //       }}
+  //     />
+  //   </Fragment>
+
+  // );
 }
 

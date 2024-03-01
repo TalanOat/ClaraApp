@@ -1,20 +1,19 @@
-import { View, Text, TextInput, StyleSheet, Touchable, TouchableOpacity, Easing, PanResponder, } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { defaultStyles } from '@/constants/Styles'
+import emotionsData from '@/assets/data/emotionsUpdated.json';
 
 import Animated, {
     FadeInDown,
     FadeOutUp,
     SlideInDown,
-    useSharedValue,
-    withTiming,
+
 } from 'react-native-reanimated';
 
 import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
-import { PanGestureHandler } from 'react-native-gesture-handler'
 import Slider from '@react-native-community/slider'
 
 interface TrackingValues {
@@ -22,6 +21,11 @@ interface TrackingValues {
     value1: string;
     value2: string;
     value3: string;
+}
+
+interface SelectedEmotion {
+    baseKey: number;
+    extendedKey?: string;
 }
 
 const createJournal = () => {
@@ -68,7 +72,6 @@ const createJournal = () => {
     }, []);
 
 
-
     const addDataForTrackingValues = async (figure1: number, figure2: number, figure3: number) => {
         //console.log("in tracking set")
         try {
@@ -99,75 +102,76 @@ const createJournal = () => {
         addDataForTrackingValues(figure1, figure2, figure3);
     }
 
-    //TODO: calculate the percentage value of each slider in a function to be a number between 1-10, or 1-100
-    // Then set it using the function, then try to print it using the other funciton to test it working
+    const [showExtended, setShowExtended] = useState<boolean>(false);
+    const [selectedEmotions, setSelectedEmotions] = useState<SelectedEmotion[]>([]);
+    const [extendedOpenKeys, setExtendedOpenKeys] = useState<number[]>([]);
 
-    const baseEmotionsData = [
-        { key: 1, name: 'Joyful', backgroundColor: '#D0BB01' },
-        { key: 2, name: 'Sad', backgroundColor: '#73AECF' },
-        { key: 3, name: 'Angry', backgroundColor: '#A7251E' },
-        { key: 4, name: 'Powerful', backgroundColor: '#274389' },
-        { key: 5, name: 'Scared', backgroundColor: '#BD976A' },
-        { key: 6, name: 'Peaceful', backgroundColor: '#1D681B' }
-    ]
+    //TODO: make it so that the emotions are logged
 
-    const extendedEmotionsData = [
-        { key: "joyful_1", name: 'Energetic', backgroundColor: '#C850F2' },
-        { key: "joyful_2", name: 'Sensuous', backgroundColor: '#C850F2' },
-        { key: "joyful_3", name: 'Cheerful', backgroundColor: '#C850F2' },
-        { key: "joyful_4", name: 'Creative', backgroundColor: '#C850F2' },
-        { key: "joyful_5", name: 'Hopeful', backgroundColor: '#C850F2' },
-        { key: "joyful_6", name: 'Excited', backgroundColor: '#C850F2' }
-    ]
-
-
-    const [showEmotionOptions, setShowEmotionOptions] = useState(false);
-    const [selectedBaseEmotion, setSelectedBaseEmotion] = useState(0)
-
-    const handleEmotionPressed = (emotionKey: number) => {
-        if (showEmotionOptions && selectedBaseEmotion === emotionKey) {
-            setSelectedBaseEmotion(-1);
-            setShowEmotionOptions(false)
-        }
-        else {
-            setSelectedBaseEmotion(emotionKey);
-            setShowEmotionOptions(true)
-        }
-
-        //TODO: add functionality so that it only shows the extendedEmotions data for baseEmotion(1)
-        switch (emotionKey) {
-            case 1:
-            //console.log("first is selected")
-            //TODO: edit the base emotions array
-            default:
-            // code block
-        }
-    }
-
-    const handleExtendedEmotionPressed = (emotionKey: string) => {
-        console.log("extended emotion pressed (key): ", emotionKey)
-        //setSelectedEmotion(emotion);
-        //setShowEmotionOptions(true); 
-    }
-
-    const renderOptions = () => {
-        if (showEmotionOptions) {
-            return (
-                extendedEmotionsData.map(emotion => (
-
-                    <TouchableOpacity
-                        key={emotion.key}
-                        style={[emotionsStyles.button, { backgroundColor: emotion.backgroundColor }]} // Combined styles
-                        onPress={() => handleExtendedEmotionPressed(emotion.key)}
-                    >
-                        <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
-                    </TouchableOpacity>
-                ))
+    //Called when an emotion is pressed and updates the setSelectedEmotions() state according to
+    //  the users input. Pressing an extended emotion once will add it and then pressing again will remove it
+    const handleEmotionPressed = (baseEmotionKey: number, extendedEmotionKey?: string) => {
+        //(1) checks to see if the emotion pressed is already in the array
+        const emotionSelected = selectedEmotions.some(emotion => {
+            emotion.baseKey === baseEmotionKey && emotion.extendedKey === extendedEmotionKey
+        });
+        setSelectedEmotions(prevEmotions => {
+            // Checks to see if the base emotion already exists in the selected array
+            const duplicateBaseEmotion = prevEmotions.some(emotion =>
+                emotion.baseKey === baseEmotionKey && !extendedEmotionKey
             );
-        } else {
-            return null;
+
+            console.log("duplicateBaseEmotion: ", duplicateBaseEmotion);
+
+            //if duplicated then return the previous emotions in the array and don't change it
+            if (duplicateBaseEmotion) {
+                return prevEmotions;
+            }
+            else {
+                //(2a) if it is already in the array it needs to be found and removed as the user has
+                //  toggled the button and wants to remove it
+                if (emotionSelected) {
+                    return prevEmotions.filter(emotion =>
+                        !(emotion.baseKey === baseEmotionKey && emotion.extendedKey === extendedEmotionKey)
+                    );
+                }
+                //(2b) otherwise just add the emotion to the array keeping the previous emotions already there
+                else {
+                    return [
+                        ...prevEmotions,
+                        { baseKey: baseEmotionKey, extendedKey: extendedEmotionKey || "null" }
+                    ];
+                }
+            }
+        });
+
+        //(1) Finally this statement is used to identify if the base Emotion 
+        if (extendedEmotionKey === undefined) {
+
+            setExtendedOpenKeys(prevKeys => {
+                //(2a) Then check whether the baseEmotion is already in the ExtendedOpenKeys
+                //  which would mean that it already open and needs to be closed
+                if (prevKeys.includes(baseEmotionKey)) {
+                    return prevKeys.filter(key => key !== baseEmotionKey);
+                }
+                //(2b) Otherwise open the baseEmotionKey extending emotions buttons
+                else {
+                    return [...prevKeys, baseEmotionKey];
+                }
+            });
         }
-    }
+    };
+
+
+    const handleCancelEmotion = () => {
+        setSelectedEmotions([]);
+    };
+
+    useEffect(() => {
+        console.log(selectedEmotions)
+    }, [selectedEmotions]);
+
+
 
     return (
         <LinearGradient
@@ -230,44 +234,58 @@ const createJournal = () => {
                                 maximumTrackTintColor={Colors.primary} />
                         </View>
                     )}
+                    {/* Emotions container */}
                     <View style={emotionsStyles.emotionsContainer}>
-                        {/* render emotion buttons */}
-                        {showEmotionOptions
-                            ? baseEmotionsData.filter(
-                                (emotion) => emotion.key === selectedBaseEmotion 
-                            ).map((emotion) => (
+                        {/* Base emotions Mapping */}
+                        {emotionsData.map((emotion) => (
+                            <Animated.View key={emotion.key} entering={FadeInDown.delay(200)}>
                                 <TouchableOpacity
-                                    key={emotion.key}
                                     style={[
                                         emotionsStyles.button,
                                         { backgroundColor: emotion.backgroundColor },
-                                        selectedBaseEmotion === emotion.key
-                                            ? emotionsStyles.selectedButton
-                                            : null,
+                                        //if at least one of the selectedEmotions by the user is the same 
+                                        //  as the base emotion, and the extendedKey is not selected then add 
+                                        //  the selectedButton style
+                                        selectedEmotions.some(em =>
+                                            em.baseKey === emotion.key && em.extendedKey === "null"
+                                        ) ? emotionsStyles.selectedButton : null
                                     ]}
-                                    onPress={() => handleEmotionPressed(emotion.key)}
-                                >
+                                    onPress={() => handleEmotionPressed(emotion.key)}>
                                     <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
                                 </TouchableOpacity>
-                            ))
-                            : baseEmotionsData.map((emotion) => (
-                                <TouchableOpacity
-                                    key={emotion.key}
-                                    style={[
-                                        emotionsStyles.button,
-                                        { backgroundColor: emotion.backgroundColor },
-                                        selectedBaseEmotion === emotion.key
-                                            ? emotionsStyles.selectedButton
-                                            : null,
-                                    ]}
-                                    onPress={() => handleEmotionPressed(emotion.key)}
-                                >
-                                    <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        {renderOptions()}
-
+                                {/* Extended emotions Mapping */}
+                                {extendedOpenKeys.includes(emotion.key) && (
+                                    <View style={emotionsStyles.extendedEmotionsContainer}>
+                                        {emotion.extendedEmotions?.map(extEmotion => (
+                                            <TouchableOpacity
+                                                key={extEmotion.key}
+                                                style={[
+                                                    emotionsStyles.button,
+                                                    { backgroundColor: extEmotion.backgroundColor },
+                                                    selectedEmotions.some(ext =>
+                                                        ext.baseKey === emotion.key && ext.extendedKey === extEmotion.key
+                                                    ) ? emotionsStyles.selectedButton : null,
+                                                ]}
+                                                onPress={() => handleEmotionPressed(emotion.key, extEmotion.key)}>
+                                                <Text style={emotionsStyles.buttonText}>{extEmotion.name}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </Animated.View>
+                        ))}
+                        <Animated.View style={emotionsStyles.cancelButtonContainer} entering={FadeInDown.delay(100)}>
+                            <TouchableOpacity
+                                style={[
+                                    emotionsStyles.cancelButton,
+                                ]}
+                                onPress={() => handleCancelEmotion()}>
+                                {/* <Text style={emotionsStyles.buttonText}>Cancel</Text> */}
+                                <MaterialCommunityIcons name="window-close" size={25} color="white" />
+                            </TouchableOpacity>
+                        </Animated.View>
                     </View>
+
                 </View>
             </Animated.ScrollView>
             {flashNotification && (
@@ -292,16 +310,34 @@ const emotionsStyles = StyleSheet.create({
         padding: 15,
         alignSelf: 'flex-start',
         borderRadius: 10,
-        elevation: 10
+        elevation: 10,
+        opacity: 0.5
     },
     buttonText: {
         color: "white",
         fontFamily: "mon-b",
     },
     selectedButton: {
-        backgroundColor: Colors.pink,
-        color: "black"
+        //backgroundColor: Colors.primary,
+        color: "black",
+        opacity: 1
     },
+    extendedEmotionsContainer: {
+        marginTop: 15,
+        flexDirection: "row",
+        gap: 15,
+        flexWrap: "wrap"
+    },
+    cancelButtonContainer: {},
+    cancelButton: {
+        padding: 11,
+        alignSelf: 'flex-end',
+        borderRadius: 10,
+        elevation: 10,
+        backgroundColor: Colors.primary
+    },
+    cancelButtonText: {}
+
 })
 
 

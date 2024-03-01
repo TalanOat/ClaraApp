@@ -1,0 +1,224 @@
+[
+    {
+        "key": 1,
+        "name": "Joyful",
+        "backgroundColor": "#D0BB01",
+        "extendedEmotions": [
+            {
+                "key": "joyful_1",
+                "name": "Energetic",
+                "backgroundColor": "#D0BB01"
+            },
+            {
+                "key": "joyful_2",
+                "name": "Playful",
+                "backgroundColor": "#D0BB01"
+            },
+            {
+                "key": "joyful_3",
+                "name": "Cheerful",
+                "backgroundColor": "#D0BB01"
+            },
+            {
+                "key": "joyful_4",
+                "name": "Creative",
+                "backgroundColor": "#D0BB01"
+            },
+            {
+                "key": "joyful_5",
+                "name": "Hopeful",
+                "backgroundColor": "#D0BB01"
+            },
+            {
+                "key": "joyful_6",
+                "name": "Excited",
+                "backgroundColor": "#D0BB01"
+            }
+        ]
+    },
+    {
+        "key": 2,
+        "name": "Sad",
+        "backgroundColor": "#73AECF",
+        "extendedEmotions": [
+            {
+                "key": "sad_1",
+                "name": "Lonely",
+                "backgroundColor": "#73AECF"
+            },
+            {
+                "key": "sad_2",
+                "name": "Discouraged",
+                "backgroundColor": "#73AECF"
+            },
+            {
+                "key": "sad_3",
+                "name": "Worthless",
+                "backgroundColor": "#73AECF"
+            },
+            {
+                "key": "sad_4",
+                "name": "Disappointed",
+                "backgroundColor": "#73AECF"
+            },
+            {
+                "key": "sad_5",
+                "name": "Helpless",
+                "backgroundColor": "#73AECF"
+            },
+            {
+                "key": "sad_6",
+                "name": "Unimportant",
+                "backgroundColor": "#73AECF"
+            }
+        ]
+    },
+    {
+        "key": 3,
+        "name": "Angry",
+        "backgroundColor": "#A7251E",
+        "extendedEmotions": [
+            {
+                "key": "angry_1",
+                "name": "Frustrated",
+                "backgroundColor": "#A7251E"
+            },
+            {
+                "key": "angry_2",
+                "name": "Angry",
+                "backgroundColor": "#A7251E"
+            },
+            {
+                "key": "angry_3",
+                "name": "Furious",
+                "backgroundColor": "#A7251E"
+            },
+            {
+                "key": "angry_4",
+                "name": "Judgmental",
+                "backgroundColor": "#A7251E"
+            },
+            {
+                "key": "angry_5",
+                "name": "Disgusted",
+                "backgroundColor": "#A7251E"
+            },
+            {
+                "key": "angry_6",
+                "name": "Annoyed",
+                "backgroundColor": "#A7251E"
+            }
+        ]
+    },
+    {
+        "key": 4,
+        "name": "Powerful",
+        "backgroundColor": "#274389",
+        "extendedEmotions": [
+            {
+                "key": "powerful_1",
+                "name": "Determined",
+                "backgroundColor": "#274389"
+            },
+            {
+                "key": "powerful_2",
+                "name": "Confident",
+                "backgroundColor": "#274389"
+            },
+            {
+                "key": "powerful_3",
+                "name": "Important",
+                "backgroundColor": "#274389"
+            },
+            {
+                "key": "powerful_4",
+                "name": "In Control",
+                "backgroundColor": "#274389"
+            },
+            {
+                "key": "powerful_5",
+                "name": "Strong",
+                "backgroundColor": "#274389"
+            },
+            {
+                "key": "powerful_6",
+                "name": "Proud",
+                "backgroundColor": "#274389"
+            }
+        ]
+    },
+    {
+        "key": 5,
+        "name": "Scared",
+        "backgroundColor": "#BD976A",
+        "extendedEmotions": [
+            {
+                "key": "scared_1",
+                "name": "Nervous",
+                "backgroundColor": "#BD976A"
+            },
+            {
+                "key": "scared_2",
+                "name": "Worried",
+                "backgroundColor": "#BD976A"
+            },
+            {
+                "key": "scared_3",
+                "name": "Unsure",
+                "backgroundColor": "#BD976A"
+            },
+            {
+                "key": "scared_4",
+                "name": "Weak",
+                "backgroundColor": "#BD976A"
+            },
+            {
+                "key": "scared_5",
+                "name": "Afraid",
+                "backgroundColor": "#BD976A"
+            },
+            {
+                "key": "scared_6",
+                "name": "Rejected",
+                "backgroundColor": "#BD976A"
+            }
+        ]
+    },
+    {
+        "key": 6,
+        "name": "Peaceful",
+        "backgroundColor": "#1D681B",
+        "extendedEmotions": [
+            {
+                "key": "peaceful_1",
+                "name": "Content",
+                "backgroundColor": "#1D681B"
+            },
+            {
+                "key": "peaceful_2",
+                "name": "Safe",
+                "backgroundColor": "#1D681B"
+            },
+            {
+                "key": "peaceful_3",
+                "name": "Optimistic",
+                "backgroundColor": "#1D681B"
+            },
+            {
+                "key": "peaceful_4",
+                "name": "Trusting",
+                "backgroundColor": "#1D681B"
+            },
+            {
+                "key": "peaceful_5",
+                "name": "Loved",
+                "backgroundColor": "#1D681B"
+            },
+            {
+                "key": "peaceful_6",
+                "name": "Thankful",
+                "backgroundColor": "#1D681B"
+            }
+        ]
+    }
+]
