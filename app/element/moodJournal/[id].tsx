@@ -8,84 +8,81 @@ import { defaultStyles } from '@/constants/Styles'
 import Colors from '@/constants/Colors';
 
 import Animated, {
+  FadeInDown,
+  FadeOutUp,
   SlideInDown,
+
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 
-interface Journal {
+import emotionsData from '@/assets/data/emotionsUpdated.json';
+import Slider from '@react-native-community/slider'
+
+interface TrackingValues {
   id: number;
-  title: string;
-  body: string;
-  time: string;
+  value1: string;
+  value2: string;
+  value3: string;
 }
+
+interface SelectedEmotion {
+  baseKey: number;
+  extendedKey?: string;
+}
+
+
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [journalEntry, setJournalEntry] = useState<Journal>();
-  const [textInputValue, setTextInputValue] = useState('');
-  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [flashNotification, setFlashNotification] = useState(false);
+  const [userTrackingVals, setUserTrackingVals] = useState<TrackingValues>();
 
+  /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
+  const [sliderValue1, setSliderValue1] = useState<number>(0);
+  const [sliderValue2, setSliderValue2] = useState<number>(0);
+  const [sliderValue3, setSliderValue3] = useState<number>(0);
 
-  const handleInputChange = (input: string) => {
-    setTextInputValue(input);
-  }
-
-  //the input ref is used to get a reference to the textinput component
-  //  to ensure the users keyboard is opened on the page load and their
-  //  cursor is at the top of the input box
-  const textInputRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    setTimeout(() => {
-      textInputRef.current?.focus();
-    }, 1000);
-  }, []);
-
-
-
-  useEffect(() => {
-    const fetchEntry = async () => {
+  const fetchTrackingValues = async () => {
       try {
-        const entry = await databaseService.getJournalEntryByID(parseInt(id));
-        if (entry) {
-          setJournalEntry({
-            id: entry.id,
-            title: entry.title,
-            body: entry.body,
-            time: moment(entry.createdAt).format('HH:mm')
-          });
-          setTextInputValue(entry.body);
-        } else {
-          // TODO: entry not found
-        }
+          const tempValues = await databaseService.getAllTrackingValues();
+          setUserTrackingVals(tempValues);
       } catch (error) {
-        console.error('error:', error);
+          console.error("error getting values:", error);
       }
+  };
+
+  const fetchTrackingData = async () => {
+    try {
+        const tempValues = await databaseService.getAllTrackingValues();
+        setUserTrackingVals(tempValues);
+    } catch (error) {
+        console.error("error getting values:", error);
     }
-    fetchEntry();
+};
+
+  useEffect(() => {
+      if (userTrackingVals) {
+          setLoading(false);
+      }
+  }, [userTrackingVals]);
+
+  useEffect(() => {
+      setLoading(true);
+      fetchTrackingValues().then(() => {
+          setLoading(false);
+      })
+      console.log("pageID param: ", id)
   }, []);
 
-  async function databaseUpdateJournalEntry() {
-    try {
-      //console.log("databae update")
-      if (journalEntry) {
-        await databaseService.updateJournalEntry(journalEntry.id, "Journal Entry", textInputValue);
-        //TODO: possibly add loading
-        //TODO: visual feedback to the user that it has worked
-      }
-      else {
-        //TODO:  (VFB) journal not loaded yet
-      }
-    } catch (error) {
-      console.error("update error:", error);
-    }
-  }
+  /* ---------------------------------- other --------------------------------- */
 
-  const handleUpdate = (e: any) => {
-    e.preventDefault();
+
+  const handleUpdate = () => {
+
     console.log("handle submit")
-    databaseUpdateJournalEntry()
+    //databaseUpdateMoodJournalEntry()
   }
 
 
@@ -98,22 +95,72 @@ const Page = () => {
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
-          <Text style={styles.elementTitle}>{journalEntry?.title}</Text>
-          <TouchableOpacity onPress={(e) => { handleUpdate(e); }} >
-            <MaterialCommunityIcons name="check" size={40} color="white"  />
+          <Text style={styles.elementTitle}>Check In</Text>
+          <TouchableOpacity onPress={() => { handleUpdate(); }} >
+            <MaterialCommunityIcons name="check" size={40} color="white" />
           </TouchableOpacity>
+
         </View>
         <View style={styles.contentRow}>
-          <TextInput
-            style={styles.journalInput}
-            onChangeText={handleInputChange}
-            value={textInputValue}
-            multiline={true}
-            numberOfLines={20}
-            ref={textInputRef}
-          />
+          <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning John</Text>
+          {/* first slider row : user interaction affects the sliderValue using a range from 0-1*/}
+          {!loading && (
+            <View style={styles.sliderRow}>
+              <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                {userTrackingVals?.value1}
+              </Text>
+              <Slider style={{ width: 200, height: 40 }}
+                value={sliderValue1}
+                onValueChange={(value) => { setSliderValue1(value) }}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor={Colors.pink}
+                maximumTrackTintColor={Colors.primary} />
+            </View>
+          )}
+          {/* second slider row */}
+          {!loading && (
+            <View style={styles.sliderRow}>
+              <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                {userTrackingVals?.value2}
+              </Text>
+              <Slider style={{ width: 200, height: 40 }}
+                value={sliderValue2}
+                onValueChange={(value) => { setSliderValue2(value) }}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor={Colors.pink}
+                maximumTrackTintColor={Colors.primary} />
+            </View>
+          )}
+          {/* third slider row */}
+          {!loading && (
+            <View style={styles.sliderRow}>
+              <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                {userTrackingVals?.value3}
+              </Text>
+              <Slider style={{ width: 200, height: 40 }}
+                value={sliderValue3}
+                onValueChange={(value) => { setSliderValue3(value) }}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor={Colors.pink}
+                maximumTrackTintColor={Colors.primary} />
+            </View>
+          )}
+          {/* Emotions container */}
+          <View style={emotionsStyles.emotionsContainer}>
+          
+          </View>
+          
+
         </View>
       </Animated.ScrollView>
+      {flashNotification && (
+        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+          <Text style={flashMessage.innerText}>Success</Text>
+        </Animated.View>
+      )}
     </LinearGradient>
   )
 }
@@ -122,15 +169,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  journalInput: {
-    height: "100%",
-    borderColor: 'transparent',
-    color: "white",
-    fontFamily: "mon",
-    fontSize: 16,
-    textAlignVertical: 'top',
-    maxHeight: 250
-  },
+
   journalContainer: {
     padding: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -138,6 +177,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 15,
     marginLeft: 15,
+  },
+  submitFormButton: {
+    marginTop: 100
   },
   topRow: {
     flexDirection: "row",
@@ -156,7 +198,81 @@ const styles = StyleSheet.create({
   contentRow: {
     padding: 20
   },
+  progressText: { marginBottom: 10, },
+  sliderRow: {
+    paddingTop: 10
+  },
+  moodHeader: {
+    marginBottom: 15
+  }
 })
+
+const emotionsStyles = StyleSheet.create({
+  emotionsContainer: {
+    marginTop: 25,
+    flexDirection: "row",
+    gap: 15,
+    flexWrap: "wrap"
+  },
+  button: {
+    //backgroundColor: Colors.pink,
+    padding: 15,
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    elevation: 10,
+    opacity: 0.5
+  },
+  buttonText: {
+    color: "white",
+    fontFamily: "mon-b",
+  },
+  selectedButton: {
+    //backgroundColor: Colors.primary,
+    color: "black",
+    opacity: 1
+  },
+  extendedEmotionsContainer: {
+    marginTop: 15,
+    flexDirection: "row",
+    gap: 15,
+    flexWrap: "wrap"
+  },
+  cancelButtonContainer: {},
+  cancelButton: {
+    padding: 11,
+    alignSelf: 'flex-end',
+    borderRadius: 10,
+    elevation: 10,
+    backgroundColor: Colors.primary
+  },
+  cancelButtonText: {}
+
+})
+
+
+const flashMessage = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  innerText: {
+    padding: 20,
+    color: "white",
+    fontFamily: "mon-b",
+    fontSize: 15,
+
+    backgroundColor: Colors.pink,
+    borderRadius: 10,
+    //margin: 50
+  }
+})
+
 
 
 export default Page

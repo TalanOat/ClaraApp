@@ -19,6 +19,10 @@ const settings = () => {
         createTwoButtonAlert();
     } 
 
+    const handleDropAllSubmit = () => {
+        createDropAllAlert();
+    } 
+
     const handleTrackingSubmit = () => {
         //console.log('values:', tracking1, tracking2, tracking3);
         databaseService.createThreeTrackingValues(tracking1, tracking2, tracking3);
@@ -38,6 +42,21 @@ const settings = () => {
             },
         ]);
     }
+    const createDropAllAlert = () => {
+        Alert.alert('Warning', `Are you sure you want to drop all tables`, [
+            {
+                text: 'Cancel',
+                onPress: () => console.log('Cancel Pressed'),
+                style: 'cancel',
+            },
+            {
+                text: 'OK', onPress: () => {
+                    adminDatabaseService.dropAllTables();
+                }
+            },
+        ]);
+    }
+
 
     const handleInput2Change = (input: string) => {
         setSelectText(input);
@@ -57,6 +76,12 @@ const settings = () => {
                     style={styles.basicInput}>
                 </TextInput>
                 <TouchableOpacity style={styles.button} onPress={() => { handleDropSubmit() }}>
+                    <Text>Confirm</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={styles.firstForm}>
+                <Text style={styles.header1}>Drop Every Table</Text>
+                <TouchableOpacity style={styles.button} onPress={() => { handleDropAllSubmit() }}>
                     <Text>Confirm</Text>
                 </TouchableOpacity>
             </View>
@@ -95,6 +120,7 @@ const settings = () => {
                     <Text>Confirm</Text>
                 </TouchableOpacity>
             </View>
+
         </View>
     )
 }

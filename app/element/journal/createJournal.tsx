@@ -32,6 +32,7 @@ const createJournal = () => {
   async function databaseCreateJournalEntry() {
     try {
       const currentTime = new Date().toISOString()
+      //TODO add the ability to set the title manually 
       await databaseService.createJournalEntry("Journal Entry", text, currentTime);
     }
 

@@ -191,6 +191,7 @@ const DayView = ({ loadAnimation }: {
       console.error("error getting values:", error);
     }
   };
+  //! TODO update this to actually get the mood journal entries
 
   const fetchMoodJournalEntries = async () => {
     setLoading(true);
@@ -217,10 +218,6 @@ const DayView = ({ loadAnimation }: {
         setUserElements(prevElements => [...prevElements, ...entries]);
         //console.log(userElements)
       }
-      //TODO: make this work with USerElement interface. Values always the same but data is different for each
-      //console.log("trackingValuesArray: ", trackingValuesArray);
-
-      //(3) Map the tracking data to the USerElement interface object
     }
     catch (error) {
       console.error('Error fetching entries:', error);

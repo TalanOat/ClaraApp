@@ -16,6 +16,7 @@ export class DatabaseService {
 
   public initDB() {
     //"tx" means transaction 
+    //ANCHOR journal table
     db.transaction((tx) => {
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS journals (
@@ -24,6 +25,7 @@ export class DatabaseService {
           body TEXT,
           createdAt DATE)`
       );
+      //ANCHOR mood Journal tables
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS tracking_values (
            id INTEGER PRIMARY KEY AUTOINCREMENT,  
@@ -47,6 +49,30 @@ export class DatabaseService {
           dataID INTEGER,
           FOREIGN KEY (valueID) REFERENCES tracking_values(id),
           FOREIGN KEY (dataID) REFERENCES tracking_data(id) 
+        )`
+      );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS emotions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          base_emotion INTEGER, 
+          extended_emotion TEXT
+        )`
+      );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS mood_journals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          created_at DATE,
+          tracking_data_id INTEGER, 
+          FOREIGN KEY (tracking_data_id) REFERENCES tracking_data(id) 
+        )`
+      );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS mood_journal_emotions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          mood_journal_id INTEGER,
+          emotion_id INTEGER, 
+          FOREIGN KEY (mood_journal_id) REFERENCES mood_journals(id),
+          FOREIGN KEY (emotion_id) REFERENCES emotions(id) 
         )`
       );
     }, (error) => {
@@ -180,41 +206,74 @@ export class DatabaseService {
     });
   }
 
-  public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<any> {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        //(1) insert into (tracking_data)
-        tx.executeSql(
-          'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
-          [value1, value2, value3],
-          //(2) if successful then update the joining table
-          (txObject, resultSet) => {
-            const dataId = resultSet.insertId;
-            //(3) insert link into (tracking_value_to_data) using trackingValueID
-            if (dataId) {
-              tx.executeSql(
-                'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
-                [trackingValueID, dataId],
-                () => {
-                  console.log('Linking insert successful');
-                  resolve(null);
+  // public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<any> {
+  //   return new Promise((resolve, reject) => {
+  //     db.transaction((tx) => {
+  //       //(1) insert into (tracking_data)
+  //       tx.executeSql(
+  //         'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
+  //         [value1, value2, value3],
+  //         //(2) if successful then update the joining table
+  //         (txObject, resultSet) => {
+  //           const dataId = resultSet.insertId;
+  //           //(3) insert link into (tracking_value_to_data) using trackingValueID
+  //           if (dataId) {
+  //             tx.executeSql(
+  //               'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
+  //               [trackingValueID, dataId],
+  //               () => {
+  //                 console.log('Linking insert successful');
+  //                 resolve(null);
+  //               },
+  //             );
+  //           }
+  //           else {
+  //             console.error('first insert failed to return a ID to complete the remaining insert:');
+  //             return true;
+  //           }
+  //         },
+  //         (txObject, error) => {
+  //           console.error('insert error:', error);
+  //           reject(error);
+  //           return true;
+  //         }
+  //       );
+  //     });
+  //   });
+  // }
+
+  public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<number> { // Updated to return a number (trackingDataID)
+    return new Promise<number>((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
+                [value1, value2, value3],
+                (txObject, resultSet) => {
+                    const dataId = resultSet.insertId;
+                    
+                    if (dataId) {
+                        tx.executeSql(
+                            'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
+                            [trackingValueID, dataId], 
+                            (txObject, result) => {
+                              //console.log("dataId: ", dataId)
+                                resolve(dataId); 
+                            }, 
+                        );
+                    } else {
+                        console.error('first insert failed to return a ID to complete the remaining insert:');
+                        reject(new Error("Failed to get trackingDataID"));
+                    }
                 },
-              );
-            }
-            else {
-              console.error('first insert failed to return a ID to complete the remaining insert:');
-              return true;
-            }
-          },
-          (txObject, error) => {
-            console.error('insert error:', error);
-            reject(error);
-            return true;
-          }
-        );
-      });
+                (txObject, error) => {
+                    console.error('insert error:', error);
+                    reject(error);
+                    return true; 
+                }
+            );
+        });
     });
-  }
+}
 
   public getAllTrackingValues(): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -263,6 +322,72 @@ export class DatabaseService {
             }
             resolve(dataArray);
 
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  //ANCHOR - New mood Journal Changes
+
+  public createMoodJournal(createdAt: string, trackingDataId: number): Promise<number> { // Updated return type
+    return new Promise<number>((resolve, reject) => { // Specify Promise type
+        db.transaction((tx) => {
+            tx.executeSql(
+                'INSERT INTO mood_journals (created_at, tracking_data_id) VALUES (?, ?)',
+                [createdAt, trackingDataId],
+                (txObject, resultSet) => {
+                    if (resultSet.insertId) { // Check for insertId existence
+                        resolve(resultSet.insertId);
+                    } else {
+                        reject(new Error("Failed to get moodJournalId after insertion"));
+                    }
+                },
+                (txObject, error) => {
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+}
+
+  public addEmotion(baseEmotion: number, extendedEmotion?: string): Promise<number> {
+    return new Promise<number>((resolve, reject) => { // Specify Promise type
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO emotions (base_emotion, extended_emotion) VALUES (?, ?)',
+          [baseEmotion, extendedEmotion ?? null], 
+          (txObject, resultSet) => {
+            if (resultSet.insertId) { 
+              resolve(resultSet.insertId);
+            } else {
+              //TODO - edit this
+              reject(new Error("no insert ID"));
+            }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public addMoodJournalEmotion(moodJournalId: number, emotionId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO mood_journal_emotions (mood_journal_id, emotion_id) VALUES (?, ?)',
+          [moodJournalId, emotionId],
+          () => {
+            console.log("MoodJournalEmotion created successfully")
+            resolve();
           },
           (txObject, error) => {
             reject(error);

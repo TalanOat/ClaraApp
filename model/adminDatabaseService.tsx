@@ -14,20 +14,20 @@ export class AdminDatabaseService {
 
   }
 
-  public initDB() {
-    //"tx" means transaction 
-    db.transaction((tx) => {
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS journals (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, 
-          title TEXT,
-          text TEXT,
-          createdAt DATE)`
-      );
-    }, (error) => {
-      console.error('database init error:', error);
-    });
-  }
+  // public initDB() {
+  //   //"tx" means transaction 
+  //   db.transaction((tx) => {
+  //     tx.executeSql(
+  //       `CREATE TABLE IF NOT EXISTS journals (
+  //         id INTEGER PRIMARY KEY AUTOINCREMENT, 
+  //         title TEXT,
+  //         text TEXT,
+  //         createdAt DATE)`
+  //     );
+  //   }, (error) => {
+  //     console.error('database init error:', error);
+  //   });
+  // }
 
   //TODO: add code to protect against SQL injection
   public getAllJournalEntries() {
@@ -95,6 +95,36 @@ export class AdminDatabaseService {
       );
     });
   }
+
+  public dropAllTables() {
+    const tableNames = [
+        'journals',
+        'tracking_values',
+        'tracking_data',
+        'tracking_value_to_data',
+        'emotions',
+        'mood_journals',
+        'mood_journal_emotions'
+    ];
+
+    return new Promise<void>((resolve, reject) => {
+        db.transaction(tx => {
+            tableNames.forEach(tableName => {
+                tx.executeSql(
+                    `DROP TABLE IF EXISTS ${tableName}`,
+                    [],
+                    () => { },
+                    (_, error) => {
+                        console.error(`Error dropping table ${tableName}:`, error);
+                        reject(error); 
+                        return true; 
+                    } 
+                );
+            });
+            resolve(); // Signal success after all tables are processed
+        });
+    });
+}
 
 
 }

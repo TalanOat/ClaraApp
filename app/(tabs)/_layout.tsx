@@ -29,27 +29,27 @@ const Layout = () => {
 
   const { navigate } = useNavigation<NavigationProps>()
 
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [forceRerender, setForceRerender] = useState(false);
+  // const [keyboardVisible, setKeyboardVisible] = useState(false);
+  // const [forceRerender, setForceRerender] = useState(false);
 
-  useEffect(() => {
-    const showListener = Keyboard.addListener('keyboardDidShow', () => {
-      console.log("keyboard show")
-      setKeyboardVisible(true)
-    });
+  // useEffect(() => {
+  //   const showListener = Keyboard.addListener('keyboardDidShow', () => {
+  //     console.log("keyboard show")
+  //     setKeyboardVisible(true)
+  //   });
 
-    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-      console.log("keyboard hide")
-      setKeyboardVisible(false);
-      setForceRerender(true);
-      setTimeout(() => setForceRerender(false), 100);
-    });
+  //   const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+  //     console.log("keyboard hide")
+  //     setKeyboardVisible(false);
+  //     setForceRerender(true);
+  //     setTimeout(() => setForceRerender(false), 100);
+  //   });
 
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
+  //   return () => {
+  //     showListener.remove();
+  //     hideListener.remove();
+  //   };
+  // }, []);
 
   return (
     <KeyboardAvoidingView

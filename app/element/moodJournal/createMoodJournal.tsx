@@ -33,22 +33,11 @@ const createJournal = () => {
     const [flashNotification, setFlashNotification] = useState(false);
     const [userTrackingVals, setUserTrackingVals] = useState<TrackingValues>();
 
-    //three states for the sliders
+    /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
     const [sliderValue1, setSliderValue1] = useState<number>(0);
     const [sliderValue2, setSliderValue2] = useState<number>(0);
     const [sliderValue3, setSliderValue3] = useState<number>(0);
 
-    const handleSubmit = () => {
-        setFlashNotification(true);
-
-        setTimeout(() => {
-            setFlashNotification(false);
-        }, 1000);
-    }
-
-    useEffect(() => {
-        //console.log(sliderValue1)
-    }, [sliderValue1])
 
     const fetchTrackingValues = async () => {
         try {
@@ -68,7 +57,9 @@ const createJournal = () => {
 
     useEffect(() => {
         setLoading(true);
-        fetchTrackingValues()
+        fetchTrackingValues().then(() => {
+            setLoading(false);
+        })
     }, []);
 
 
@@ -76,10 +67,19 @@ const createJournal = () => {
         //console.log("in tracking set")
         try {
             if (userTrackingVals) {
-                await databaseService.createTrackingDataAndLink(
+                const trackingDataID = await databaseService.createTrackingDataAndLink(
                     figure1, figure2, figure3, userTrackingVals.id);
+                return trackingDataID;
             }
-        } catch (error) {
+            else {
+                // TODO: - handle this
+                console.error("userTrackingVals not found");
+                return null;
+            }
+
+
+        }
+        catch (error) {
             console.error("error inserting values:", error);
         }
     }
@@ -89,24 +89,11 @@ const createJournal = () => {
         return (formula);
     }
 
-    const handleTestSubmit = () => {
-        //addDataDummyTest();
-        //getData();
-        const figure1 = calculatePercentage(sliderValue1);
-        const figure2 = calculatePercentage(sliderValue2);
-        const figure3 = calculatePercentage(sliderValue3);
-        console.log(
-            "figure 1: ", figure1,
-            "figure 2: ", figure2,
-            "figure 3: ", figure3)
-        addDataForTrackingValues(figure1, figure2, figure3);
-    }
+    //-----------------------------------------------------------------
 
-    const [showExtended, setShowExtended] = useState<boolean>(false);
+    //ANCHOR EMOTIONS BACKEND
     const [selectedEmotions, setSelectedEmotions] = useState<SelectedEmotion[]>([]);
     const [extendedOpenKeys, setExtendedOpenKeys] = useState<number[]>([]);
-
-    //TODO: make it so that the emotions are logged
 
     //Called when an emotion is pressed and updates the setSelectedEmotions() state according to
     //  the users input. Pressing an extended emotion once will add it and then pressing again will remove it
@@ -121,7 +108,7 @@ const createJournal = () => {
                 emotion.baseKey === baseEmotionKey && !extendedEmotionKey
             );
 
-            console.log("duplicateBaseEmotion: ", duplicateBaseEmotion);
+            //console.log("duplicateBaseEmotion: ", duplicateBaseEmotion);
 
             //if duplicated then return the previous emotions in the array and don't change it
             if (duplicateBaseEmotion) {
@@ -162,16 +149,91 @@ const createJournal = () => {
         }
     };
 
-
     const handleCancelEmotion = () => {
         setSelectedEmotions([]);
     };
 
-    useEffect(() => {
-        console.log(selectedEmotions)
-    }, [selectedEmotions]);
+    // useEffect(() => {
+    //     console.log(selectedEmotions)
+    // }, [selectedEmotions]);
+
+    //-----------------------------------------------------------------------------------------
+
+    //TODO check that this is only run after the create Tracking Data as it needs the trackingID
+    const databaseCreateMoodJournal = async (trackingID: number) => {
+        //console.log("in tracking set")
+        try {
+            const currentTime = new Date().toISOString()
+            const returnedMoodJournalID = await databaseService.createMoodJournal(currentTime, trackingID);
+            if (returnedMoodJournalID) {
+                return returnedMoodJournalID
+            }
+            else {
+                // TODO: - handle this
+                console.error("error getting returnedMoodJournalID");
+                return null;
+            }
+
+        } catch (error) {
+            console.error("error inserting mood Journal:", error);
+        }
+    }
+
+    async function databaseCreateAndLinkEmotions(selectedEmotions: SelectedEmotion[], moodJournalID: number) {
+        for (const emotion of selectedEmotions) {
+            try {
+    
+                const emotionId = await databaseService.addEmotion(emotion.baseKey, emotion.extendedKey); 
+                //console.log(`Added emotion with ID: ${emotionId}`);
+
+                await databaseService.addMoodJournalEmotion(moodJournalID, emotionId);
+    
+            } catch (error) {
+                console.error(`Error adding emotion ${emotion.baseKey} - ${emotion.extendedKey}:`, error);
+            }
+        }
+    }
+
+    //TODO: actually wire up submition
+    const handleSubmit = async () => {
+        setFlashNotification(true);
+        //TODO handle database add
+
+        // console.log("sliderValue1: ", sliderValue1,
+        //     "sliderValue2: ", sliderValue2,
+        //     "sliderValue3: ", sliderValue3,)
+        // console.log("selectedEmotions: ", selectedEmotions)
+
+        //(1) add tracking_data to the database:
+        const trackingDataId = await addDataForTrackingValues( 
+            calculatePercentage(sliderValue1),
+            calculatePercentage(sliderValue2),
+            calculatePercentage(sliderValue3)
+        );
+
+        //(2) create mood Journal Entry
+        if (trackingDataId) {
+            //console.log("trackingDataId: ", trackingDataId)
+            const moodJournalID = await databaseCreateMoodJournal(trackingDataId);
+             //(3) Add the emotions and link it to the moodJournalID
+            if (moodJournalID){
+                databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+            }
+        }
+
+        //(3) 
+        //testing for now
+        
 
 
+        //TODO - need to return the trackingDataID
+        
+
+
+        setTimeout(() => {
+            setFlashNotification(false);
+        }, 1000);
+    }
 
     return (
         <LinearGradient
@@ -294,7 +356,6 @@ const createJournal = () => {
                 </Animated.View>
             )}
         </LinearGradient>
-
     )
 }
 

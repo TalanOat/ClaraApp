@@ -101,6 +101,7 @@ function RootLayoutNav() {
           <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
           <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
           <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+          <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
           <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
         </Stack>
 
