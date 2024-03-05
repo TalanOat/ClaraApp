@@ -26,6 +26,16 @@ interface TrackingValues {
   value3: string;
 }
 
+interface MoodJournalEntry {
+  id: number;
+  createdAt: string; // Assuming the database returns a string for created_at 
+  trackingData: {
+    figure1: number;
+    figure2: number;
+    figure3: number;
+  };
+  // Add other mood journal fields here as needed
+}
 interface SelectedEmotion {
   baseKey: number;
   extendedKey?: string;
@@ -38,43 +48,108 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [flashNotification, setFlashNotification] = useState(false);
   const [userTrackingVals, setUserTrackingVals] = useState<TrackingValues>();
+  const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournalEntry>();
 
   /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
   const [sliderValue1, setSliderValue1] = useState<number>(0);
   const [sliderValue2, setSliderValue2] = useState<number>(0);
   const [sliderValue3, setSliderValue3] = useState<number>(0);
 
+
+
   const fetchTrackingValues = async () => {
-      try {
-          const tempValues = await databaseService.getAllTrackingValues();
-          setUserTrackingVals(tempValues);
-      } catch (error) {
-          console.error("error getting values:", error);
-      }
+    try {
+      const tempTrackingValues = await databaseService.getAllTrackingValues();
+
+      return (tempTrackingValues);
+
+
+    }
+    catch (error) {
+      console.error("error getting values:", error);
+    }
   };
 
-  const fetchTrackingData = async () => {
+  const fetchMoodJournal = async () => {
+    setLoading(true);
     try {
-        const tempValues = await databaseService.getAllTrackingValues();
-        setUserTrackingVals(tempValues);
-    } catch (error) {
-        console.error("error getting values:", error);
-    }
-};
+      const trackingValuesArray = await fetchTrackingValues();
 
-  useEffect(() => {
-      if (userTrackingVals) {
-          setLoading(false);
+      if (trackingValuesArray) {
+        const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
+        if (tempMoodJournal) {
+          return tempMoodJournal
+        }
       }
-  }, [userTrackingVals]);
+    }
+    catch (error) {
+      console.error("error getting mood Journals:", error);
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmotionsForMoodJournal = async () => {
+    //setLoading(true);
+    try {
+      if (moodJournalEntry) {
+        console.log("moodJournalEntry.id!! ", moodJournalEntry.id)
+        const test = await databaseService.getEmotionsForMoodJournal(moodJournalEntry.id)
+        if (test) {
+          return test
+        }
+      }
+      else if (!moodJournalEntry) {
+        console.log("no moodJournal to link")
+        return null
+      }
+
+    }
+    catch (error) {
+      console.error("error getting mood journal emotions:", error);
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
+
+  //! TODO do the tracking values need to be syncrounous, can it not be asycn  ?
+  useEffect(() => {
+    setLoading(true);
+    const fetchData = async () => {
+      const trackingValuesArray = await fetchTrackingValues();
+      setUserTrackingVals(trackingValuesArray);
+
+      const tempMoodJournal = await fetchMoodJournal();
+      setMoodJournalEntry(tempMoodJournal)
+    }
+    fetchData().finally(() => {
+      setLoading(false)
+    });
+
+  }, []);
+
+  //! todo handle the emotions array being empty
 
   useEffect(() => {
-      setLoading(true);
-      fetchTrackingValues().then(() => {
-          setLoading(false);
-      })
-      console.log("pageID param: ", id)
-  }, []);
+    setLoading(true);
+    const fetchEmotionsData = async () => {
+      const emotions = await fetchEmotionsForMoodJournal();
+      if (emotions) {
+        console.log("emotions: ", emotions)
+      }
+    }
+    fetchEmotionsData().finally(() => {
+      setLoading(false)
+    });
+
+  }, [moodJournalEntry]);
+
 
   /* ---------------------------------- other --------------------------------- */
 
@@ -110,10 +185,10 @@ const Page = () => {
                 {userTrackingVals?.value1}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={sliderValue1}
+                value={moodJournalEntry?.trackingData.figure1}
                 onValueChange={(value) => { setSliderValue1(value) }}
                 minimumValue={0}
-                maximumValue={1}
+                maximumValue={100}
                 minimumTrackTintColor={Colors.pink}
                 maximumTrackTintColor={Colors.primary} />
             </View>
@@ -125,10 +200,10 @@ const Page = () => {
                 {userTrackingVals?.value2}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={sliderValue2}
+                value={moodJournalEntry?.trackingData.figure2}
                 onValueChange={(value) => { setSliderValue2(value) }}
                 minimumValue={0}
-                maximumValue={1}
+                maximumValue={100}
                 minimumTrackTintColor={Colors.pink}
                 maximumTrackTintColor={Colors.primary} />
             </View>
@@ -140,19 +215,19 @@ const Page = () => {
                 {userTrackingVals?.value3}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={sliderValue3}
+                value={moodJournalEntry?.trackingData.figure3}
                 onValueChange={(value) => { setSliderValue3(value) }}
                 minimumValue={0}
-                maximumValue={1}
+                maximumValue={100}
                 minimumTrackTintColor={Colors.pink}
                 maximumTrackTintColor={Colors.primary} />
             </View>
           )}
           {/* Emotions container */}
           <View style={emotionsStyles.emotionsContainer}>
-          
+
           </View>
-          
+
 
         </View>
       </Animated.ScrollView>

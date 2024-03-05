@@ -199,11 +199,6 @@ const createJournal = () => {
         setFlashNotification(true);
         //TODO handle database add
 
-        // console.log("sliderValue1: ", sliderValue1,
-        //     "sliderValue2: ", sliderValue2,
-        //     "sliderValue3: ", sliderValue3,)
-        // console.log("selectedEmotions: ", selectedEmotions)
-
         //(1) add tracking_data to the database:
         const trackingDataId = await addDataForTrackingValues( 
             calculatePercentage(sliderValue1),

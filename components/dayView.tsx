@@ -191,6 +191,36 @@ const DayView = ({ loadAnimation }: {
       console.error("error getting values:", error);
     }
   };
+
+  const fetchAllMoodJournals = async () => {
+    setLoading(true);
+    try {
+        const trackingValuesArray = await fetchTrackingValues();
+        if (trackingValuesArray) {
+            const tempMoodJournals = await databaseService.getAllMoodJournalsWithTrackingData();
+            console.log("tempMoodJournals: ", tempMoodJournals)
+
+            const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
+                id: "mood_" + moodJournal.id,
+                type: 'mood',
+                title: moodJournal.title, 
+                time: moment(moodJournal.createdAt).format('HH:mm'),
+                moodType1: trackingValuesArray.value1, 
+                moodValue1: moodJournal.trackingData.figure1, 
+                moodType2: trackingValuesArray.value2, 
+                moodValue2: moodJournal.trackingData.figure2, 
+                moodType3: trackingValuesArray.value3, 
+                moodValue3: moodJournal.trackingData.figure3 
+            }));
+
+            setUserElements(prevElements => [...prevElements, ...entries]);
+        }
+    } catch (error) {
+        console.error("error getting mood Journals:", error);
+    } finally {
+        setLoading(false); 
+    }
+};
   //! TODO update this to actually get the mood journal entries
 
   const fetchMoodJournalEntries = async () => {
@@ -200,23 +230,13 @@ const DayView = ({ loadAnimation }: {
       const trackingValuesArray = await fetchTrackingValues();
       //(2) Get the tracking data for the "trackingValuesArray"
       if (trackingValuesArray) {
-        //console.log("tackingid: ", trackingValuesArray.id)
-        const trackingDataArray = await fetchTrackingData(trackingValuesArray.id);
-        //console.log("trackingDataArray: ", trackingDataArray) 
-        const entries: UserElement[] = trackingDataArray.map((moodJournal: any) => ({
-          id: "mood_" + moodJournal.id,
-          type: 'mood',
-          title: moodJournal.title,
-          time: moment(moodJournal.createdAt).format('HH:mm'),
-          moodType1: trackingValuesArray.value1, // How do we get "Happiness" here?
-          moodValue1: moodJournal.figure1,
-          moodType2: trackingValuesArray.value2, // How do we get "Anxiety" here?
-          moodValue2: moodJournal.figure2,
-          moodType3: trackingValuesArray.value3, // How do we get "Depression" here?
-          moodValue3: moodJournal.figure3
-        }));
-        setUserElements(prevElements => [...prevElements, ...entries]);
-        //console.log(userElements)
+        //get all moodJournalEntries
+        await fetchAllMoodJournals();
+        // if(moodJournalEntries){
+
+        //   console.log(moodJournalEntries)
+        // }
+
       }
     }
     catch (error) {
@@ -238,6 +258,10 @@ const DayView = ({ loadAnimation }: {
     return { prefix, id };
   }
 
+  // useEffect(() => {
+  //   console.log("userElements: ", userElements)
+  // }, [userElements]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -257,8 +281,6 @@ const DayView = ({ loadAnimation }: {
       }
     }
     fetchData();
-
-    // Initiate data fetching
   }, []);
 
   //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading

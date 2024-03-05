@@ -206,74 +206,39 @@ export class DatabaseService {
     });
   }
 
-  // public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<any> {
-  //   return new Promise((resolve, reject) => {
-  //     db.transaction((tx) => {
-  //       //(1) insert into (tracking_data)
-  //       tx.executeSql(
-  //         'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
-  //         [value1, value2, value3],
-  //         //(2) if successful then update the joining table
-  //         (txObject, resultSet) => {
-  //           const dataId = resultSet.insertId;
-  //           //(3) insert link into (tracking_value_to_data) using trackingValueID
-  //           if (dataId) {
-  //             tx.executeSql(
-  //               'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
-  //               [trackingValueID, dataId],
-  //               () => {
-  //                 console.log('Linking insert successful');
-  //                 resolve(null);
-  //               },
-  //             );
-  //           }
-  //           else {
-  //             console.error('first insert failed to return a ID to complete the remaining insert:');
-  //             return true;
-  //           }
-  //         },
-  //         (txObject, error) => {
-  //           console.error('insert error:', error);
-  //           reject(error);
-  //           return true;
-  //         }
-  //       );
-  //     });
-  //   });
-  // }
 
   public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<number> { // Updated to return a number (trackingDataID)
     return new Promise<number>((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
-                [value1, value2, value3],
-                (txObject, resultSet) => {
-                    const dataId = resultSet.insertId;
-                    
-                    if (dataId) {
-                        tx.executeSql(
-                            'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
-                            [trackingValueID, dataId], 
-                            (txObject, result) => {
-                              //console.log("dataId: ", dataId)
-                                resolve(dataId); 
-                            }, 
-                        );
-                    } else {
-                        console.error('first insert failed to return a ID to complete the remaining insert:');
-                        reject(new Error("Failed to get trackingDataID"));
-                    }
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
+          [value1, value2, value3],
+          (txObject, resultSet) => {
+            const dataId = resultSet.insertId;
+
+            if (dataId) {
+              tx.executeSql(
+                'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
+                [trackingValueID, dataId],
+                (txObject, result) => {
+                  //console.log("dataId: ", dataId)
+                  resolve(dataId);
                 },
-                (txObject, error) => {
-                    console.error('insert error:', error);
-                    reject(error);
-                    return true; 
-                }
-            );
-        });
+              );
+            } else {
+              console.error('first insert failed to return a ID to complete the remaining insert:');
+              reject(new Error("Failed to get trackingDataID"));
+            }
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error);
+            return true;
+          }
+        );
+      });
     });
-}
+  }
 
   public getAllTrackingValues(): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -336,34 +301,34 @@ export class DatabaseService {
 
   public createMoodJournal(createdAt: string, trackingDataId: number): Promise<number> { // Updated return type
     return new Promise<number>((resolve, reject) => { // Specify Promise type
-        db.transaction((tx) => {
-            tx.executeSql(
-                'INSERT INTO mood_journals (created_at, tracking_data_id) VALUES (?, ?)',
-                [createdAt, trackingDataId],
-                (txObject, resultSet) => {
-                    if (resultSet.insertId) { // Check for insertId existence
-                        resolve(resultSet.insertId);
-                    } else {
-                        reject(new Error("Failed to get moodJournalId after insertion"));
-                    }
-                },
-                (txObject, error) => {
-                    reject(error);
-                    return true;
-                }
-            );
-        });
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO mood_journals (created_at, tracking_data_id) VALUES (?, ?)',
+          [createdAt, trackingDataId],
+          (txObject, resultSet) => {
+            if (resultSet.insertId) { // Check for insertId existence
+              resolve(resultSet.insertId);
+            } else {
+              reject(new Error("Failed to get moodJournalId after insertion"));
+            }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
     });
-}
+  }
 
   public addEmotion(baseEmotion: number, extendedEmotion?: string): Promise<number> {
     return new Promise<number>((resolve, reject) => { // Specify Promise type
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO emotions (base_emotion, extended_emotion) VALUES (?, ?)',
-          [baseEmotion, extendedEmotion ?? null], 
+          [baseEmotion, extendedEmotion ?? null],
           (txObject, resultSet) => {
-            if (resultSet.insertId) { 
+            if (resultSet.insertId) {
               resolve(resultSet.insertId);
             } else {
               //TODO - edit this
@@ -388,6 +353,128 @@ export class DatabaseService {
           () => {
             console.log("MoodJournalEmotion created successfully")
             resolve();
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getAllMoodJournals(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT * FROM mood_journals ORDER BY created_at DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      })
+    })
+  }
+
+  public getAllMoodJournalsWithTrackingData(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT 
+            mj.id, mj.created_at, mj.tracking_data_id,
+            td.figure1, td.figure2, td.figure3 
+            FROM mood_journals mj
+            JOIN tracking_data td ON td.id = mj.tracking_data_id
+            ORDER BY mj.created_at DESC`,
+          [],
+          (txObject, result) => {
+            const moodJournalEntries = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              const row = result.rows.item(i);
+              moodJournalEntries.push({
+                id: row.id,
+                createdAt: row.created_at,
+                trackingData: {
+                  figure1: row.figure1,
+                  figure2: row.figure2,
+                  figure3: row.figure3
+                }
+                // TODO add other mood journal fields 
+              });
+            }
+            resolve(moodJournalEntries);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      })
+    })
+  }
+
+  public getMoodJournalByID(journalID: number): Promise<any | null> { // Updated return type
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT 
+                 mj.id, mj.created_at, mj.tracking_data_id,
+                 td.figure1, td.figure2, td.figure3 
+                 FROM mood_journals mj
+                 JOIN tracking_data td ON td.id = mj.tracking_data_id
+                 WHERE mj.id = ?`,
+          [journalID],
+          (txObject, result) => {
+            if (result.rows.length > 0) {
+              const row = result.rows.item(0);
+              const moodJournalEntry = {
+                id: row.id,
+                createdAt: row.created_at,
+                trackingData: {
+                  figure1: row.figure1,
+                  figure2: row.figure2,
+                  figure3: row.figure3
+                }
+                // TODO add other mood journal fields 
+              };
+              resolve(moodJournalEntry);
+            } else {
+              resolve(null);
+            }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      })
+    })
+  }
+
+  public getEmotionsForMoodJournal(moodJournalId: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT 
+           e.base_emotion, e.extended_emotion 
+           FROM mood_journal_emotions mje
+           JOIN emotions e ON e.id = mje.emotion_id 
+           WHERE mje.mood_journal_id = ?`,
+          [moodJournalId],
+          (txObject, result) => {
+            const emotionsArray = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              emotionsArray.push({
+                baseKey: result.rows.item(i).base_emotion,
+                extendedKey: result.rows.item(i).extended_emotion
+              });
+            }
+            resolve(emotionsArray);
           },
           (txObject, error) => {
             reject(error);
