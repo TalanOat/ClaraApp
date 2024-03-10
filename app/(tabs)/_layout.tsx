@@ -127,11 +127,11 @@ const Layout = () => {
           }}>
           </Tabs.Screen>
 
-          <Tabs.Screen name="vault" options={{
+          <Tabs.Screen name="stats" options={{
             tabBarItemStyle: tabStyles.otherTabs,
-            tabBarLabel: "Vault",
+            tabBarLabel: "Stats",
             tabBarIcon: ({ color }) =>
-              <MaterialCommunityIcons name='safe-square-outline'
+              <MaterialCommunityIcons name='chart-timeline-variant-shimmer'
                 color={color}
                 size={35}></MaterialCommunityIcons>
           }}>

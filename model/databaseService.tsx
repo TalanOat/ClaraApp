@@ -186,6 +186,28 @@ export class DatabaseService {
     });
   }
 
+  public getLastJournalEntry(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT * FROM journals ORDER BY id DESC LIMIT 1;`, 
+          [], 
+          (txObject, result) => {
+            if (result.rows.length > 0) {
+              resolve(result.rows.item(0));
+            } else {
+              resolve(null);
+            }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
   public createThreeTrackingValues(value1: string, value2: string, value3: string): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -206,8 +228,7 @@ export class DatabaseService {
     });
   }
 
-
-  public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<number> { // Updated to return a number (trackingDataID)
+  public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<number> { 
     return new Promise<number>((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -299,14 +320,14 @@ export class DatabaseService {
 
   //ANCHOR - New mood Journal Changes
 
-  public createMoodJournal(createdAt: string, trackingDataId: number): Promise<number> { // Updated return type
-    return new Promise<number>((resolve, reject) => { // Specify Promise type
+  public createMoodJournal(createdAt: string, trackingDataId: number): Promise<number> { 
+    return new Promise<number>((resolve, reject) => { 
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO mood_journals (created_at, tracking_data_id) VALUES (?, ?)',
           [createdAt, trackingDataId],
           (txObject, resultSet) => {
-            if (resultSet.insertId) { // Check for insertId existence
+            if (resultSet.insertId) {
               resolve(resultSet.insertId);
             } else {
               reject(new Error("Failed to get moodJournalId after insertion"));
@@ -418,7 +439,7 @@ export class DatabaseService {
     })
   }
 
-  public getMoodJournalByID(journalID: number): Promise<any | null> { // Updated return type
+  public getMoodJournalByID(journalID: number): Promise<any | null> { 
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -443,6 +464,45 @@ export class DatabaseService {
                 // TODO add other mood journal fields 
               };
               resolve(moodJournalEntry);
+            } else {
+              resolve(null);
+            }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      })
+    })
+  }
+
+  public getLatestMoodJournal(): Promise<any | null> { 
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT 
+               mj.id, mj.created_at, mj.tracking_data_id,
+               td.figure1, td.figure2, td.figure3 
+           FROM mood_journals mj
+           JOIN tracking_data td ON td.id = mj.tracking_data_id 
+           ORDER BY mj.created_at DESC 
+           LIMIT 1`,
+          [], 
+          (txObject, result) => {
+            if (result.rows.length > 0) {
+              const row = result.rows.item(0); 
+              const moodJournalEntry = {
+                id: row.id,
+                createdAt: row.created_at,
+                trackingData: {
+                  figure1: row.figure1,
+                  figure2: row.figure2,
+                  figure3: row.figure3
+                }
+                // TODO add other mood journal fields 
+              };
+              resolve(row); 
             } else {
               resolve(null);
             }

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps'
@@ -9,38 +9,52 @@ import * as Location from 'expo-location';
 import { defaultStyles } from '@/constants/Styles'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
-let testlocatons = [{
-  title: "test",
-  location: {
-    latitude: 52.6212,
-    longitude: 1.25668
-  },
-  description: "test marker",
-  calloutText: "location 1"
-}]
+import MapViewDirections from 'react-native-maps-directions';
+import { GOOGLE_API_KEY } from '@/environments'
+
+//import * as turf from '@turf/turf';
+
+const GOOGLE_MAPS_APIKEY = GOOGLE_API_KEY;
+
 
 interface Location {
   latitude: number;
   longitude: number;
 }
 
-const Page = () => {
-  const onRegionChange = (region: any) => {
-    console.log(region)
-  }
+const { width, height } = Dimensions.get("window");
 
+const ASPECT_RATIO = width / height;
+const LATITUDE_DELTA = 0.01;
+const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
+
+
+
+
+const Page = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [mapRegion, setMapRegion] = useState({
-    latitude: 52.62128509709368, latitudeDelta: 0.018099873381153486, longitude: 1.2566833989723016, longitudeDelta: 0.019608259215829094
+    latitude: 52.62128509709368, latitudeDelta: LATITUDE_DELTA, longitude: 1.2566833989723016, longitudeDelta: LONGITUDE_DELTA
   });
 
   //!TODO random point generation:
   const [randomMarkers, setRandomMarkers] = useState<Location[]>([]);
 
-  const generateRandomPoints = (center: Location, radius: number, count: number) => {
+  const [destination, setDestination] = useState<Location>();
+
+  const [origin, setOrigin] = useState<Location>();
+
+  const [randomPointsGenerated, setRandomPointsGenerated] = useState(false);
+
+
+
+  const generateRandomPoints = (center: Location, radius: number, count: number): Location[] => {
     const points = [];
+    // (1) loop the specified "count"
     for (let i = 0; i < count; i++) {
+      // (2) generate random offsets for latitude and longitude, in random locations 
+      //  contained in the boundary of double the users radius
       const randomOffsetX = (Math.random() * 2 * radius) - radius;
       const randomOffsetY = (Math.random() * 2 * radius) - radius;
 
@@ -52,7 +66,28 @@ const Page = () => {
     return points;
   };
 
-  
+  const filterPoints = (points: Location[]) => {
+
+  }
+
+  const reverseGeocode = async (point: Location) => {
+    try {
+      if (point) {
+        const results = await Location.reverseGeocodeAsync({
+          longitude: point.longitude,
+          latitude: point.latitude,
+        });
+
+        console.log("reverseGeocode Results: ", results);
+
+        // Do something with the results: e.g., display in the Callout
+      }
+    } catch (error) {
+      console.error("Error in reverseGeocode:", error);
+    }
+  };
+
+
 
   const handleGetLocation = async () => {
     setIsLoading(true);
@@ -69,43 +104,49 @@ const Page = () => {
       longitude: location.coords.longitude,
     });
 
-    if (location) {
+    setOrigin({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    })
+
+
+    if (location && !randomPointsGenerated) { // Only generate if needed
       const generatedPoints = generateRandomPoints(
         location.coords,
         0.01, // Radius of 0.05 degrees (adjust as needed)
         10    // Number of points to generate
       );
       setRandomMarkers(generatedPoints);
+      setDestination(generatedPoints[0]);
+      setRandomPointsGenerated(true);
+    }
+
+    if (location) {
+
       setIsLoading(false);
       console.log(location.coords)
     }
   };
 
-  const testPrint = () => {
-    console.log("test")
+  const switchDestination = (marker: Location) => {
+    setDestination(marker);
+    console.log(marker)
+    reverseGeocode(marker);
   }
 
   useEffect(() => {
     handleGetLocation();
   }, [])
 
-  // const showLocations = () => {
-  //   return testlocatons.map((item, index) => {
-  //     return (
-  //       <Marker
-  //         key={index}
-  //         coordinate={item.location}
-  //         title={item.title}
-  //         description={item.description}
-  //         pinColor={Colors.pink}>
-  //         <Callout>
-  //           <Text>Count: {count}</Text>
-  //           <Button title='Add Count?' onPress={() => setCount(count + 1)}></Button>
-  //         </Callout>
-  //       </Marker>
-  //     )
-  //   })
-  // }
+
+
+  useEffect(() => {
+    //handleGetLocation();
+    setDestination(randomMarkers[0])
+  }, [randomMarkers])
+
+  const [selectedMarker, setSelectedMarker] = useState<Location>();
+
 
   return (
     <LinearGradient
@@ -117,14 +158,34 @@ const Page = () => {
           style={styles.map}
           provider={PROVIDER_GOOGLE}
           region={mapRegion}
+          initialRegion={mapRegion
+          }
         //customMapStyle={mapStyle}
         >
+          <MapViewDirections
+            origin={origin}
+            destination={destination}
+            apikey={GOOGLE_MAPS_APIKEY}
+            strokeWidth={4}
+            strokeColor="red"
+          />
           {/* {showLocations()} */}
 
-          {/* <Button title="Get Location" onPress={() => { console.log("Button Pressed"); testPrint() }} /> */}
           {randomMarkers.map((marker, index) => (
-            <Marker key={index} coordinate={marker} />
+            <Marker
+              key={index}
+              coordinate={marker}
+              onPress={() => { setSelectedMarker(marker); }}
+            >
+              {selectedMarker && (
+                <Callout key={index}
+                  onPress={() => switchDestination(selectedMarker)}>
+                  <Text>Marker Info</Text>
+                </Callout>
+              )}
+            </Marker>
           ))}
+
         </MapView>
         {/* Loading Indicator */}
         {isLoading && (
