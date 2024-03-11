@@ -25,7 +25,7 @@ const settings = () => {
 
     const handleTrackingSubmit = () => {
         //console.log('values:', tracking1, tracking2, tracking3);
-        databaseService.createThreeTrackingValues(tracking1, tracking2, tracking3);
+        databaseService.createThreeTrackingNames(tracking1, tracking2, tracking3);
     }
     
     const createTwoButtonAlert = () => {

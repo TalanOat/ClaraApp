@@ -99,12 +99,10 @@ export class AdminDatabaseService {
   public dropAllTables() {
     const tableNames = [
         'journals',
-        'tracking_values',
-        'tracking_data',
-        'tracking_value_to_data',
+        'tracking_names',
         'emotions',
         'mood_journals',
-        'mood_journal_emotions'
+        'mood_journal_emotions',
     ];
 
     return new Promise<void>((resolve, reject) => {
@@ -113,7 +111,9 @@ export class AdminDatabaseService {
                 tx.executeSql(
                     `DROP TABLE IF EXISTS ${tableName}`,
                     [],
-                    () => { },
+                    () => {
+                      console.log("succesfully dropped all tables")
+                     },
                     (_, error) => {
                         console.error(`Error dropping table ${tableName}:`, error);
                         reject(error); 

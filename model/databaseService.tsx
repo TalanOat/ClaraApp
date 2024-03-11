@@ -7,6 +7,21 @@ interface JournalEntry {
   createdAt?: Date;
 }
 
+interface TrackingName {
+  id: number;
+  name: string;
+}
+
+interface MoodJournal {
+  createdAt: string;
+  trackingNameId1: number;
+  figure1: number;
+  trackingNameId2: number;
+  figure2: number;
+  trackingNameId3: number;
+  figure3: number;
+}
+
 const db = SQLite.openDatabase('journal.db');
 
 export class DatabaseService {
@@ -27,29 +42,10 @@ export class DatabaseService {
       );
       //ANCHOR mood Journal tables
       tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS tracking_values (
-           id INTEGER PRIMARY KEY AUTOINCREMENT,  
-           value1 TEXT,
-           value2 TEXT,
-           value3 TEXT
+        `CREATE TABLE IF NOT EXISTS tracking_names (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT
          )`
-      );
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS tracking_data (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          figure1 INTEGER, 
-          figure2 INTEGER,
-          figure3 INTEGER
-        )`
-      );
-      tx.executeSql(
-        `CREATE TABLE IF NOT EXISTS tracking_value_to_data (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          valueID INTEGER, 
-          dataID INTEGER,
-          FOREIGN KEY (valueID) REFERENCES tracking_values(id),
-          FOREIGN KEY (dataID) REFERENCES tracking_data(id) 
-        )`
       );
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS emotions (
@@ -62,8 +58,15 @@ export class DatabaseService {
         `CREATE TABLE IF NOT EXISTS mood_journals (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           created_at DATE,
-          tracking_data_id INTEGER, 
-          FOREIGN KEY (tracking_data_id) REFERENCES tracking_data(id) 
+          tracking_name1_id INTEGER,
+          tracking_value1 INTEGER, 
+          tracking_name2_id INTEGER,
+          tracking_value2 INTEGER,
+          tracking_name3_id INTEGER,
+          tracking_value3 INTEGER,
+          FOREIGN KEY (tracking_name1_id) REFERENCES tracking_names(id),
+          FOREIGN KEY (tracking_name2_id) REFERENCES tracking_names(id),
+          FOREIGN KEY (tracking_name3_id) REFERENCES tracking_names(id)
         )`
       );
       tx.executeSql(
@@ -190,8 +193,8 @@ export class DatabaseService {
     return new Promise((resolve, reject) => {
       db.transaction(tx => {
         tx.executeSql(
-          `SELECT * FROM journals ORDER BY id DESC LIMIT 1;`, 
-          [], 
+          `SELECT * FROM journals ORDER BY id DESC LIMIT 1;`,
+          [],
           (txObject, result) => {
             if (result.rows.length > 0) {
               resolve(result.rows.item(0));
@@ -208,18 +211,20 @@ export class DatabaseService {
     });
   }
 
-  public createThreeTrackingValues(value1: string, value2: string, value3: string): Promise<void> {
+
+  //! TODO add checks to make suer that there is at least three values in the table
+  public createThreeTrackingNames(value1: string, value2: string, value3: string): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          'INSERT INTO tracking_values (value1, value2, value3) VALUES (?, ?, ?)',
+          'INSERT INTO tracking_names (name) VALUES (?),(?),(?)',
           [value1, value2, value3],
           (txObject, resultSet) => {
-            console.log('insert successful', resultSet);
+            console.log('tracking names added');
             resolve();
           },
           (txObject, error) => {
-            console.error('insert error:', error);
+            console.error('tracking name adding error:', error);
             reject(error);
             return true;
           }
@@ -228,88 +233,24 @@ export class DatabaseService {
     });
   }
 
-  public createTrackingDataAndLink(value1: number, value2: number, value3: number, trackingValueID: number): Promise<number> { 
-    return new Promise<number>((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          'INSERT INTO tracking_data (figure1, figure2, figure3) VALUES (?, ?, ?)',
-          [value1, value2, value3],
-          (txObject, resultSet) => {
-            const dataId = resultSet.insertId;
-
-            if (dataId) {
-              tx.executeSql(
-                'INSERT INTO tracking_value_to_data (valueID, dataID) VALUES (?, ?)',
-                [trackingValueID, dataId],
-                (txObject, result) => {
-                  //console.log("dataId: ", dataId)
-                  resolve(dataId);
-                },
-              );
-            } else {
-              console.error('first insert failed to return a ID to complete the remaining insert:');
-              reject(new Error("Failed to get trackingDataID"));
-            }
-          },
-          (txObject, error) => {
-            console.error('insert error:', error);
-            reject(error);
-            return true;
-          }
-        );
-      });
-    });
-  }
-
-  public getAllTrackingValues(): Promise<any> {
+  public getLastThreeTrackingNames(): Promise<TrackingName[]> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          `SELECT * FROM tracking_values
-           ORDER BY id DESC LIMIT 1`,
+          'SELECT id, name FROM tracking_names ORDER BY id DESC LIMIT 3',
           [],
-          (txObject, result) => {
-            if (result.rows.length > 0) {
-              const lastRow = result.rows.item(0);
-              //const lastRowArray = Object.values(lastRow); 
-              resolve(lastRow);
-            } else {
-              resolve(null);
-            }
-          },
-          (txObject, error) => {
-            reject(error);
-            return true;
-          }
-        );
-      });
-    });
-  }
-
-  public getAllTrackingAndData(valueID: number): Promise<any> {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          `SELECT td.id, td.figure1, td.figure2, td.figure3  
-           FROM tracking_data td 
-           JOIN tracking_value_to_data tvtd ON td.id = tvtd.dataID
-           WHERE tvtd.valueID = ?`,
-          [valueID],
-          (txObject, result) => {
-            const dataArray = [];
-            for (let i = 0; i < result.rows.length; i++) {
-              const row = result.rows.item(i);
-              dataArray.push({
-                id: row.id,
-                figure1: row.figure1,
-                figure2: row.figure2,
-                figure3: row.figure3
+          (_, resultSet) => {
+            const trackingNames: TrackingName[] = [];
+            for (let i = 0; i < resultSet.rows.length; i++) {
+              trackingNames.push({
+                id: resultSet.rows.item(i).id,
+                name: resultSet.rows.item(i).name
               });
             }
-            resolve(dataArray);
-
+            resolve(trackingNames);
           },
-          (txObject, error) => {
+          (_, error) => {
+            console.error('Error fetching tracking names:', error);
             reject(error);
             return true;
           }
@@ -320,18 +261,25 @@ export class DatabaseService {
 
   //ANCHOR - New mood Journal Changes
 
-  public createMoodJournal(createdAt: string, trackingDataId: number): Promise<number> { 
-    return new Promise<number>((resolve, reject) => { 
+  public createMoodJournal(moodJournalData: MoodJournal): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          'INSERT INTO mood_journals (created_at, tracking_data_id) VALUES (?, ?)',
-          [createdAt, trackingDataId],
+          `INSERT INTO mood_journals 
+            (created_at, tracking_name1_id, tracking_value1, 
+             tracking_name2_id, tracking_value2, tracking_name3_id, tracking_value3) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            moodJournalData.createdAt,
+            moodJournalData.trackingNameId1,
+            moodJournalData.figure1,
+            moodJournalData.trackingNameId2,
+            moodJournalData.figure2,
+            moodJournalData.trackingNameId3,
+            moodJournalData.figure3
+          ],
           (txObject, resultSet) => {
-            if (resultSet.insertId) {
-              resolve(resultSet.insertId);
-            } else {
-              reject(new Error("Failed to get moodJournalId after insertion"));
-            }
+            resolve(resultSet.insertId || -1);
           },
           (txObject, error) => {
             reject(error);
@@ -372,7 +320,7 @@ export class DatabaseService {
           'INSERT INTO mood_journal_emotions (mood_journal_id, emotion_id) VALUES (?, ?)',
           [moodJournalId, emotionId],
           () => {
-            console.log("MoodJournalEmotion created successfully")
+            //console.log("MoodJournalEmotion created successfully")
             resolve();
           },
           (txObject, error) => {
@@ -388,58 +336,66 @@ export class DatabaseService {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
-          `SELECT * FROM mood_journals ORDER BY created_at DESC`,
-          [],
-          (txObject, result) => {
-            resolve(result.rows._array);
-          },
-          (txObject, error) => {
-            reject(error);
-            return true;
-          }
-        );
-      })
-    })
-  }
-
-  public getAllMoodJournalsWithTrackingData(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          `SELECT 
-            mj.id, mj.created_at, mj.tracking_data_id,
-            td.figure1, td.figure2, td.figure3 
+          `SELECT mj.*,
+          tn1.name AS tracking_name1, 
+          tn2.name AS tracking_name2, 
+          tn3.name AS tracking_name3
             FROM mood_journals mj
-            JOIN tracking_data td ON td.id = mj.tracking_data_id
+            LEFT JOIN tracking_names tn1 ON mj.tracking_name1_id = tn1.id
+            LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
+            LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
             ORDER BY mj.created_at DESC`,
           [],
-          (txObject, result) => {
-            const moodJournalEntries = [];
-            for (let i = 0; i < result.rows.length; i++) {
-              const row = result.rows.item(i);
-              moodJournalEntries.push({
-                id: row.id,
-                createdAt: row.created_at,
-                trackingData: {
-                  figure1: row.figure1,
-                  figure2: row.figure2,
-                  figure3: row.figure3
-                }
-                // TODO add other mood journal fields 
-              });
-            }
-            resolve(moodJournalEntries);
+          (txObject, resultSet) => {
+            resolve(resultSet.rows._array);
           },
           (txObject, error) => {
             reject(error);
             return true;
           }
         );
-      })
-    })
+      });
+    });
   }
 
-  public getMoodJournalByID(journalID: number): Promise<any | null> { 
+  // public getAllMoodJournalsWithTrackingData(): Promise<any[]> {
+  //   return new Promise((resolve, reject) => {
+  //     db.transaction((tx) => {
+  //       tx.executeSql(
+  //         `SELECT 
+  //           mj.id, mj.created_at, mj.tracking_data_id,
+  //           td.figure1, td.figure2, td.figure3 
+  //           FROM mood_journals mj
+  //           JOIN tracking_data td ON td.id = mj.tracking_data_id
+  //           ORDER BY mj.created_at DESC`,
+  //         [],
+  //         (txObject, result) => {
+  //           const moodJournalEntries = [];
+  //           for (let i = 0; i < result.rows.length; i++) {
+  //             const row = result.rows.item(i);
+  //             moodJournalEntries.push({
+  //               id: row.id,
+  //               createdAt: row.created_at,
+  //               trackingData: {
+  //                 figure1: row.figure1,
+  //                 figure2: row.figure2,
+  //                 figure3: row.figure3
+  //               }
+  //               // TODO add other mood journal fields 
+  //             });
+  //           }
+  //           resolve(moodJournalEntries);
+  //         },
+  //         (txObject, error) => {
+  //           reject(error);
+  //           return true;
+  //         }
+  //       );
+  //     })
+  //   })
+  // }
+
+  public getMoodJournalByID(journalID: number): Promise<any | null> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -477,7 +433,7 @@ export class DatabaseService {
     })
   }
 
-  public getLatestMoodJournal(): Promise<any | null> { 
+  public getLatestMoodJournal(): Promise<any | null> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -488,10 +444,10 @@ export class DatabaseService {
            JOIN tracking_data td ON td.id = mj.tracking_data_id 
            ORDER BY mj.created_at DESC 
            LIMIT 1`,
-          [], 
+          [],
           (txObject, result) => {
             if (result.rows.length > 0) {
-              const row = result.rows.item(0); 
+              const row = result.rows.item(0);
               const moodJournalEntry = {
                 id: row.id,
                 createdAt: row.created_at,
@@ -502,7 +458,7 @@ export class DatabaseService {
                 }
                 // TODO add other mood journal fields 
               };
-              resolve(row); 
+              resolve(row);
             } else {
               resolve(null);
             }

@@ -21,10 +21,10 @@ interface UserElement {
   title: string;
   time: string;
   icon?: string;
-  moodType1?: string;
-  moodValue1?: number;
-  moodType2?: string;
-  moodValue2?: number;
+  trackingName1?: string,
+  trackingValue1?: number,
+  trackingName2?: string,
+  trackingValue2?: number,
   goalName?: string,
   goalTarget?: number,
   goalValue?: number
@@ -103,6 +103,7 @@ const DayView = ({ loadAnimation }: {
   useEffect(() => {
     //console.log()
     if (loadAnimation) {
+      //onRefresh()
       setAnimating(true);
     }
     else {
@@ -114,7 +115,7 @@ const DayView = ({ loadAnimation }: {
   const fetchJournalEntries = async () => {
     setLoading(true);
     try {
-      const databaseResult = await databaseService.getAllJournalEntries(); // Adjust function name if needed
+      const databaseResult = await databaseService.getAllJournalEntries(); 
       const entries: UserElement[] = databaseResult.map(journal => ({
         id: "journal_" + journal.id,
         type: 'journal',
@@ -170,79 +171,98 @@ const DayView = ({ loadAnimation }: {
 
   //TODO: get the moodScores and populate it as a varaible 
   //set it to the userElelemtn array
-  const fetchTrackingValues = async () => {
-    try {
-      const tempTrackingValues = await databaseService.getAllTrackingValues();
-      return (tempTrackingValues);
+  // const fetchTrackingValues = async () => {
+  //   try {
+  //     const tempTrackingValues = await databaseService.getAllTrackingValues();
+  //     return (tempTrackingValues);
 
-    }
-    catch (error) {
-      console.error("error getting values:", error);
-    }
-  };
+  //   }
+  //   catch (error) {
+  //     console.error("error getting values:", error);
+  //   }
+  // };
 
-  const fetchTrackingData = async (dataValueID: number) => {
-    try {
-      const tempTrackingData = await databaseService.getAllTrackingAndData(dataValueID);
-      return (tempTrackingData);
+  // const fetchAllMoodJournals = async () => {
+  //   setLoading(true);
+  //   try {
 
-    }
-    catch (error) {
-      console.error("error getting values:", error);
-    }
-  };
+  //     //! TODO add moodjournal fetch code to fix!!!!
+  //     //!
+  //     //!
 
-  const fetchAllMoodJournals = async () => {
-    setLoading(true);
-    try {
-        const trackingValuesArray = await fetchTrackingValues();
-        if (trackingValuesArray) {
-            const tempMoodJournals = await databaseService.getAllMoodJournalsWithTrackingData();
-            console.log("tempMoodJournals: ", tempMoodJournals)
+  //     //const tempMoodJournals = await databaseService.getAllMoodJournalsWithTrackingData();
+  //     //console.log("tempMoodJournals: ", tempMoodJournals)
 
-            const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
-                id: "mood_" + moodJournal.id,
-                type: 'mood',
-                title: moodJournal.title, 
-                time: moment(moodJournal.createdAt).format('HH:mm'),
-                moodType1: trackingValuesArray.value1, 
-                moodValue1: moodJournal.trackingData.figure1, 
-                moodType2: trackingValuesArray.value2, 
-                moodValue2: moodJournal.trackingData.figure2, 
-                moodType3: trackingValuesArray.value3, 
-                moodValue3: moodJournal.trackingData.figure3 
-            }));
+  //     // const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
+  //     //   id: "mood_" + moodJournal.id,
+  //     //   type: 'mood',
+  //     //   title: moodJournal.title,
+  //     //   time: moment(moodJournal.createdAt).format('HH:mm'),
+  //     //   moodType1: moodJournal.tracking_value1,
+  //     //   moodValue1: moodJournal.trackingData.figure1,
+  //     //   moodType2: trackingValuesArray.value2,
+  //     //   moodValue2: moodJournal.trackingData.figure2,
+  //     //   moodType3: trackingValuesArray.value3,
+  //     //   moodValue3: moodJournal.trackingData.figure3
+  //     // }));
 
-            setUserElements(prevElements => [...prevElements, ...entries]);
-        }
-    } catch (error) {
-        console.error("error getting mood Journals:", error);
-    } finally {
-        setLoading(false); 
-    }
-};
+  //     //setUserElements(prevElements => [...prevElements, ...entries]);
+
+  //   } catch (error) {
+  //     console.error("error getting mood Journals:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   //! TODO update this to actually get the mood journal entries
 
   const fetchMoodJournalEntries = async () => {
     setLoading(true);
     try {
-      //(1) Get the last row in the "tracking_values" table
-      const trackingValuesArray = await fetchTrackingValues();
-      //(2) Get the tracking data for the "trackingValuesArray"
-      if (trackingValuesArray) {
-        //get all moodJournalEntries
-        await fetchAllMoodJournals();
-        // if(moodJournalEntries){
 
-        //   console.log(moodJournalEntries)
-        // }
+      //! TODO add moodjournal fetch code to fix!!!!
+      //!
+      //!
+
+      const tempMoodJournals = await databaseService.getAllMoodJournals();
+      if (tempMoodJournals) {
+        const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
+          id: "mood_" + moodJournal.id,
+          type: 'mood',
+          title: 'Mood Journal',
+          time: moment(moodJournal.createdAt).format('HH:mm'),
+          trackingName1: moodJournal.tracking_name1,
+          trackingValue1: moodJournal.tracking_value1,
+          trackingName2: moodJournal.tracking_name2,
+          trackingValue2: moodJournal.tracking_value2,
+          trackingName3: moodJournal.tracking_name3,
+          trackingValue3: moodJournal.tracking_value3
+        }));
+
+          console.log(entries);
+          setUserElements(prevElements => [...prevElements, ...entries]);
 
       }
-    }
-    catch (error) {
-      console.error('Error fetching entries:', error);
-    }
-    finally {
+
+
+      // const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
+      //   id: "mood_" + moodJournal.id,
+      //   type: 'mood',
+      //   title: moodJournal.title,
+      //   time: moment(moodJournal.createdAt).format('HH:mm'),
+      //   moodType1: moodJournal.tracking_value1,
+      //   moodValue1: moodJournal.trackingData.figure1,
+      //   moodType2: trackingValuesArray.value2,
+      //   moodValue2: moodJournal.trackingData.figure2,
+      //   moodType3: trackingValuesArray.value3,
+      //   moodValue3: moodJournal.trackingData.figure3
+      // }));
+
+      //setUserElements(prevElements => [...prevElements, ...entries]);
+
+    } catch (error) {
+      console.error("error getting mood Journals:", error);
+    } finally {
       setLoading(false);
     }
   }
@@ -267,7 +287,6 @@ const DayView = ({ loadAnimation }: {
       try {
         await fetchJournalEntries();
         await fetchMoodJournalEntries();
-
       }
       catch (error) {
         console.error("Error fetching data:", error);
@@ -315,13 +334,13 @@ const DayView = ({ loadAnimation }: {
               </View>
               <View style={styles.remainingContent}>
                 <View style={styles.contentRow}>
-                  {item.moodValue1 !== undefined && (
-                    <ProgressBar step={item.moodValue1} steps={100} height={25} isAnimating={animating} textLabel={item.moodType1} />
+                  {item.trackingName1 !== undefined && item.trackingValue1 !== undefined && (
+                    <ProgressBar step={item.trackingValue1} steps={100} height={25} isAnimating={animating} textLabel={item.trackingName1} />
                   )}
                 </View>
                 <View style={styles.contentRow}>
-                  {item.moodValue2 !== undefined && (
-                    <ProgressBar step={item.moodValue2} steps={100} height={25} isAnimating={animating} textLabel={item.moodType2} />
+                  {item.trackingName2 !== undefined && item.trackingValue2 !== undefined && (
+                    <ProgressBar step={item.trackingValue2} steps={100} height={25} isAnimating={animating} textLabel={item.trackingName2} />
                   )}
                 </View>
               </View>

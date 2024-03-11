@@ -16,11 +16,9 @@ import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
 import Slider from '@react-native-community/slider'
 
-interface TrackingValues {
+interface TrackingName {
     id: number;
-    value1: string;
-    value2: string;
-    value3: string;
+    name: string;
 }
 
 interface SelectedEmotion {
@@ -28,10 +26,21 @@ interface SelectedEmotion {
     extendedKey?: string;
 }
 
+interface MoodJournal {
+    createdAt: string;
+    trackingNameId1: number;
+    figure1: number;
+    trackingNameId2: number;
+    figure2: number;
+    trackingNameId3: number;
+    figure3: number;
+}
+
+
 const createJournal = () => {
     const [loading, setLoading] = useState(false);
     const [flashNotification, setFlashNotification] = useState(false);
-    const [userTrackingVals, setUserTrackingVals] = useState<TrackingValues>();
+    const [userTrackingVals, setUserTrackingVals] = useState<TrackingName[]>([]);
 
     /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
     const [sliderValue1, setSliderValue1] = useState<number>(0);
@@ -41,48 +50,14 @@ const createJournal = () => {
 
     const fetchTrackingValues = async () => {
         try {
-            const tempValues = await databaseService.getAllTrackingValues();
-            setUserTrackingVals(tempValues);
+            const tempValues = await databaseService.getLastThreeTrackingNames();
+            if (tempValues) {
+                setUserTrackingVals(tempValues);
+            }
         } catch (error) {
             console.error("error getting values:", error);
         }
     };
-
-    useEffect(() => {
-        //if to prevent for recursively calling when there is no value.
-        if (userTrackingVals) {
-            setLoading(false);
-        }
-    }, [userTrackingVals]);
-
-    useEffect(() => {
-        setLoading(true);
-        fetchTrackingValues().then(() => {
-            setLoading(false);
-        })
-    }, []);
-
-
-    const addDataForTrackingValues = async (figure1: number, figure2: number, figure3: number) => {
-        //console.log("in tracking set")
-        try {
-            if (userTrackingVals) {
-                const trackingDataID = await databaseService.createTrackingDataAndLink(
-                    figure1, figure2, figure3, userTrackingVals.id);
-                return trackingDataID;
-            }
-            else {
-                // TODO: - handle this
-                console.error("userTrackingVals not found");
-                return null;
-            }
-
-
-        }
-        catch (error) {
-            console.error("error inserting values:", error);
-        }
-    }
 
     const calculatePercentage = (inputValue: number) => {
         const formula = Math.round(inputValue * 100);
@@ -160,11 +135,10 @@ const createJournal = () => {
     //-----------------------------------------------------------------------------------------
 
     //TODO check that this is only run after the create Tracking Data as it needs the trackingID
-    const databaseCreateMoodJournal = async (trackingID: number) => {
+    const databaseCreateMoodJournal = async (inputMoodJournal:MoodJournal) => {
         //console.log("in tracking set")
         try {
-            const currentTime = new Date().toISOString()
-            const returnedMoodJournalID = await databaseService.createMoodJournal(currentTime, trackingID);
+            const returnedMoodJournalID = await databaseService.createMoodJournal(inputMoodJournal);
             if (returnedMoodJournalID) {
                 return returnedMoodJournalID
             }
@@ -182,12 +156,13 @@ const createJournal = () => {
     async function databaseCreateAndLinkEmotions(selectedEmotions: SelectedEmotion[], moodJournalID: number) {
         for (const emotion of selectedEmotions) {
             try {
-    
-                const emotionId = await databaseService.addEmotion(emotion.baseKey, emotion.extendedKey); 
-                //console.log(`Added emotion with ID: ${emotionId}`);
 
-                await databaseService.addMoodJournalEmotion(moodJournalID, emotionId);
-    
+                const emotionId = await databaseService.addEmotion(emotion.baseKey, emotion.extendedKey);
+                if(emotionId){
+                    console.log("Added emotion with ID: ", emotionId);
+                    await databaseService.addMoodJournalEmotion(moodJournalID, emotionId);
+                }                
+
             } catch (error) {
                 console.error(`Error adding emotion ${emotion.baseKey} - ${emotion.extendedKey}:`, error);
             }
@@ -200,35 +175,67 @@ const createJournal = () => {
         //TODO handle database add
 
         //(1) add tracking_data to the database:
-        const trackingDataId = await addDataForTrackingValues( 
-            calculatePercentage(sliderValue1),
-            calculatePercentage(sliderValue2),
-            calculatePercentage(sliderValue3)
-        );
+        // const trackingDataId = await addDataForTrackingValues( 
+        //     calculatePercentage(sliderValue1),
+        //     calculatePercentage(sliderValue2),
+        //     calculatePercentage(sliderValue3)
+        // );
 
         //(2) create mood Journal Entry
-        if (trackingDataId) {
-            //console.log("trackingDataId: ", trackingDataId)
-            const moodJournalID = await databaseCreateMoodJournal(trackingDataId);
-             //(3) Add the emotions and link it to the moodJournalID
-            if (moodJournalID){
-                databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
-            }
-        }
+        // if (trackingDataId) {
+        //     //console.log("trackingDataId: ", trackingDataId)
+        //     const moodJournalID = await databaseCreateMoodJournal(trackingDataId);
+        //      //(3) Add the emotions and link it to the moodJournalID
+        //     if (moodJournalID){
+        //         databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+        //     }
+        // }
+        const currentTime = new Date().toISOString()
+        const inputMoodJournal: MoodJournal = ({
+            createdAt: currentTime,
+            trackingNameId1: userTrackingVals[2].id,
+            figure1: calculatePercentage(sliderValue1),
+            trackingNameId2: userTrackingVals[1].id,
+            figure2: calculatePercentage(sliderValue2),
+            trackingNameId3: userTrackingVals[0].id,
+            figure3: calculatePercentage(sliderValue3)
+        });
+        console.log("inputMoodJournal: ", inputMoodJournal)
+        
+
+        const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
+
+        // //(3) Add the emotions and link it to the moodJournalID
+        if (moodJournalID) {
+             databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+         }
+
+        //
+        //const moodJournalID = await databaseCreateMoodJournal();
+        //(3) Add the emotions and link it to the moodJournalID
 
         //(3) 
         //testing for now
-        
-
-
         //TODO - need to return the trackingDataID
-        
-
-
         setTimeout(() => {
             setFlashNotification(false);
         }, 1000);
     }
+
+    useEffect(() => {
+        if (userTrackingVals) {
+            setLoading(false);
+            console.log("userTrackingVals: ", userTrackingVals)
+
+        }
+    }, [userTrackingVals]);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchTrackingValues().then(() => {
+            setLoading(false);
+        })
+    }, []);
 
     return (
         <LinearGradient
@@ -250,7 +257,7 @@ const createJournal = () => {
                     {!loading && (
                         <View style={styles.sliderRow}>
                             <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals?.value1}
+                                {userTrackingVals[2]?.name}
                             </Text>
                             <Slider style={{ width: 200, height: 40 }}
                                 value={sliderValue1}
@@ -265,7 +272,7 @@ const createJournal = () => {
                     {!loading && (
                         <View style={styles.sliderRow}>
                             <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals?.value2}
+                                {userTrackingVals[1]?.name}
                             </Text>
                             <Slider style={{ width: 200, height: 40 }}
                                 value={sliderValue2}
@@ -280,7 +287,7 @@ const createJournal = () => {
                     {!loading && (
                         <View style={styles.sliderRow}>
                             <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals?.value3}
+                                {userTrackingVals[0]?.name}
                             </Text>
                             <Slider style={{ width: 200, height: 40 }}
                                 value={sliderValue3}
