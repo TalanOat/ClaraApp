@@ -26,16 +26,18 @@ interface TrackingValues {
   value3: string;
 }
 
-interface MoodJournalEntry {
+
+interface MoodJournal {
   id: number;
-  createdAt: string; // Assuming the database returns a string for created_at 
-  trackingData: {
-    figure1: number;
-    figure2: number;
-    figure3: number;
-  };
-  // Add other mood journal fields here as needed
+  createdAt: string;
+  trackingName1: string;
+  figure1: number;
+  trackingName2: string;
+  figure2: number;
+  trackingName3: string;
+  figure3: number;
 }
+
 interface SelectedEmotion {
   baseKey: number;
   extendedKey?: string;
@@ -47,8 +49,7 @@ const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [loading, setLoading] = useState(false);
   const [flashNotification, setFlashNotification] = useState(false);
-  const [userTrackingVals, setUserTrackingVals] = useState<TrackingValues>();
-  const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournalEntry>();
+  const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal>();
 
   /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
   const [sliderValue1, setSliderValue1] = useState<number>(0);
@@ -56,30 +57,24 @@ const Page = () => {
   const [sliderValue3, setSliderValue3] = useState<number>(0);
 
 
-
-  const fetchTrackingValues = async () => {
-    try {
-      const tempTrackingValues = await databaseService.getAllTrackingValues();
-
-      return (tempTrackingValues);
-
-
-    }
-    catch (error) {
-      console.error("error getting values:", error);
-    }
-  };
-
-  const fetchMoodJournal = async () => {
+  const fetchMoodJournal = async (): Promise<MoodJournal | undefined> => {
     setLoading(true);
     try {
-      const trackingValuesArray = await fetchTrackingValues();
+      const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
+      if (tempMoodJournal) {
+        const returnedMoodJournal: MoodJournal = ({
+          id: tempMoodJournal.id,
+          createdAt: tempMoodJournal.created_at,
+          trackingName1: tempMoodJournal.tracking_name1,
+          figure1: tempMoodJournal.tracking_value1,
+          trackingName2: tempMoodJournal.tracking_name2,
+          figure2: tempMoodJournal.tracking_value2,
+          trackingName3: tempMoodJournal.tracking_name3,
+          figure3: tempMoodJournal.tracking_value3,
+        });
 
-      if (trackingValuesArray) {
-        const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
-        if (tempMoodJournal) {
-          return tempMoodJournal
-        }
+        console.log("returnedMoodJournal: ", returnedMoodJournal)
+        return returnedMoodJournal
       }
     }
     catch (error) {
@@ -115,28 +110,10 @@ const Page = () => {
   };
 
 
-
-
-
-  //! TODO do the tracking values need to be syncrounous, can it not be asycn  ?
-  useEffect(() => {
-    setLoading(true);
-    const fetchData = async () => {
-      const trackingValuesArray = await fetchTrackingValues();
-      setUserTrackingVals(trackingValuesArray);
-
-      const tempMoodJournal = await fetchMoodJournal();
-      setMoodJournalEntry(tempMoodJournal)
-    }
-    fetchData().finally(() => {
-      setLoading(false)
-    });
-
-  }, []);
-
   //! todo handle the emotions array being empty
 
   useEffect(() => {
+    console.log("moodJournalEntry: ", moodJournalEntry)
     setLoading(true);
     const fetchEmotionsData = async () => {
       const emotions = await fetchEmotionsForMoodJournal();
@@ -150,16 +127,28 @@ const Page = () => {
 
   }, [moodJournalEntry]);
 
+  //! TODO do the tracking values need to be syncrounous, can it not be asycn  ?
+  useEffect(() => {
+    setLoading(true);
+    const fetchData = async () => {
+      const tempMoodJournal = await fetchMoodJournal();
+
+      setMoodJournalEntry(tempMoodJournal)
+    }
+    fetchData().finally(() => {
+      setLoading(false)
+    });
+
+  }, []);
+
 
   /* ---------------------------------- other --------------------------------- */
-
 
   const handleUpdate = () => {
 
     console.log("handle submit")
     //databaseUpdateMoodJournalEntry()
   }
-
 
 
   return (
@@ -182,10 +171,10 @@ const Page = () => {
           {!loading && (
             <View style={styles.sliderRow}>
               <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                {userTrackingVals?.value1}
+                {moodJournalEntry?.trackingName1}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={moodJournalEntry?.trackingData.figure1}
+                value={moodJournalEntry?.figure1}
                 onValueChange={(value) => { setSliderValue1(value) }}
                 minimumValue={0}
                 maximumValue={100}
@@ -197,10 +186,10 @@ const Page = () => {
           {!loading && (
             <View style={styles.sliderRow}>
               <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                {userTrackingVals?.value2}
+                {moodJournalEntry?.trackingName2}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={moodJournalEntry?.trackingData.figure2}
+                value={moodJournalEntry?.figure2}
                 onValueChange={(value) => { setSliderValue2(value) }}
                 minimumValue={0}
                 maximumValue={100}
@@ -212,10 +201,10 @@ const Page = () => {
           {!loading && (
             <View style={styles.sliderRow}>
               <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                {userTrackingVals?.value3}
+                {moodJournalEntry?.trackingName3}
               </Text>
               <Slider style={{ width: 200, height: 40 }}
-                value={moodJournalEntry?.trackingData.figure3}
+                value={moodJournalEntry?.figure3}
                 onValueChange={(value) => { setSliderValue3(value) }}
                 minimumValue={0}
                 maximumValue={100}
