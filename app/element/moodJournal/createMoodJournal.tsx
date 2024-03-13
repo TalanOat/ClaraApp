@@ -168,28 +168,8 @@ const createJournal = () => {
             }
         }
     }
-
-    //TODO: actually wire up submition
     const handleSubmit = async () => {
         setFlashNotification(true);
-        //TODO handle database add
-
-        //(1) add tracking_data to the database:
-        // const trackingDataId = await addDataForTrackingValues( 
-        //     calculatePercentage(sliderValue1),
-        //     calculatePercentage(sliderValue2),
-        //     calculatePercentage(sliderValue3)
-        // );
-
-        //(2) create mood Journal Entry
-        // if (trackingDataId) {
-        //     //console.log("trackingDataId: ", trackingDataId)
-        //     const moodJournalID = await databaseCreateMoodJournal(trackingDataId);
-        //      //(3) Add the emotions and link it to the moodJournalID
-        //     if (moodJournalID){
-        //         databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
-        //     }
-        // }
         const currentTime = new Date().toISOString()
         const inputMoodJournal: MoodJournal = ({
             createdAt: currentTime,
@@ -202,21 +182,10 @@ const createJournal = () => {
         });
         console.log("inputMoodJournal: ", inputMoodJournal)
         
-
         const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
-
-        // //(3) Add the emotions and link it to the moodJournalID
         if (moodJournalID) {
              databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
          }
-
-        //
-        //const moodJournalID = await databaseCreateMoodJournal();
-        //(3) Add the emotions and link it to the moodJournalID
-
-        //(3) 
-        //testing for now
-        //TODO - need to return the trackingDataID
         setTimeout(() => {
             setFlashNotification(false);
         }, 1000);

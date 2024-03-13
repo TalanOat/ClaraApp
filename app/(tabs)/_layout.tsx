@@ -71,7 +71,7 @@ const Layout = () => {
             right: 0,
             elevation: 0,
             display: 'flex',
-            height: 200,
+            height: 80,
             flexDirection: 'row',
             alignItems: 'flex-end',
             paddingBottom: 10,

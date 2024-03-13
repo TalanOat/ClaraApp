@@ -156,7 +156,7 @@ const Page = () => {
     //(1) First get the id without the prefix
     const idWithNoPreix = splitId(id).id;
     console.log(idWithNoPreix)
-    Alert.alert('Warning', `Are you sure you want to delete this entry: ${title}`, [
+    Alert.alert('Warning', `Are you sure you want to delete this journal entry`, [
       {
         text: 'Cancel',
         onPress: () => console.log('Cancel Pressed'),
@@ -175,7 +175,7 @@ const Page = () => {
     //(1) First get the id without the prefix
     const idWithNoPreix = splitId(id).id;
     console.log(idWithNoPreix)
-    Alert.alert('Warning', `Are you sure you want to delete this mood journal entry:`, [
+    Alert.alert('Warning', `Are you sure you want to delete this mood journal entry`, [
       {
         text: 'Cancel',
         onPress: () => console.log('Cancel Pressed'),
