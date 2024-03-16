@@ -11,7 +11,6 @@ import Animated, {
   FadeInDown,
   FadeOutUp,
   SlideInDown,
-
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
@@ -26,15 +25,14 @@ interface TrackingValues {
   value3: string;
 }
 
-
 interface MoodJournal {
-  id: number;
+  id: number,
   createdAt: string;
-  trackingName1: string;
+  trackingName1: number;
   figure1: number;
-  trackingName2: string;
+  trackingName2: number;
   figure2: number;
-  trackingName3: string;
+  trackingName3: number;
   figure3: number;
 }
 
@@ -42,8 +40,6 @@ interface SelectedEmotion {
   baseKey: number;
   extendedKey?: string;
 }
-
-
 
 const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,7 +69,8 @@ const Page = () => {
           figure3: tempMoodJournal.tracking_value3,
         });
 
-        console.log("returnedMoodJournal: ", returnedMoodJournal)
+        // console.log("returnedMoodJournal: ", returnedMoodJournal)
+        //console.log("tempMoodJournal: ", tempMoodJournal)
         return returnedMoodJournal
       }
     }
@@ -89,7 +86,7 @@ const Page = () => {
     //setLoading(true);
     try {
       if (moodJournalEntry) {
-        console.log("moodJournalEntry.id!! ", moodJournalEntry.id)
+        //console.log("moodJournalEntry.id!! ", moodJournalEntry.id)
         const test = await databaseService.getEmotionsForMoodJournal(moodJournalEntry.id)
         if (test) {
           return test
@@ -109,11 +106,9 @@ const Page = () => {
     }
   };
 
-
   //! todo handle the emotions array being empty
-
   useEffect(() => {
-    console.log("moodJournalEntry: ", moodJournalEntry)
+    //console.log("moodJournalEntry: ", moodJournalEntry)
     setLoading(true);
     const fetchEmotionsData = async () => {
       const emotions = await fetchEmotionsForMoodJournal();
@@ -127,28 +122,66 @@ const Page = () => {
 
   }, [moodJournalEntry]);
 
+  /* ---------------------------------- other --------------------------------- */
+
+
+  const databaseUpdateMoodJournalEntry = async (figure1: number, figure2: number, figure3: number) => {
+    try {
+      console.log("figure1:", figure1, "figure2:", figure2, "figure3:", figure3)
+      const updatedMoodJournal = await databaseService.updateMoodJournalFigures(parseInt(id),
+        figure1,
+        figure2,
+        figure3);
+      if (updatedMoodJournal) {
+        console.log("success")
+      }
+    }
+    catch (error) {
+      console.error(error, "there was an problem updating the mood Journal")
+    }
+  }
+
+  const handleUpdate = () => {
+    //console.log("sliderValue1: ", sliderValue1, "id: ", id)
+    //console.log("handle submit")
+
+    setFlashNotification(true);
+    //const currentTime = new Date().toISOString()
+    //console.log("moodJournalEntry: ", moodJournalEntry)
+
+    //console.log("inputMoodJournal: ", inputMoodJournal)
+
+    databaseUpdateMoodJournalEntry(
+      Math.round(sliderValue1),
+      Math.round(sliderValue2),
+      Math.round(sliderValue3)
+    )
+
+
+
+    setTimeout(() => {
+      setFlashNotification(false);
+    }, 1000);
+  }
+
   //! TODO do the tracking values need to be syncrounous, can it not be asycn  ?
   useEffect(() => {
     setLoading(true);
     const fetchData = async () => {
       const tempMoodJournal = await fetchMoodJournal();
 
-      setMoodJournalEntry(tempMoodJournal)
+      if (tempMoodJournal) {
+        setMoodJournalEntry(tempMoodJournal)
+        setSliderValue1(tempMoodJournal.figure1);
+        setSliderValue2(tempMoodJournal.figure2);
+        setSliderValue3(tempMoodJournal.figure3);
+      }
+
     }
     fetchData().finally(() => {
       setLoading(false)
     });
-
   }, []);
-
-
-  /* ---------------------------------- other --------------------------------- */
-
-  const handleUpdate = () => {
-
-    console.log("handle submit")
-    //databaseUpdateMoodJournalEntry()
-  }
 
 
   return (

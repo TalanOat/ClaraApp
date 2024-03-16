@@ -290,6 +290,26 @@ export class DatabaseService {
     });
   }
 
+  public updateMoodJournalFigures(id: number, figure1: number, figure2: number, figure3: number): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `UPDATE mood_journals 
+           SET tracking_value1 = ?, tracking_value2 = ?, tracking_value3 = ?
+           WHERE id = ?`,
+          [figure1, figure2, figure3, id], 
+          (txObject, resultSet) => {
+            resolve(true);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true; 
+          }
+        );
+      });
+    });
+  }
+
   public addEmotion(baseEmotion: number, extendedEmotion?: string): Promise<number> {
     return new Promise<number>((resolve, reject) => { // Specify Promise type
       db.transaction((tx) => {
