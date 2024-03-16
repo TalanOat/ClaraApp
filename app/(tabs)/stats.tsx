@@ -80,7 +80,6 @@ const Page = () => {
     }
   }, [pageFocused])
 
-
   /* ------------------------- end of navigation code ------------------------- */
 
   const [journalEntry, setJournalEntry] = useState<Journal>()
@@ -88,15 +87,17 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
 
   const fetchLastEntry = async () => {
+    //console.log("fetching")
     try {
       const entry = await databaseService.getLastJournalEntry();
       if (entry) {
-        setJournalEntry({
+        const returnedEntry: Journal = ({
           id: entry.id,
           title: entry.title,
           body: entry.body,
           time: moment(entry.createdAt).format('HH:mm')
         });
+        return returnedEntry
       }
       else {
         console.error("entry not found, or no entries exist")
@@ -108,6 +109,7 @@ const Page = () => {
   }
 
   const fetchLastMoodJournal = async () => {
+    //console.log("fetching mood")
     setLoading(true);
     try {
       const tempMoodJournal = await databaseService.getLatestMoodJournal();
@@ -124,7 +126,7 @@ const Page = () => {
         trackingName3: tempMoodJournal.tracking_name3,
         figure3: tempMoodJournal.tracking_value3,
       });
-      setMoodJournalEntry(returnedMoodJournal);
+      return (returnedMoodJournal);
     }
     catch (error) {
       console.error("error getting mood Journals:", error);
@@ -148,6 +150,7 @@ const Page = () => {
     return countB - countA;
   }
 
+  //! Might not be useful anymore
   const analyiseWordProbabilty = async (text: string) => {
     const wordCounts: WordCount = {};
     //(1) split the input into separate strings for each word and remove (".")
@@ -171,28 +174,23 @@ const Page = () => {
   }
 
   //* SEMANTIC ANALYSIS
-  const semantic = async (journalBody: string) => {
-    //console.log("asad");
+  const semanticSearch = async (journalBody: string, searchScore: number) => {
     var Sentiment = require('sentiment');
     var sentiment = new Sentiment();
     var result = sentiment.analyze(journalBody);
-    //console.log(result);    // Score: -2, Comparative: -0.666
-  }
+    const semanticCalculationArray = result.calculation;
+    const matchingKeys = [];
 
-  useEffect(() => {
-    if (journalEntry) {
-      const analyzeAndUseWords = async () => {
-        const sortedWords = await analyiseWordProbabilty(journalEntry.body);
-        if (sortedWords) {
-          //console.log("Sorted Words:", sortedWords);
-          //TODO do somehting with the sortedWords
+    for (const entry of semanticCalculationArray) {
+      for (const [key, value] of Object.entries(entry)) {
+        if (value === searchScore) {
+          matchingKeys.push(key);
         }
       }
-      semantic(journalEntry.body);
-      analyzeAndUseWords();  // Call the async function 
     }
-  }, [journalEntry])
 
+    return matchingKeys;
+  }
 
   /* ---------------------- end of text journal analysis ---------------------- */
 
@@ -212,99 +210,127 @@ const Page = () => {
     if (trackingValue.invertScore) {
       actualValue = 100 - actualValue;
     }
-    if (actualValue <= 25) {
-      trackingValue.score = "very_negative";
-    } else if (actualValue <= 50) {
-      trackingValue.score = "negative";
-    } else if (actualValue >= 75) {
+    //console.log("trackingValueName: ", trackingValue.name, "trackingValueScore: ", trackingValue.score)
+    if (actualValue < 25) { 
       trackingValue.score = "very_positive";
-    } else {
+    } else if (actualValue < 50) { 
       trackingValue.score = "positive";
+    } else if (actualValue >= 50) {  
+      trackingValue.score = "negative";
+    } else if (actualValue >= 75) {  
+      trackingValue.score = "very_negative";
     }
   }
 
-  const setUpTrackingValues = () => {
-    if (moodJournalEntry) {
-      //console.log("moodJournalEntry: ", moodJournalEntry)
+  const assignTrackingValues = (moodJournalInput: MoodJournal) => {
+    //console.log("moodJournalInput: ", moodJournalInput)
+    const results: TrackingValue[] = [];
+    const trackingProperties = [
+      ["trackingName1", "figure1"],
+      ["trackingName2", "figure2"],
+      ["trackingName3", "figure3"]
+    ] as const;
 
-      const results: TrackingValue[] = [];
-      const trackingProperties = [
-        ["trackingName1", "figure1"],
-        ["trackingName2", "figure2"],
-        ["trackingName3", "figure3"]
-      ] as const;
-
-      for (const [nameKey, valueKey] of trackingProperties) {
-        let shouldInvert = false;
-        if ((moodJournalEntry[nameKey] as string) === "Happiness") {
-          shouldInvert = true;
-        }
-
-        const trackingValue: TrackingValue = {
-          name: moodJournalEntry[nameKey] as string,
-          value: moodJournalEntry[valueKey] as number,
-          score: undefined,
-          invertScore: shouldInvert
-        };
-        assignScoreToTrackingValue(trackingValue);
-
-        results.push(trackingValue);
+    for (const [nameKey, valueKey] of trackingProperties) {
+      let shouldInvert = false;
+      if ((moodJournalInput[nameKey] as string) === "Happiness") {
+        shouldInvert = true;
       }
-      //console.log("results", results)
-      setTrackingPoints(results);
+
+      const trackingValue: TrackingValue = {
+        name: moodJournalInput[nameKey] as string,
+        value: moodJournalInput[valueKey] as number,
+        score: undefined,
+        invertScore: shouldInvert
+      };
+      assignScoreToTrackingValue(trackingValue);
+
+      results.push(trackingValue);
     }
+    console.log("results", results)
+    //setTrackingPoints(results);
+    return results
+
+
   }
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([fetchLastEntry(), fetchLastMoodJournal()]);
-    }
-    catch (error) {
-      console.error("Error fetching data:", error);
-    }
-    finally {
-      setLoading(false);
-    }
-  };
+  /* -------------------------- emotion Bubble setup -------------------------- */
 
-  // //! is this still needed
-  useEffect(() => {
-    if (moodJournalEntry) {
-      setUpTrackingValues();
+  const [wordBubble, setWordBubble] = useState([]);
+
+  const assignWordBubble = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
+    console.log("inputTrackingPoints: ", inputTrackingPoints)
+
+    //* if (word) <= -2 : very negative
+    //* if (word) <= -1 : negative
+    //* if (word) >=  1 : positive
+    //* if (word) >=  2 : very positive
+    const inputTrackingScore = inputTrackingPoints.score;
+    console.log("inputTrackingScore: ", inputTrackingScore)
+
+    let searchValue = 0;
+
+    switch (inputTrackingScore) {
+      case "very_negative":
+        searchValue = -2;
+        break;
+      case "negative":
+        searchValue = -1;
+        break;
+      case "positive":
+        searchValue = 1;
+        break;
+      case "very_positive":
+        searchValue = 3;
+        break;
+      default:
+      // code block
     }
 
-  }, [moodJournalEntry])
+    const semanticAnalysis = async (searchValue: number) => {
+      const matchingKeys = await semanticSearch(journalEntryInput.body, searchValue);
+      //console.log("matchingKeys: ", matchingKeys)
+      return (matchingKeys);
+      
+    };
+
+    const tempReturn = await semanticAnalysis(searchValue);
+    if(tempReturn){
+      console.log("tempReturn: ", tempReturn)
+    }
+
+  }
 
   /* ----------------------------- BarChart setup ----------------------------- */
 
-  const assignChartData = () => {
-    if (trackingPoints) {
-      let filteredTrackingPoints;
+  const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
+    let filteredTrackingPoints;
 
-      //if no button has been pressed...
-      if (selectedTracking === "") {
-        // select the first point
-        filteredTrackingPoints = [trackingPoints[0]];
-      } 
-      else {
-        // filter based on selectedTracking
-        filteredTrackingPoints = trackingPoints.filter(
-          point => point.name === selectedTracking
-        );
-      }
-      //console.log("filteredTrackingPoints: ", filteredTrackingPoints)
+    //if no button has been pressed...
+    if (selectedTracking?.name === undefined) {
+      // select the first point
+      filteredTrackingPoints = [inputTrackingPoints[0]];
+      // set the selected point to be the first one by default
+      setSelectedTracking(inputTrackingPoints[0])
+      return (filteredTrackingPoints[0])
 
-      const trackingLabels = filteredTrackingPoints.map(point => point.name);
-      const trackingValues = filteredTrackingPoints.map(point => point.value);
-
-      setChartData({
-        labels: trackingLabels,
-        datasets: [{ data: trackingValues }]
-      });
     }
+    else {
+      // filter based on selectedTracking
+      filteredTrackingPoints = inputTrackingPoints.filter(
+        point => point.name === selectedTracking?.name
+      );
+    }
+
+    const trackingLabels = filteredTrackingPoints.map(point => point.name);
+    const trackingValues = filteredTrackingPoints.map(point => point.value);
+
+    setChartData({
+      labels: trackingLabels,
+      datasets: [{ data: trackingValues }]
+    });
   };
-  //const widht = Dimensions.get("window").width
+
   const [chartWidth, setChartWidth] = useState(0);
 
   const handleLayout = (event: any) => {
@@ -322,32 +348,69 @@ const Page = () => {
 
   /* ---------------------------- trackingNav code ---------------------------- */
 
-  const [selectedTracking, setSelectedTracking] = useState("");
+  const [selectedTracking, setSelectedTracking] = useState<TrackingValue>();
 
-  const handleTrackingPress = (trackingName: string) => {
-    setSelectedTracking(trackingName);
+  const handleTrackingPress = (selectedTrackingInput: TrackingValue) => {
+    setSelectedTracking(selectedTrackingInput);
   };
-
-  //! testing function
-  useEffect(() => {
-    if (selectedTracking) {
-      console.log("selectedTracking: ", selectedTracking)
-    }
-  }, [selectedTracking]);
 
   /* -------------- other code - including the first load useEffect ------------- */
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [journalEntryResult, moodJournalResult] = await Promise.all([fetchLastEntry(), fetchLastMoodJournal()]);
+      return { journalEntryResult, moodJournalResult };
+
+    }
+    catch (error) {
+      console.error("Error fetching data:", error);
+      return { journalEntryResult: undefined, moodJournalResult: undefined };
+
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+  //if the selected tracking is changed
   useEffect(() => {
-    if (trackingPoints) {
-      assignChartData();
+    if (trackingPoints && journalEntry && selectedTracking) {
+      assignChartData(trackingPoints);
+      assignWordBubble(journalEntry, selectedTracking);
       //console.log("trackingPoints: ", trackingPoints)
     }
-  }, [trackingPoints, selectedTracking]);
+  }, [selectedTracking]);
 
   //Initaliser function
   useEffect(() => {
-    //console.log("first load")
-    fetchData()
+    const fetchDataAndAssignData = async () => {
+      try {
+        const fetchedObject = await fetchData();
+        if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
+          setJournalEntry(fetchedObject.journalEntryResult)
+          setMoodJournalEntry(fetchedObject.moodJournalResult)
+
+          const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult)
+          setTrackingPoints(returnedTrackingPoints);
+
+          const defaultSelectedValue = assignChartData(returnedTrackingPoints);
+          if (defaultSelectedValue) {
+            assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue)
+          }
+        }
+
+      }
+      catch (error) {
+
+        console.error("Error fetching data:", error);
+      }
+      finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDataAndAssignData();
   }, []);
 
   return (
@@ -356,20 +419,21 @@ const Page = () => {
       colors={["#20115B", "#C876FF"]}>
       <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
         {!loading && (
-          <Animated.View style={styles.statsContainer} entering={SlideInUp.delay(100)}>
-            <View style={styles.timelineNav}>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Daily</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Weekly</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText}>Monthly</Text>
-              </TouchableOpacity>
-            </View>
+          <Animated.ScrollView style={styles.statsContainer} entering={SlideInUp.delay(100)}>
             <View style={styles.moodFeedbackContainer}>
-              <Text style={defaultStyles.subTitleHeader}>Daily Analysis</Text>
+              <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
+              <View style={styles.timelineNav}>
+                <TouchableOpacity style={styles.button}>
+                  <Text style={styles.buttonText}>Daily</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button}>
+                  <Text style={styles.buttonText}>Weekly</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button}>
+                  <Text style={styles.buttonText}>Monthly</Text>
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
                 {chartData && (
                   <BarChart
@@ -383,14 +447,17 @@ const Page = () => {
                     chartConfig={{
                       backgroundColor: Colors.primary,
                       backgroundGradientFrom: Colors.primary,
-                      backgroundGradientTo: Colors.primary,
+                      backgroundGradientTo: Colors.pink,
+                      backgroundGradientFromOpacity: 0,
+                      backgroundGradientToOpacity: 0,
                       color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                       labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                      barPercentage: 4,
                       style: {
                         borderRadius: 16,
                       },
                       propsForBackgroundLines: {
-                        strokeWidth: 0
+                        strokeWidth: 1
                       },
                       decimalPlaces: 0,
                     }}
@@ -400,25 +467,23 @@ const Page = () => {
                     }}
                   />
                 )}
-
               </View>
             </View>
             {trackingPoints !== undefined && (
               <View style={styles.trackingNav}>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[0].name)}>
+                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[0])}>
                   <Text style={styles.smallButtonText}>{trackingPoints[0].name}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[1].name)}>
+                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[1])}>
                   <Text style={styles.smallButtonText}>{trackingPoints[1].name}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[2].name)}>
+                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[2])}>
                   <Text style={styles.smallButtonText}>{trackingPoints[2].name}</Text>
                 </TouchableOpacity>
               </View>
             )}
-
-
-          </Animated.View>
+            {}
+          </Animated.ScrollView>
         )}
         {loading && (
           <Animated.View style={styles.loadingPopup} entering={SlideInDown.delay(200)} exiting={SlideInUp.delay(100)}>
@@ -453,9 +518,10 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   moodFeedbackContainer: {
-    flex: 1,
+    //flex: 1,
     flexDirection: 'column',
     justifyContent: "flex-start",
+    paddingTop: 20
     //backgroundColor: "gray"
     //width: "90%",
     //paddingLeft: 10,
@@ -469,29 +535,30 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     //backgroundColor: "pink",
     alignSelf: "center",
-    paddingTop: 20
   },
   timelineNav: {
     flexDirection: "row",
     justifyContent: "flex-start",
     //padding: 5,
-    paddingBottom: 30,
-    gap: 10
+    gap: 10,
+    paddingBottom: 15,
+    paddingTop: 15,
 
     //backgroundColor: "gray"
   },
   trackingNav: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     //padding: 5,
-    paddingBottom: 30,
+    paddingBottom: 15,
+    paddingTop: 5,
     gap: 10
 
     //backgroundColor: "gray"
   },
   button: {
-    backgroundColor: Colors.pink,
-    padding: 15,
+    backgroundColor: Colors.transparentWhite,
+    padding: 12,
     //alignSelf: "center",
     borderRadius: 10,
     elevation: 10,
@@ -505,8 +572,8 @@ const styles = StyleSheet.create({
     fontSize: 12
   },
   smallButton: {
-    backgroundColor: Colors.primary,
-    padding: 15,
+    backgroundColor: Colors.transparentWhite,
+    padding: 12,
     //alignSelf: "center",
     borderRadius: 10,
     elevation: 10,
@@ -519,6 +586,9 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     fontSize: 12
   },
+  header: {
+    paddingBottom: 10
+  }
 
 })
 
