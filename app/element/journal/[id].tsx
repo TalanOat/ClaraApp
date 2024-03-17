@@ -8,10 +8,14 @@ import { defaultStyles } from '@/constants/Styles'
 import Colors from '@/constants/Colors';
 
 import Animated, {
+  FadeInDown,
+  FadeOutUp,
   SlideInDown,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
+
+
 
 interface Journal {
   id: number;
@@ -25,12 +29,11 @@ const Page = () => {
   const [journalEntry, setJournalEntry] = useState<Journal>();
   const [textInputValue, setTextInputValue] = useState('');
   const [text, setText] = useState('');
-
+  const [flashNotification, setFlashNotification] = useState(false);
 
   const handleInputChange = (input: string) => {
     setTextInputValue(input);
   }
-
   //the input ref is used to get a reference to the textinput component
   //  to ensure the users keyboard is opened on the page load and their
   //  cursor is at the top of the input box
@@ -41,8 +44,6 @@ const Page = () => {
       textInputRef.current?.focus();
     }, 1000);
   }, []);
-
-
 
   useEffect(() => {
     const fetchEntry = async () => {
@@ -73,22 +74,29 @@ const Page = () => {
         await databaseService.updateJournalEntry(journalEntry.id, "Journal Entry", textInputValue);
         //TODO: possibly add loading
         //TODO: visual feedback to the user that it has worked
+        setFlashNotification(true);
+        setTimeout(() => {
+          setFlashNotification(false);
+        }, 1000);
       }
       else {
         //TODO:  (VFB) journal not loaded yet
       }
-    } catch (error) {
+    } 
+    catch (error) {
       console.error("update error:", error);
+      setFlashNotification(true);
+      setTimeout(() => {
+        setFlashNotification(false);
+      }, 1000);
     }
   }
 
   const handleUpdate = (e: any) => {
     e.preventDefault();
-    console.log("handle submit")
-    databaseUpdateJournalEntry()
+    console.log("handle submit");
+    databaseUpdateJournalEntry();
   }
-
-
 
   return (
     <LinearGradient
@@ -100,7 +108,7 @@ const Page = () => {
           <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
           <Text style={styles.elementTitle}>{journalEntry?.title}</Text>
           <TouchableOpacity onPress={(e) => { handleUpdate(e); }} >
-            <MaterialCommunityIcons name="check" size={40} color="white"  />
+            <MaterialCommunityIcons name="check" size={40} color="white" />
           </TouchableOpacity>
         </View>
         <View style={styles.contentRow}>
@@ -114,6 +122,11 @@ const Page = () => {
           />
         </View>
       </Animated.ScrollView>
+      {flashNotification && (
+        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+          <Text style={flashMessage.innerText}>Success</Text>
+        </Animated.View>
+      )}
     </LinearGradient>
   )
 }
@@ -156,6 +169,29 @@ const styles = StyleSheet.create({
   contentRow: {
     padding: 20
   },
+})
+
+const flashMessage = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  innerText: {
+    padding: 20,
+    color: "white",
+    fontFamily: "mon-b",
+    fontSize: 15,
+
+    backgroundColor: Colors.pink,
+    borderRadius: 10,
+    //margin: 50
+  }
 })
 
 

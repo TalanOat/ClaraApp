@@ -24,9 +24,13 @@ import Animated, {
   SlideInDown,
   SlideInUp,
   FadeInDown,
+  FadeInUp,
+  SlideInLeft,
+  SlideInRight,
 } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-
+import nlp from 'compromise'
 
 interface Journal {
   id: number;
@@ -46,11 +50,7 @@ interface MoodJournal {
   figure3: number;
 }
 
-// const MyBarChart = () => {
-//   return (
-
-//   );
-// };
+//! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
 
 //! TODO implement loading state and animation
 const Page = () => {
@@ -85,6 +85,7 @@ const Page = () => {
   const [journalEntry, setJournalEntry] = useState<Journal>()
   const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   const fetchLastEntry = async () => {
     //console.log("fetching")
@@ -192,8 +193,6 @@ const Page = () => {
     return matchingKeys;
   }
 
-  /* ---------------------- end of text journal analysis ---------------------- */
-
   /* -------------------------- mood journal analysis ------------------------- */
 
   const [trackingPoints, setTrackingPoints] = useState<TrackingValue[]>()
@@ -210,14 +209,14 @@ const Page = () => {
     if (trackingValue.invertScore) {
       actualValue = 100 - actualValue;
     }
-    //console.log("trackingValueName: ", trackingValue.name, "trackingValueScore: ", trackingValue.score)
-    if (actualValue < 25) { 
+
+    if (actualValue <= 25) {
       trackingValue.score = "very_positive";
-    } else if (actualValue < 50) { 
+    } else if (actualValue < 50) {
       trackingValue.score = "positive";
-    } else if (actualValue >= 50) {  
+    } else if (actualValue < 75) {
       trackingValue.score = "negative";
-    } else if (actualValue >= 75) {  
+    } else {
       trackingValue.score = "very_negative";
     }
   }
@@ -247,7 +246,7 @@ const Page = () => {
 
       results.push(trackingValue);
     }
-    console.log("results", results)
+    //console.log("results", results)
     //setTrackingPoints(results);
     return results
 
@@ -256,17 +255,17 @@ const Page = () => {
 
   /* -------------------------- emotion Bubble setup -------------------------- */
 
-  const [wordBubble, setWordBubble] = useState([]);
+  const [wordBubble, setWordBubble] = useState<string[]>([]);
 
   const assignWordBubble = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
-    console.log("inputTrackingPoints: ", inputTrackingPoints)
+    //console.log("inputTrackingPoints: ", inputTrackingPoints)
 
     //* if (word) <= -2 : very negative
     //* if (word) <= -1 : negative
     //* if (word) >=  1 : positive
     //* if (word) >=  2 : very positive
     const inputTrackingScore = inputTrackingPoints.score;
-    console.log("inputTrackingScore: ", inputTrackingScore)
+    //console.log("inputTrackingScore: ", inputTrackingScore)
 
     let searchValue = 0;
 
@@ -289,14 +288,15 @@ const Page = () => {
 
     const semanticAnalysis = async (searchValue: number) => {
       const matchingKeys = await semanticSearch(journalEntryInput.body, searchValue);
-      //console.log("matchingKeys: ", matchingKeys)
+      console.log("matchingKeys: ", matchingKeys)
       return (matchingKeys);
-      
+
     };
 
     const tempReturn = await semanticAnalysis(searchValue);
-    if(tempReturn){
-      console.log("tempReturn: ", tempReturn)
+    if (tempReturn) {
+      //console.log("tempReturn: ", tempReturn)
+      setWordBubble(tempReturn)
     }
 
   }
@@ -354,6 +354,55 @@ const Page = () => {
     setSelectedTracking(selectedTrackingInput);
   };
 
+  /* --------------------------- conjuctive analysis -------------------------- */
+
+  //! ToDO allow for multiple sentences!
+  const [conjunctiveSentence, setConjunctiveSentence] = useState<string[]>();
+
+  //* SEMANTIC ANALYSIS
+  const semanticScore = (textInput: string) => {
+    var Sentiment = require('sentiment');
+    var sentiment = new Sentiment();
+    var result = sentiment.analyze(textInput);
+    const semanticCalculationArray = result.score;
+
+    return semanticCalculationArray;
+  }
+
+  const testConjunctionAndSplit = () => {
+    setLoading(true);
+
+    const testPhrase = "I hate fish. I'm happy because I went to the gym, but I felt so lazy because I was only there for 30 minutes. I like fish";
+    const doc = nlp(testPhrase);
+    const conjunctiveSentence = doc.if('but').text();
+    const splitIndex = conjunctiveSentence.indexOf(' but ');
+
+    if (conjunctiveSentence.length > 0) {
+      const splitSentence = conjunctiveSentence.split(' but ');
+      const [before, after] = splitSentence
+      const middle = 'but';
+
+      const beforeScore = semanticScore(before);
+      const afterScore = semanticScore(after);
+
+      //console.log("beforeSemantics :", beforeScore);
+      //console.log("afterSemantics :", afterScore);
+
+      if (beforeScore >= 1 && afterScore <= -1) {
+        //console.log("flagged string")
+        setLoading(false);
+        //const returnedSentence = 
+        return [before, middle, after];
+
+      }
+    }
+    else {
+      console.log("no 'but' found!");
+      setLoading(false);
+      return (false)
+    }
+  }
+
   /* -------------- other code - including the first load useEffect ------------- */
 
   const fetchData = async () => {
@@ -402,7 +451,6 @@ const Page = () => {
 
       }
       catch (error) {
-
         console.error("Error fetching data:", error);
       }
       finally {
@@ -411,7 +459,15 @@ const Page = () => {
     };
 
     fetchDataAndAssignData();
+
+    const positiveToNegative = testConjunctionAndSplit();
+    if (positiveToNegative) {
+      //console.log("testing here!! ", positiveToNegative )
+      setConjunctiveSentence(positiveToNegative);
+    }
+
   }, []);
+
 
   return (
     <LinearGradient
@@ -422,6 +478,7 @@ const Page = () => {
           <Animated.ScrollView style={styles.statsContainer} entering={SlideInUp.delay(100)}>
             <View style={styles.moodFeedbackContainer}>
               <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
+              {/* Timeline Navigation - (Daily, weekly, monthly) */}
               <View style={styles.timelineNav}>
                 <TouchableOpacity style={styles.button}>
                   <Text style={styles.buttonText}>Daily</Text>
@@ -435,6 +492,7 @@ const Page = () => {
               </View>
 
               <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
+                {/* Bar Chart */}
                 {chartData && (
                   <BarChart
                     data={chartData}
@@ -471,18 +529,56 @@ const Page = () => {
             </View>
             {trackingPoints !== undefined && (
               <View style={styles.trackingNav}>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[0])}>
-                  <Text style={styles.smallButtonText}>{trackingPoints[0].name}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[1])}>
-                  <Text style={styles.smallButtonText}>{trackingPoints[1].name}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.smallButton} onPress={() => handleTrackingPress(trackingPoints[2])}>
-                  <Text style={styles.smallButtonText}>{trackingPoints[2].name}</Text>
-                </TouchableOpacity>
+                {trackingPoints.map((trackingPoint, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.button,
+                      selectedTracking?.name === trackingPoint.name ? styles.selectedBubble : null
+                    ]}
+                    onPress={() => handleTrackingPress(trackingPoint)}
+                  >
+                    <Text style={styles.buttonText}>{trackingPoint.name}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
-            {}
+            <View style={styles.textIconRow}>
+              <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
+              <Animated.View entering={SlideInLeft.delay(50)} >
+                <TouchableOpacity >
+                  <MaterialCommunityIcons name='cog'
+                    color={"white"}
+                    size={30}>
+                  </MaterialCommunityIcons>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+
+            <Animated.View style={styles.wordBubbleContainer} entering={FadeInDown.delay(200)}>
+              {wordBubble.map((word) => (
+                <Animated.View key={word} entering={SlideInLeft.delay(50)}>
+                  <TouchableOpacity style={styles.wordBubble} >
+                    <Text style={styles.buttonText}>{word}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </Animated.View>
+            <Text style={[defaultStyles.subTitleHeader, styles.header]}>Conjuctive Analysis</Text>
+            {conjunctiveSentence && (
+              <View style={styles.conjunctiveContainer}>
+                <Text style={defaultStyles.paragraph}>You might have turned a positive into a negative</Text>
+                <View style={[styles.conjunctiveElement, styles.positive]}>
+                  <Text style={[styles.analysisText]}>{conjunctiveSentence[0]}</Text>
+                </View>
+                <View style={[styles.conjunctiveElement, styles.but]}>
+                  <Text style={[styles.analysisText]}>{conjunctiveSentence[1]}</Text>
+                </View>
+                <View style={[styles.conjunctiveElement, styles.negative]}>
+                  <Text style={[styles.analysisText]}>{conjunctiveSentence[2]}</Text>
+                </View>
+              </View>
+            )}
           </Animated.ScrollView>
         )}
         {loading && (
@@ -518,52 +614,47 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   moodFeedbackContainer: {
-    //flex: 1,
     flexDirection: 'column',
     justifyContent: "flex-start",
     paddingTop: 20
-    //backgroundColor: "gray"
-    //width: "90%",
-    //paddingLeft: 10,
-    //paddingRight: 10,
-
   },
   chartContainer: {
-    //flex: 1,
     width: '100%',
     borderRadius: 16,
     overflow: "hidden",
-    //backgroundColor: "pink",
     alignSelf: "center",
   },
   timelineNav: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    //padding: 5,
     gap: 10,
     paddingBottom: 15,
     paddingTop: 15,
-
-    //backgroundColor: "gray"
   },
   trackingNav: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    //padding: 5,
     paddingBottom: 15,
     paddingTop: 5,
     gap: 10
-
-    //backgroundColor: "gray"
   },
   button: {
     backgroundColor: Colors.transparentWhite,
     padding: 12,
-    //alignSelf: "center",
     borderRadius: 10,
     elevation: 10,
-    //flex: 1
-    //opacity: 0.5
+  },
+  wordBubble: {
+    backgroundColor: Colors.transparentPrimary,
+    padding: 12,
+    borderRadius: 10,
+    elevation: 10,
+  },
+  selectedBubble: {
+    backgroundColor: Colors.pink,
+    padding: 12,
+    borderRadius: 10,
+    elevation: 10,
   },
   buttonText: {
     color: "white",
@@ -571,23 +662,57 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     fontSize: 12
   },
-  smallButton: {
-    backgroundColor: Colors.transparentWhite,
-    padding: 12,
-    //alignSelf: "center",
-    borderRadius: 10,
-    elevation: 10,
-    //flex: 1
-    //opacity: 0.5
-  },
-  smallButtonText: {
-    color: "white",
-    fontFamily: "mon-b",
-    alignSelf: "center",
-    fontSize: 12
-  },
   header: {
     paddingBottom: 10
+  },
+  wordBubbleContainer: {
+    justifyContent: "flex-start",
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+    paddingTop: 10,
+    paddingBottom: 20
+  },
+  wordBubbleAdd: {
+    backgroundColor: Colors.transparentPrimary,
+    padding: 12,
+    borderRadius: 10,
+    elevation: 10,
+    alignSelf: "flex-end"
+  },
+  textIconRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flex: 1,
+    paddingBottom: 10,
+    paddingTop: 20
+  },
+  positive: {
+    backgroundColor: "rgba(98, 171, 96, 0.8)"
+  },
+  but: {
+    backgroundColor: "rgba(208, 187, 1, 0.8)"
+  },
+  negative: {
+    backgroundColor: "rgba(156, 50, 50, 0.8)"
+  },
+  analysisText: {
+    color: "white",
+    fontFamily: "mon-sb",
+    
+  },
+  conjunctiveContainer: {
+    //backgroundColor: Colors.transparentWhite,
+    //padding: 10'
+    paddingTop: 10,
+    justifyContent: "space-evenly",
+    gap: 10
+  },
+  conjunctiveElement: {
+    backgroundColor: Colors.transparentWhite,
+    padding: 10,
+    borderRadius: 16
   }
 
 })

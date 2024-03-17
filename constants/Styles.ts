@@ -38,6 +38,10 @@ export const defaultStyles = StyleSheet.create({
     buttonText: {
         color: "white",
         fontFamily: "mon-b",
+    },
+    paragraph: {
+        color: "white",
+        fontFamily: "mon",
     }
 
     

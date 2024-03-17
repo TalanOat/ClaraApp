@@ -4,5 +4,5 @@ export default {
   white: '#FFFFFF',
   offWhite: "#D9D9D9",
   transparentWhite: 'rgba(255, 255, 255, 0.15)',
-
+  transparentPrimary: 'rgba(32, 17, 91, 0.15)',
 };
