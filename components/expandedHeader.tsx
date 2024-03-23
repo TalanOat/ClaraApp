@@ -1,18 +1,82 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigation, Stack } from 'expo-router'
 import Colors from '@/constants/Colors'
 
+import moment from 'moment';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Platform } from 'react-native';
+
+import Animated, {
+    ZoomIn,
+} from 'react-native-reanimated';
+
+
+import { DateContext } from './contexts/dateProvider'
+
+
 const ExpandedHeader = () => {
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    //Date Context set
+    const { headerDate, setHeaderDate } = useContext(DateContext)
+
+    useEffect(() => {
+        if (Platform.OS === "ios") {
+            setShowDatePicker(true);
+        }
+    }, []);
+
+    const toggleDatePicker = () => {
+        if (Platform.OS !== "ios") {
+            setShowDatePicker(!showDatePicker)
+        }
+    }
+    const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+        const currentDate = selectedDate || date;
+        toggleDatePicker();
+        setDate(currentDate);
+        setHeaderDate({
+            date: currentDate
+        })
+    };
+
+    const formatDate = (date: Date) => moment(date).format("dddd, Do MMM");
+
+    
 
     return (
         <View style={styles.container}>
             <View style={styles.actionRow}>
-                <View style={styles.dateRow}>
-                    <Text style={styles.day}>Sunday</Text>
-                    <Text style={styles.date}>4th Feb</Text>
-                </View>
+                {formatDate && Platform.OS === "ios" && (
+                    <Animated.View entering={ZoomIn.delay(200)} style={styles.dateRow}>
+                        <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                onChange={handleDateChange}
+                                display={"calendar"}
+                                style={styles.iosDatePicker}
+                            />
+                        )}
+                    </Animated.View>
+                )}
+                {formatDate && Platform.OS === "android" && (
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateRow}>
+                        <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
+                        <Text style={styles.date}>{formatDate(date).split(',')[1]}</Text>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                onChange={handleDateChange}
+                                display="calendar"
+                            />
+                        )}
+                    </TouchableOpacity>
+                )}
                 <Link href={'/element/settings'} asChild style={styles.touchAreaButton}>
                     <TouchableOpacity >
                         <MaterialCommunityIcons name='cog'
@@ -23,7 +87,6 @@ const ExpandedHeader = () => {
                     </TouchableOpacity>
                 </Link>
             </View>
-
         </View>
     )
 }
@@ -46,7 +109,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "flex-start",
         flex: 1,
-        gap: 10,
+        gap: 5,
         padding: 15,
 
     },
@@ -67,6 +130,9 @@ const styles = StyleSheet.create({
     },
     settingsButton: {
 
+    },
+    iosDatePicker: {
+        margin: 0
     }
 })
 

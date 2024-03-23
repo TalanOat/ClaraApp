@@ -1,8 +1,10 @@
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, Alert, } from 'react-native'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React, { useState, useEffect, useRef } from 'react'
-import { defaultStyles } from '@/constants/Styles'
 import { Link, useNavigation } from 'expo-router';
+//import DayView from '@/components/dayView';
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { defaultStyles } from '@/constants/Styles'
 import Colors from '@/constants/Colors';
 import Animated, {
   useSharedValue,
@@ -14,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
+
+import { DateContext } from '@/components/contexts/dateProvider';
 
 interface UserElement {
   id: string;
@@ -48,8 +52,8 @@ const ProgressBar: React.FunctionComponent<{
     if (isAnimating) {
       animatedWidth.value = 0;
       animatedWidth.value = withTiming((progressPercentage * barWidth) / 100, {
-        duration: 500,
-        easing: Easing.linear
+        duration: 400,
+        easing: Easing.inOut(Easing.quad)
       });
 
     }
@@ -89,9 +93,31 @@ const ProgressBar: React.FunctionComponent<{
   )
 }
 
-const DayView = ({ loadAnimation }: {
-  loadAnimation: boolean;
-}) => {
+
+
+const Page = () => {
+  /* -------------------------- Navigation page logic ------------------------- */
+  const navigation = useNavigation();
+  const [pageFocused, setpageFocused] = useState(false);
+
+  //listens for navigation changes, carries out code when this page is focused
+  useEffect(() => {
+    const navigationListener = navigation.addListener("focus", () => {
+      setpageFocused(true);
+      setTimeout(() => setpageFocused(false), 1000);
+    });
+
+    const blurListener = navigation.addListener("blur", () => {
+      setpageFocused(false);
+    });
+
+    return () => {
+      navigation.removeListener("focus", navigationListener);
+      navigation.removeListener("blur", blurListener);
+    };
+  }, [navigation]);
+
+  /* ------------------------------- daviewLogic ------------------------------ */
 
   const [loading, setLoading] = useState(false);
   const listRef = useRef<FlatList>(null);
@@ -101,20 +127,17 @@ const DayView = ({ loadAnimation }: {
   const [fetchComplete, setFetchComplete] = useState(false);
 
   useEffect(() => {
-    //console.log()
-    if (loadAnimation) {
-      //onRefresh()
-      setAnimating(true);
+    if (pageFocused) {
+      onRefresh();
     }
-    else {
+     else {
       setAnimating(false);
     }
-  }, [loadAnimation])
+  }, [pageFocused])
 
 
   const fetchJournalEntries = async () => {
     setLoading(true);
-
     try {
       const databaseResult = await databaseService.getAllJournalEntries();
       const entries: UserElement[] = databaseResult.map(journal => ({
@@ -133,11 +156,11 @@ const DayView = ({ loadAnimation }: {
     }
   }
 
-  const handleDeleteEntry = (title: string, id: string) => {
+  const handleDeleteJournalEntry = (title: string, id: string) => {
     //(1) First get the id without the prefix
     const idWithNoPreix = splitId(id).id;
     console.log(idWithNoPreix)
-    Alert.alert('Warning', `Are you sure you want to delete this entry: ${title}`, [
+    Alert.alert('Warning', `Are you sure you want to delete this journal entry`, [
       {
         text: 'Cancel',
         onPress: () => console.log('Cancel Pressed'),
@@ -146,6 +169,25 @@ const DayView = ({ loadAnimation }: {
       {
         text: 'OK', onPress: () => {
           databaseService.deleteJournalEntryByID(idWithNoPreix)
+          onRefresh();
+        }
+      },
+    ]);
+  }
+
+  const handleDeleteMoodJournalEntry = (id: string) => {
+    //(1) First get the id without the prefix
+    const idWithNoPreix = splitId(id).id;
+    console.log(idWithNoPreix)
+    Alert.alert('Warning', `Are you sure you want to delete this mood journal entry`, [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {
+        text: 'OK', onPress: () => {
+          databaseService.deleteMoodJournalEntryByID(idWithNoPreix)
           onRefresh();
         }
       },
@@ -173,7 +215,6 @@ const DayView = ({ loadAnimation }: {
   const fetchMoodJournalEntries = async () => {
     setLoading(true);
     try {
-      console.log("fetching")
       const tempMoodJournals = await databaseService.getAllMoodJournals();
       if (tempMoodJournals) {
         const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
@@ -212,37 +253,43 @@ const DayView = ({ loadAnimation }: {
     return { prefix, id };
   }
 
+  // Fetch data once on initial render
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchJournalEntries();
-        await fetchMoodJournalEntries();
-      }
+        setLoading(true);
+        await Promise.all([fetchJournalEntries(), fetchMoodJournalEntries()]);
+      } 
       catch (error) {
         console.error("Error fetching data:", error);
-      }
+      } 
       finally {
-        setFetchComplete(true);
-        setTimeout(() => {
-          setAnimating(true);
-          setAnimating(false);
-        }, 1000);
+        setLoading(false);
+        setAnimating(true);
+        setTimeout(() => setAnimating(false), 500);
       }
-    }
+    };
     fetchData();
   }, []);
+
 
   //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading
   // to false
 
-  //TODO: allow for mood Journals to be deleted
+
+  const {headerDate, setHeaderDate} = useContext(DateContext)
+  useEffect(() => {
+    console.log("headerDate: ", headerDate)
+  },[headerDate])
+
+  /* -------------------- renderRows (for each userElement) ------------------- */
 
   const renderRow: ListRenderItem<UserElement> = ({ item }) => {
     switch (item.type) {
       case 'journal':
         return (
           <Link style={styles.linkContainer} href={`/element/journal/${splitId(item.id).id}`} asChild>
-            <TouchableOpacity style={styles.listElement} onLongPress={() => handleDeleteEntry(item.title, item.id)}>
+            <TouchableOpacity style={styles.listElement} onLongPress={() => handleDeleteJournalEntry(item.title, item.id)}>
               <Animated.View>
                 <View style={styles.topRow}>
                   <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
@@ -256,7 +303,7 @@ const DayView = ({ loadAnimation }: {
       case 'mood':
         return (
           <Link style={styles.linkContainer} href={`/element/moodJournal/${splitId(item.id).id}`} asChild>
-            <TouchableOpacity style={styles.listElement}>
+            <TouchableOpacity style={styles.listElement} onLongPress={() => handleDeleteMoodJournalEntry(item.id)}>
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
                 <Text style={styles.elementTitle}>Mood Journal</Text>
@@ -304,22 +351,29 @@ const DayView = ({ loadAnimation }: {
   };
 
   return (
-    <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
-      <Animated.FlatList
-        renderItem={renderRow}
-        ref={listRef}
-        data={loading ? [] : userElements}
-        style={styles.listContainer}
-        entering={SlideInUp.delay(50)}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-      >
-      </Animated.FlatList>
-    </View>
+    <LinearGradient
+      style={styles.container}
+      colors={["#20115B", "#C876FF"]}>
+      <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
+        <Animated.FlatList
+          renderItem={renderRow}
+          ref={listRef}
+          data={loading ? [] : userElements}
+          style={styles.listContainer}
+          entering={SlideInUp.delay(50)}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        >
+        </Animated.FlatList>
+      </View>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
   linkContainer: {
     padding: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -366,4 +420,4 @@ const styles = StyleSheet.create({
 
 })
 
-export default DayView
+export default Page

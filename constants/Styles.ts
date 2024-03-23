@@ -33,7 +33,7 @@ export const defaultStyles = StyleSheet.create({
         padding: 15,
         alignSelf: 'flex-start',
         borderRadius: 10,
-        elevation: 10
+        // elevation: 10
     },
     buttonText: {
         color: "white",

@@ -1,7 +1,8 @@
 import { View, Text } from 'react-native'
-import React from 'react'
+import React, { useContext, useEffect } from 'react'
 
-const Page = () => {
+
+const Page = () => { 
   return (
     <View>
       <Text>Goals</Text>

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, ViewStyle } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { databaseService } from '@/model/databaseService'
@@ -27,10 +27,13 @@ import Animated, {
   FadeInUp,
   SlideInLeft,
   SlideInRight,
+  useAnimatedStyle,
+  ZoomIn,
 } from 'react-native-reanimated';
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import nlp from 'compromise'
+import nlp from 'compromise';
 
 interface Journal {
   id: number;
@@ -49,6 +52,7 @@ interface MoodJournal {
   trackingName3: string;
   figure3: number;
 }
+
 
 //! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
 
@@ -137,42 +141,7 @@ const Page = () => {
     }
   };
 
-  /* ---------------------------- journal analysis ---------------------------- */
 
-  //* Probabiliy analysis
-  interface WordCount {
-    [word: string]: number;
-  }
-
-  function compareDescending(a: [string, number], b: [string, number]): number {
-    //only compare the second index being the count
-    const [, countA] = a;
-    const [, countB] = b;
-    return countB - countA;
-  }
-
-  //! Might not be useful anymore
-  const analyiseWordProbabilty = async (text: string) => {
-    const wordCounts: WordCount = {};
-    //(1) split the input into separate strings for each word and remove (".")
-    const words = text.toLowerCase()
-      .split(/\s+/)
-      .map(word => word.replace(/\.$/, ''));
-
-    //(2) count the word occurrences
-    words.forEach(word => {
-      if (!wordCounts[word]) {
-        wordCounts[word] = 0;
-      }
-      wordCounts[word]++;
-    });
-
-    //(3) sort the words based off of the occurance (decending order)
-    const sortedWordCounts = Object.entries(wordCounts).sort(compareDescending);
-    //console.log("sortedWordCounts: ", sortedWordCounts)
-
-    return sortedWordCounts;
-  }
 
   //* SEMANTIC ANALYSIS
   const semanticSearch = async (journalBody: string, searchScore: number) => {
@@ -305,7 +274,7 @@ const Page = () => {
 
   const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
     let filteredTrackingPoints;
-
+    setLoading(true);
     //if no button has been pressed...
     if (selectedTracking?.name === undefined) {
       // select the first point
@@ -329,6 +298,7 @@ const Page = () => {
       labels: trackingLabels,
       datasets: [{ data: trackingValues }]
     });
+    setLoading(false);
   };
 
   const [chartWidth, setChartWidth] = useState(0);
@@ -403,6 +373,84 @@ const Page = () => {
     }
   }
 
+  /* ---------------------------- journal analysis ---------------------------- */
+
+  interface JournalTheme {
+    peopleAndActorsAnalysis: [string, number][]
+    placesAnalysis: [string, number][]
+    activitiesAnalysis: [string, number][]
+  }
+
+  const [journalThemes, setJournalThemes] = useState<JournalTheme>()
+
+  //* Probabiliy analysis
+  interface WordCount {
+    [word: string]: number;
+  }
+
+  function compareDescending(a: [string, number], b: [string, number]): number {
+    //only compare the second index being the count
+    const [, countA] = a;
+    const [, countB] = b;
+    return countB - countA;
+  }
+
+  const analyiseWordProbabilty = (text: string) => {
+    const wordCounts: WordCount = {};
+    //(1) split the input into separate strings for each word and remove (".")
+    const words = text.toLowerCase()
+      .split(/\s+/)
+    //.map(word => word.replace(/\.$/, ''));
+
+    //(2) count the word occurrences
+    words.forEach(word => {
+      if (!wordCounts[word]) {
+        wordCounts[word] = 0;
+      }
+      wordCounts[word]++;
+    });
+
+    //(3) sort the words based off of the occurance (decending order)
+    const sortedWordCounts = Object.entries(wordCounts).sort(compareDescending);
+    //console.log("sortedWordCounts: ", sortedWordCounts)
+
+    return sortedWordCounts;
+  }
+
+
+  const applyThemeAnalysis = (journalBody: string) => {
+    const doc = nlp(journalBody);
+    const filteredPeople = doc.match("#Person")
+      .out('array');
+
+    const filteredActors = doc.match("#Actor")
+      .not('my')
+      .out('array');
+
+    const filteredPlaces = doc.match('#Place')
+      .out('array');
+
+    const filteredActivities = doc.match("#Activity")
+      .not('')
+      .out('array')
+
+    console.log("filteredActivities: ", filteredActivities)
+
+    // combine the people and actors
+    const combinedPeopleAndActors = filteredPeople.concat(filteredActors);
+
+    const peopleAndActorsAnalysis = combinedPeopleAndActors.length > 0 ?
+      analyiseWordProbabilty(combinedPeopleAndActors.join(' ')) : [];
+
+    const placesAnalysis = filteredPlaces.length > 0 ?
+      analyiseWordProbabilty(filteredPlaces.join(' ')) : [];
+
+    const activitiesAnalysis = filteredActivities.length > 0 ?
+      analyiseWordProbabilty(filteredActivities.join(' ')) : [];
+
+    return [peopleAndActorsAnalysis, placesAnalysis, activitiesAnalysis]
+  }
+
   /* -------------- other code - including the first load useEffect ------------- */
 
   const fetchData = async () => {
@@ -436,19 +484,33 @@ const Page = () => {
     const fetchDataAndAssignData = async () => {
       try {
         const fetchedObject = await fetchData();
+        //If the fetchData returns two promises set up the data accordingly 
         if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
+          //useState variable setup for which is used for the toggle buttons
           setJournalEntry(fetchedObject.journalEntryResult)
           setMoodJournalEntry(fetchedObject.moodJournalResult)
 
+          //Inital Bar Chart setup
           const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult)
           setTrackingPoints(returnedTrackingPoints);
-
           const defaultSelectedValue = assignChartData(returnedTrackingPoints);
+
+          //Word Bubble setup - using semantic Analysis modules
           if (defaultSelectedValue) {
             assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue)
           }
-        }
 
+          //Theme Analysis setup - using multiple Alogrithmns
+          const themesArray = applyThemeAnalysis(fetchedObject.journalEntryResult.body);
+          //console.log("themesArray: ", themesArray)
+          const themeObject: JournalTheme = {
+            peopleAndActorsAnalysis: themesArray[0],
+            placesAnalysis: themesArray[1],
+            activitiesAnalysis: themesArray[2]
+          }
+          setJournalThemes(themeObject);
+          console.log("themeObject: ", themeObject)
+        }
       }
       catch (error) {
         console.error("Error fetching data:", error);
@@ -475,7 +537,7 @@ const Page = () => {
       colors={["#20115B", "#C876FF"]}>
       <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
         {!loading && (
-          <Animated.ScrollView style={styles.statsContainer} entering={SlideInUp.delay(100)}>
+          <Animated.ScrollView style={styles.statsContainer} entering={ZoomIn.delay(100)}>
             <View style={styles.moodFeedbackContainer}>
               <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
               {/* Timeline Navigation - (Daily, weekly, monthly) */}
@@ -564,25 +626,76 @@ const Page = () => {
                 </Animated.View>
               ))}
             </Animated.View>
-            <Text style={[defaultStyles.subTitleHeader, styles.header]}>Conjuctive Analysis</Text>
+            {journalThemes && (
+              <View>
+                <Text style={[defaultStyles.subTitleHeader, styles.header]}>Key Themes</Text>
+                <View style={styles.themesContainer}>
+                  {journalThemes.activitiesAnalysis.length > 0 && (
+                    <View style={styles.themeTypeContainer}>
+                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Activities</Text>
+                      <View style={styles.themeWordsContainer}>
+                        {journalThemes.activitiesAnalysis.map(([word, count]) => (
+                          <View key={word} style={styles.wordBubble}>
+                            <Text style={styles.buttonText} >
+                              {word}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                  {journalThemes.peopleAndActorsAnalysis.length > 0 && (
+                    <View style={styles.themeTypeContainer}>
+                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>People</Text>
+                      <View style={styles.themeWordsContainer}>
+                        {journalThemes.peopleAndActorsAnalysis.map(([word, count]) => (
+                          <View key={word} style={styles.wordBubble}>
+                            <Text style={styles.buttonText} >
+                              {word}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                  {journalThemes.placesAnalysis.length > 0 && (
+                    <View style={styles.themeTypeContainer}>
+                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Places</Text>
+                      <View style={styles.themeWordsContainer}>
+                        {journalThemes.placesAnalysis.map(([word, count]) => (
+                          <View key={word} style={styles.wordBubble}>
+                            <Text style={styles.buttonText} >
+                              {word}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
             {conjunctiveSentence && (
-              <View style={styles.conjunctiveContainer}>
-                <Text style={defaultStyles.paragraph}>You might have turned a positive into a negative</Text>
-                <View style={[styles.conjunctiveElement, styles.positive]}>
-                  <Text style={[styles.analysisText]}>{conjunctiveSentence[0]}</Text>
-                </View>
-                <View style={[styles.conjunctiveElement, styles.but]}>
-                  <Text style={[styles.analysisText]}>{conjunctiveSentence[1]}</Text>
-                </View>
-                <View style={[styles.conjunctiveElement, styles.negative]}>
-                  <Text style={[styles.analysisText]}>{conjunctiveSentence[2]}</Text>
+              <View>
+                <Text style={[defaultStyles.subTitleHeader, styles.header]}>Conjuctive Analysis</Text>
+                <View style={styles.conjunctiveContainer}>
+                  <Text style={[defaultStyles.paragraph, styles.description]}>You might have turned a positive into a negative</Text>
+                  <View style={[styles.conjunctiveElement, styles.positive]}>
+                    <Text style={[styles.analysisText]}>{conjunctiveSentence[0]}</Text>
+                  </View>
+                  <View style={[styles.conjunctiveElement, styles.but]}>
+                    <Text style={[styles.analysisText]}>{conjunctiveSentence[1]}</Text>
+                  </View>
+                  <View style={[styles.conjunctiveElement, styles.negative]}>
+                    <Text style={[styles.analysisText]}>{conjunctiveSentence[2]}</Text>
+                  </View>
                 </View>
               </View>
             )}
           </Animated.ScrollView>
         )}
         {loading && (
-          <Animated.View style={styles.loadingPopup} entering={SlideInDown.delay(200)} exiting={SlideInUp.delay(100)}>
+          <Animated.View style={styles.loadingPopup} entering={ZoomIn.delay(200)} exiting={SlideInUp.delay(100)}>
             <ActivityIndicator size="large" color={Colors.pink} />
           </Animated.View>
         )}
@@ -604,7 +717,7 @@ const styles = StyleSheet.create({
   loadingPopup: {
     alignSelf: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     flex: 1,
     position: "absolute",
     top: 0,
@@ -642,19 +755,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.transparentWhite,
     padding: 12,
     borderRadius: 10,
-    elevation: 10,
+    //elevation: 10,
   },
   wordBubble: {
     backgroundColor: Colors.transparentPrimary,
     padding: 12,
     borderRadius: 10,
-    elevation: 10,
+    //elevation: 10,
   },
   selectedBubble: {
     backgroundColor: Colors.pink,
     padding: 12,
     borderRadius: 10,
-    elevation: 10,
+    //elevation: 10,
+    shadowColor: "pink",
+    shadowOpacity: 0.5,
+
   },
   buttonText: {
     color: "white",
@@ -677,7 +793,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.transparentPrimary,
     padding: 12,
     borderRadius: 10,
-    elevation: 10,
+    //elevation: 10,
     alignSelf: "flex-end"
   },
   textIconRow: {
@@ -689,31 +805,65 @@ const styles = StyleSheet.create({
     paddingTop: 20
   },
   positive: {
-    backgroundColor: "rgba(98, 171, 96, 0.8)"
+    backgroundColor: "rgba(98, 171, 96, 0.7)"
   },
   but: {
-    backgroundColor: "rgba(208, 187, 1, 0.8)"
+    backgroundColor: "rgba(208, 187, 1, 0.7)"
   },
   negative: {
-    backgroundColor: "rgba(156, 50, 50, 0.8)"
+    backgroundColor: "rgba(156, 50, 50, 0.7)"
   },
   analysisText: {
     color: "white",
     fontFamily: "mon-sb",
-    
+
   },
   conjunctiveContainer: {
     //backgroundColor: Colors.transparentWhite,
     //padding: 10'
     paddingTop: 10,
-    justifyContent: "space-evenly",
-    gap: 10
+    justifyContent: "flex-end",
+    gap: 12,
+    flexWrap: "wrap",
+    flexDirection: "row"
   },
   conjunctiveElement: {
     backgroundColor: Colors.transparentWhite,
-    padding: 10,
-    borderRadius: 16
+    padding: 15,
+    borderRadius: 16,
+    //width:  50
+    //shadowColor: "pink",
+    //shadowOpacity: 0.5,
+
+  },
+  description: {
+    paddingBottom: 10
+  },
+  themesContainer: {
+    paddingTop: 10,
+    paddingBottom: 15,
+  },
+  themeWord: {
+    backgroundColor: Colors.transparentWhite,
+    padding: 15,
+    borderRadius: 16,
+  },
+  themeTypeContainer: {
+    //flexDirection: "row"
+  },
+  themeDescription: {
+    flex: 1,
+    paddingTop: 10,
+    fontFamily: "mon-sb",
+  },
+  themeWordsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    paddingTop: 10
   }
+
 
 })
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, FlatList, ListRenderItem, TouchableOpacity, StyleSheet, Alert, } from 'react-native'
 import { Link, useNavigation } from 'expo-router';
@@ -16,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
+
+import { DateContext } from '@/components/contexts/dateProvider';
 
 interface UserElement {
   id: string;
@@ -90,6 +92,8 @@ const ProgressBar: React.FunctionComponent<{
     </View>
   )
 }
+
+
 
 const Page = () => {
   /* -------------------------- Navigation page logic ------------------------- */
@@ -268,9 +272,15 @@ const Page = () => {
     fetchData();
   }, []);
 
+
   //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading
   // to false
 
+
+  const {headerDate, setHeaderDate} = useContext(DateContext)
+  useEffect(() => {
+    console.log("headerDate: ", headerDate)
+  },[headerDate])
 
   /* -------------------- renderRows (for each userElement) ------------------- */
 

@@ -1,6 +1,6 @@
 import { View, Text, Touchable, TouchableOpacity, KeyboardAvoidingView, Keyboard } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { Tabs, useNavigation } from 'expo-router'
+import React, { useContext, useEffect, useState } from 'react'
+import { Tabs, useNavigation, useSearchParams } from 'expo-router'
 import Colors from '@/constants/Colors'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { Ionicons } from '@expo/vector-icons'
@@ -19,44 +19,24 @@ type NavigationProps = {
   navigate: (value: string) => void;
 }
 
+interface Props  {
+  headerDate: Date
+}
+
 const Layout = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const { navigate } = useNavigation<NavigationProps>()
+  
 
   function handleAddNavigation(path: string) {
-    setShowAddMenu(false) //close the add menu before navigating
+    setShowAddMenu(false)
     navigate(path)
   }
 
-  const { navigate } = useNavigation<NavigationProps>()
-
-  // const [keyboardVisible, setKeyboardVisible] = useState(false);
-  // const [forceRerender, setForceRerender] = useState(false);
-
-  // useEffect(() => {
-  //   const showListener = Keyboard.addListener('keyboardDidShow', () => {
-  //     console.log("keyboard show")
-  //     setKeyboardVisible(true)
-  //   });
-
-  //   const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-  //     console.log("keyboard hide")
-  //     setKeyboardVisible(false);
-  //     setForceRerender(true);
-  //     setTimeout(() => setForceRerender(false), 100);
-  //   });
-
-  //   return () => {
-  //     showListener.remove();
-  //     hideListener.remove();
-  //   };
-  // }, []);
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      // behavior={keyboardVisible ? 'padding' : undefined}
-      // key={forceRerender ? 'key1' : 'key2'} //when the key is detected as changed the component re-renders
-    >
+      style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
         <Tabs screenOptions={{
           tabBarActiveTintColor: Colors.primary,
