@@ -126,6 +126,27 @@ export class DatabaseService {
     });
   }
 
+  public getAllJournalsForDate(date: string): Promise<any[]> {
+    //date format => "YYYY-MM-DD"
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT * FROM journals 
+           WHERE DATE(createdAt) = ?
+           ORDER BY createdAt DESC`,
+          [date], 
+          (txObject, result) => {
+            resolve(result.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true; 
+          }
+        );
+      });
+    });
+  }
+
   //TODO: add code to protect against SQL injection
   public createJournalEntry(title: string, body: string, createdAt: string): Promise<void> {
     return new Promise((resolve, reject) => { // Wrap in a promise
@@ -378,6 +399,7 @@ export class DatabaseService {
     });
   }
 
+
   // public getAllMoodJournalsWithTrackingData(): Promise<any[]> {
   //   return new Promise((resolve, reject) => {
   //     db.transaction((tx) => {
@@ -476,44 +498,34 @@ export class DatabaseService {
     });
   }
 
-  // public getLatestMoodJournal(): Promise<any | null> {
-  //   return new Promise((resolve, reject) => {
-  //     db.transaction((tx) => {
-  //       tx.executeSql(
-  //         `SELECT 
-  //              mj.id, mj.created_at, mj.tracking_data_id,
-  //              td.figure1, td.figure2, td.figure3 
-  //          FROM mood_journals mj
-  //          JOIN tracking_data td ON td.id = mj.tracking_data_id 
-  //          ORDER BY mj.created_at DESC 
-  //          LIMIT 1`,
-  //         [],
-  //         (txObject, result) => {
-  //           if (result.rows.length > 0) {
-  //             const row = result.rows.item(0);
-  //             const moodJournalEntry = {
-  //               id: row.id,
-  //               createdAt: row.created_at,
-  //               trackingData: {
-  //                 figure1: row.figure1,
-  //                 figure2: row.figure2,
-  //                 figure3: row.figure3
-  //               }
-  //               // TODO add other mood journal fields 
-  //             };
-  //             resolve(row);
-  //           } else {
-  //             resolve(null);
-  //           }
-  //         },
-  //         (txObject, error) => {
-  //           reject(error);
-  //           return true;
-  //         }
-  //       );
-  //     })
-  //   })
-  // }
+  public getAllMoodJournalsForDate(date: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT mj.*, 
+              tn1.name AS tracking_name1, 
+              tn2.name AS tracking_name2, 
+              tn3.name AS tracking_name3
+           FROM mood_journals mj
+           LEFT JOIN tracking_names tn1 ON mj.tracking_name1_id = tn1.id
+           LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
+           LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
+           WHERE DATE(mj.created_at) = ?
+           ORDER BY mj.created_at DESC`,
+          [date], // Parameterized query 
+          (txObject, resultSet) => {
+            resolve(resultSet.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+
 
   public deleteMoodJournalEntryByID(id: number): Promise<void> {
     return new Promise((resolve, reject) => {

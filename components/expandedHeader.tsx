@@ -16,6 +16,8 @@ import Animated, {
 import { DateContext } from './contexts/dateProvider'
 
 
+
+
 const ExpandedHeader = () => {
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -23,9 +25,9 @@ const ExpandedHeader = () => {
     const { headerDate, setHeaderDate } = useContext(DateContext)
 
     useEffect(() => {
-        if (Platform.OS === "ios") {
-            setShowDatePicker(true);
-        }
+        // if (Platform.OS === "ios") {
+             //setShowDatePicker(true);
+        // }
     }, []);
 
     const toggleDatePicker = () => {
@@ -33,13 +35,21 @@ const ExpandedHeader = () => {
             setShowDatePicker(!showDatePicker)
         }
     }
+
+    var times = 0;
+
     const handleDateChange = (event: any, selectedDate: Date | undefined) => {
         const currentDate = selectedDate || date;
+        if(currentDate !== headerDate.date) {
+            setDate(currentDate);
+            setHeaderDate({
+                date: currentDate
+            })
+            //console.log("currentDate : ", currentDate, "headerDate.date: ", headerDate.date)
+        }
         toggleDatePicker();
-        setDate(currentDate);
-        setHeaderDate({
-            date: currentDate
-        })
+
+
     };
 
     const formatDate = (date: Date) => moment(date).format("dddd, Do MMM");
@@ -52,15 +62,14 @@ const ExpandedHeader = () => {
                 {formatDate && Platform.OS === "ios" && (
                     <Animated.View entering={ZoomIn.delay(200)} style={styles.dateRow}>
                         <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={date}
-                                mode="date"
-                                onChange={handleDateChange}
-                                display={"calendar"}
-                                style={styles.iosDatePicker}
-                            />
-                        )}
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            onChange={handleDateChange}
+                            display={"calendar"}
+                            style={styles.iosDatePicker}
+                        />
+
                     </Animated.View>
                 )}
                 {formatDate && Platform.OS === "android" && (

@@ -19,6 +19,8 @@ import moment from 'moment';
 
 import { DateContext } from '@/components/contexts/dateProvider';
 
+import ProgressBar from '@/components/progressBar';
+
 interface UserElement {
   id: string;
   type: 'journal' | 'mood' | 'goal';
@@ -33,66 +35,6 @@ interface UserElement {
   goalTarget?: number,
   goalValue?: number
 };
-
-
-//TODO: export this as a component
-const ProgressBar: React.FunctionComponent<{
-  step: number;
-  steps: number;
-  height?: number;
-  textLabel?: string;
-  isAnimating?: boolean;
-
-}> = ({ step, steps, height, textLabel, isAnimating }) => {
-  const [barWidth, setBarWidth] = useState(0);
-  const progressPercentage = (step / steps) * 100;
-  const animatedWidth = useSharedValue(0);
-
-  useEffect(() => {
-    if (isAnimating) {
-      animatedWidth.value = 0;
-      animatedWidth.value = withTiming((progressPercentage * barWidth) / 100, {
-        duration: 400,
-        easing: Easing.inOut(Easing.quad)
-      });
-
-    }
-  }, [isAnimating]);
-
-  return (
-    <View>
-      <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-        {textLabel}
-      </Text>
-      <View
-        onLayout={e => {
-          const barWidth = e.nativeEvent.layout.width;
-          setBarWidth(barWidth);
-        }}
-        style={{
-          height: height,
-          backgroundColor: Colors.offWhite,
-          borderRadius: height,
-          overflow: "hidden"
-        }}>
-        <Animated.View
-          style={[
-            {
-              height: height,
-              width: animatedWidth,
-              borderRadius: height,
-              backgroundColor: Colors.primary,
-              position: "absolute",
-              left: 0,
-              top: 0,
-            },
-          ]}
-        />
-      </View>
-    </View>
-  )
-}
-
 
 
 const Page = () => {
@@ -117,6 +59,19 @@ const Page = () => {
     };
   }, [navigation]);
 
+  /* ---------------------------- date change logic ---------------------------- */
+
+  //!TODO add the code to change the fetch functions based off of the "headerDate" const
+  const { headerDate, setHeaderDate } = useContext(DateContext)
+  //const { previousHeaderDate, setPreviousHeaderDate } = useState<>
+
+  //note: headerDate context will always be updated on inital app load
+  useEffect(() => {
+    onRefresh();
+    console.log("headerDateChanged")
+  }, [headerDate])
+
+
   /* ------------------------------- daviewLogic ------------------------------ */
 
   const [loading, setLoading] = useState(false);
@@ -128,18 +83,45 @@ const Page = () => {
 
   useEffect(() => {
     if (pageFocused) {
+      console.log("focus fetch")
+      setFetchComplete(false)
       onRefresh();
     }
-     else {
+    else {
       setAnimating(false);
     }
+    //setFetchComplete(true)
   }, [pageFocused])
 
+
+  // const fetchJournalEntries = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const databaseResult = await databaseService.getAllJournalEntries();
+  //     const entries: UserElement[] = databaseResult.map(journal => ({
+  //       id: "journal_" + journal.id,
+  //       type: 'journal',
+  //       title: journal.title,
+  //       time: moment(journal.createdAt).format('HH:mm')
+  //     }));
+  //     setUserElements(entries);
+  //   }
+  //   catch (error) {
+  //     console.error('Error fetching entries:', error);
+  //   }
+  //   finally {
+  //     setLoading(false);
+  //   }
+  // }
 
   const fetchJournalEntries = async () => {
     setLoading(true);
     try {
-      const databaseResult = await databaseService.getAllJournalEntries();
+      const inputDate = moment(headerDate.date).format("YYYY-MM-DD")
+      const databaseResult = await databaseService.getAllJournalsForDate(inputDate);
+      // if(databaseResult){
+      //   console.log("databaseResult: ", databaseResult)
+      // }
       const entries: UserElement[] = databaseResult.map(journal => ({
         id: "journal_" + journal.id,
         type: 'journal',
@@ -209,13 +191,17 @@ const Page = () => {
         setAnimating(true);
         setAnimating(false);
       }, 500);
+      setFetchComplete(true)
     }
   };
 
   const fetchMoodJournalEntries = async () => {
     setLoading(true);
     try {
-      const tempMoodJournals = await databaseService.getAllMoodJournals();
+      //console.log("in fetch Mood Journals ")
+      const inputDate = moment(headerDate.date).format("YYYY-MM-DD")
+      //console.log("testDateFormat: ", test)
+      const tempMoodJournals = await databaseService.getAllMoodJournalsForDate(inputDate);
       if (tempMoodJournals) {
         const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
           id: "mood_" + moodJournal.id,
@@ -231,7 +217,7 @@ const Page = () => {
         }));
 
         //console.log(entries);
-        setUserElements(prevElements => [...prevElements, ...entries]);
+        //setUserElements(prevElements => [...prevElements, ...entries]);
 
       }
 
@@ -253,34 +239,35 @@ const Page = () => {
     return { prefix, id };
   }
 
-  // Fetch data once on initial render
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        await Promise.all([fetchJournalEntries(), fetchMoodJournalEntries()]);
-      } 
-      catch (error) {
-        console.error("Error fetching data:", error);
-      } 
-      finally {
-        setLoading(false);
-        setAnimating(true);
-        setTimeout(() => setAnimating(false), 500);
-      }
-    };
-    fetchData();
-  }, []);
 
+  const fetchData = async () => {
 
-  //TODO: ;set up trhe loading properly so that it waits to get all the promises back and then sets loading
-  // to false
+    try {
+      setLoading(true);
 
+      await Promise.all([fetchJournalEntries(), fetchMoodJournalEntries()]);
 
-  const {headerDate, setHeaderDate} = useContext(DateContext)
-  useEffect(() => {
-    console.log("headerDate: ", headerDate)
-  },[headerDate])
+    }
+    catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    finally {
+      setLoading(false);
+      setAnimating(true);
+      setTimeout(() => setAnimating(false), 500);
+      setFetchComplete(true);
+    }
+  };
+
+  // inital load useEffect
+  // useEffect(() => {
+  //   console.log("")
+  //   if (!fetchComplete) {
+  //     fetchData();
+  //   }
+
+  // }, []);
+
 
   /* -------------------- renderRows (for each userElement) ------------------- */
 
