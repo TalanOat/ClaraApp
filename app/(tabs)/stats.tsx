@@ -1,11 +1,12 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, ViewStyle } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { databaseService } from '@/model/databaseService'
 import moment from 'moment';
 import Colors from '@/constants/Colors';
 import { useNavigation } from 'expo-router';
 import { defaultStyles } from '@/constants/Styles';
+import { JournalsContext } from '@/components/contexts/journalProvider';
 
 //chart imports
 import {
@@ -53,6 +54,23 @@ interface MoodJournal {
   figure3: number;
 }
 
+interface JournalElement {
+  id: string;
+  type: 'journal' | 'mood' | 'goal';
+  title: string;
+  time: string;
+  body?: string;
+  trackingName1?: string;
+  trackingValue1?: number;
+  trackingName2?: string;
+  trackingValue2?: number;
+  trackingName3?: string;
+  trackingValue3?: number;
+  goalName?: string;
+  goalTarget?: number;
+  goalValue?: number;
+}
+
 
 //! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
 
@@ -78,72 +96,137 @@ const Page = () => {
     };
   }, [navigation]);
 
-  useEffect(() => {
-    if (pageFocused) {
-      fetchData();
-    }
-  }, [pageFocused])
-
   /* ------------------------- end of navigation code ------------------------- */
 
   const [journalEntry, setJournalEntry] = useState<Journal>()
   const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal | null>(null);
   const [loading, setLoading] = useState(false);
+  const { journals, setJournals, fetchData } = useContext(JournalsContext);
+
+  const fetchLastEntry = () => {
+    //setLoading(true);
+
+    const latestJournal = journals
+      .filter(journal => journal.type === 'journal')
+      .sort((a, b) => {
+        return b.time.localeCompare(a.time);
+      })[0];
 
 
-  const fetchLastEntry = async () => {
-    //console.log("fetching")
-    try {
-      const entry = await databaseService.getLastJournalEntry();
-      if (entry) {
-        const returnedEntry: Journal = ({
-          id: entry.id,
-          title: entry.title,
-          body: entry.body,
-          time: moment(entry.createdAt).format('HH:mm')
-        });
-        return returnedEntry
-      }
-      else {
-        console.error("entry not found, or no entries exist")
-        // TODO: entry not found
-      }
-    } catch (error) {
-      console.error('error:', error);
+    if (latestJournal.body) {
+      const returnedEntry: Journal = ({
+        id: splitId(latestJournal.id).id,
+        title: latestJournal.title,
+        body: latestJournal?.body,
+        time: latestJournal.time
+      });
+      //console.log("returnedEntry; ", returnedEntry)
+      return returnedEntry
     }
+    else {
+      console.error("entry not found, or no entries exist")
+    }
+
+
+
   }
 
-  const fetchLastMoodJournal = async () => {
-    //console.log("fetching mood")
-    setLoading(true);
-    try {
-      const tempMoodJournal = await databaseService.getLatestMoodJournal();
-      // if (tempMoodJournal) {
-      //   console.log("tempMoodJournal: ", tempMoodJournal);
-      // }
+  const fetchLastMoodJournal = () => {
+    //setLoading(true);
+
+    const latestMoodJournal = journals
+      .filter(journal => journal.type === 'mood')
+      .sort((a, b) => {
+        return b.time.localeCompare(a.time);
+      })[0];
+    //console.log("latestMoodJournal: ", latestMoodJournal)
+
+    if (latestMoodJournal.trackingName1 && latestMoodJournal.trackingValue1 &&
+      latestMoodJournal.trackingName2 && latestMoodJournal.trackingValue2 &&
+      latestMoodJournal.trackingName3 && latestMoodJournal.trackingValue3) {
       const returnedMoodJournal: MoodJournal = ({
-        id: tempMoodJournal.id,
-        createdAt: tempMoodJournal.created_at,
-        trackingName1: tempMoodJournal.tracking_name1,
-        figure1: tempMoodJournal.tracking_value1,
-        trackingName2: tempMoodJournal.tracking_name2,
-        figure2: tempMoodJournal.tracking_value2,
-        trackingName3: tempMoodJournal.tracking_name3,
-        figure3: tempMoodJournal.tracking_value3,
+        id: splitId(latestMoodJournal.id).id,
+        createdAt: latestMoodJournal.time,
+        trackingName1: latestMoodJournal.trackingName1,
+        figure1: latestMoodJournal.trackingValue1,
+        trackingName2: latestMoodJournal.trackingName2,
+        figure2: latestMoodJournal.trackingValue2,
+        trackingName3: latestMoodJournal.trackingName3,
+        figure3: latestMoodJournal.trackingValue3,
       });
       return (returnedMoodJournal);
     }
-    catch (error) {
-      console.error("error getting mood Journals:", error);
+    else {
+      console.error("no moodJournal to analysise")
     }
-    finally {
-      setLoading(false);
-    }
+
   };
+
+  function splitId(prefixedId: string) {
+    const parts = prefixedId.split("_");
+    if (parts.length !== 2) {
+      throw new Error("invalid string to split");
+    }
+    const prefix = parts[0];
+    const id = parseInt(parts[1]);
+
+    return { prefix, id };
+  }
+
+  // const fetchLastEntry = async () => {
+  //   //console.log("fetching")
+  //   try {
+  //     const entry = await databaseService.getLastJournalEntry();
+  //     if (entry) {
+  //       const returnedEntry: Journal = ({
+  //         id: entry.id,
+  //         title: entry.title,
+  //         body: entry.body,
+  //         time: moment(entry.createdAt).format('HH:mm')
+  //       });
+  //       return returnedEntry
+  //     }
+  //     else {
+  //       console.error("entry not found, or no entries exist")
+  //       // TODO: entry not found
+  //     }
+  //   } catch (error) {
+  //     console.error('error:', error);
+  //   }
+  // }
+
+  // const fetchLastMoodJournal = async () => {
+  //   //console.log("fetching mood")
+  //   setLoading(true);
+  //   try {
+  //     const tempMoodJournal = await databaseService.getLatestMoodJournal();
+  //     // if (tempMoodJournal) {
+  //     //   console.log("tempMoodJournal: ", tempMoodJournal);
+  //     // }
+  //     const returnedMoodJournal: MoodJournal = ({
+  //       id: tempMoodJournal.id,
+  //       createdAt: tempMoodJournal.created_at,
+  //       trackingName1: tempMoodJournal.tracking_name1,
+  //       figure1: tempMoodJournal.tracking_value1,
+  //       trackingName2: tempMoodJournal.tracking_name2,
+  //       figure2: tempMoodJournal.tracking_value2,
+  //       trackingName3: tempMoodJournal.tracking_name3,
+  //       figure3: tempMoodJournal.tracking_value3,
+  //     });
+  //     return (returnedMoodJournal);
+  //   }
+  //   catch (error) {
+  //     console.error("error getting mood Journals:", error);
+  //   }
+  //   finally {
+  //     setLoading(false);
+  //   }
+  // };
 
 
 
   //* SEMANTIC ANALYSIS
+
   const semanticSearch = async (journalBody: string, searchScore: number) => {
     var Sentiment = require('sentiment');
     var sentiment = new Sentiment();
@@ -227,7 +310,7 @@ const Page = () => {
   const [wordBubble, setWordBubble] = useState<string[]>([]);
 
   const assignWordBubble = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
-    //console.log("inputTrackingPoints: ", inputTrackingPoints)
+    //console.log("journalEntryInput in the bubble: ", journalEntryInput)
 
     //* if (word) <= -2 : very negative
     //* if (word) <= -1 : negative
@@ -257,14 +340,14 @@ const Page = () => {
 
     const semanticAnalysis = async (searchValue: number) => {
       const matchingKeys = await semanticSearch(journalEntryInput.body, searchValue);
-      console.log("matchingKeys: ", matchingKeys)
-      return (matchingKeys);
-
+      //remove duplicated and convert it back into an array
+      const uniqueKeys = new Set(matchingKeys);
+      return Array.from(uniqueKeys);
     };
 
     const tempReturn = await semanticAnalysis(searchValue);
     if (tempReturn) {
-      //console.log("tempReturn: ", tempReturn)
+      //console.log("tempReturn: ", tempReturn);
       setWordBubble(tempReturn)
     }
 
@@ -275,16 +358,16 @@ const Page = () => {
   const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
     let filteredTrackingPoints;
     setLoading(true);
+    //console.log("in assign chart data")
     //if no button has been pressed...
     if (selectedTracking?.name === undefined) {
       // select the first point
       filteredTrackingPoints = [inputTrackingPoints[0]];
       // set the selected point to be the first one by default
       setSelectedTracking(inputTrackingPoints[0])
-      return (filteredTrackingPoints[0])
-
     }
     else {
+      //console.log("defined in assignings")
       // filter based on selectedTracking
       filteredTrackingPoints = inputTrackingPoints.filter(
         point => point.name === selectedTracking?.name
@@ -293,12 +376,13 @@ const Page = () => {
 
     const trackingLabels = filteredTrackingPoints.map(point => point.name);
     const trackingValues = filteredTrackingPoints.map(point => point.value);
-
+    //console.log("trackingLabels", trackingLabels)
     setChartData({
       labels: trackingLabels,
       datasets: [{ data: trackingValues }]
     });
     setLoading(false);
+    return filteredTrackingPoints;
   };
 
   const [chartWidth, setChartWidth] = useState(0);
@@ -434,7 +518,7 @@ const Page = () => {
       .not('')
       .out('array')
 
-    console.log("filteredActivities: ", filteredActivities)
+    //console.log("filteredActivities: ", filteredActivities)
 
     // combine the people and actors
     const combinedPeopleAndActors = filteredPeople.concat(filteredActors);
@@ -451,17 +535,28 @@ const Page = () => {
     return [peopleAndActorsAnalysis, placesAnalysis, activitiesAnalysis]
   }
 
+    /* ------------------------------ timeline code ----------------------------- */
+    const [selectedTimeline, setSelectedTimeline] = useState('Daily'); // Initial selection
+
+    const handleOptionPress = (option:string) => {
+      //console.log("timeline option: ", option)
+      setSelectedTimeline(option);
+    };
+
   /* -------------- other code - including the first load useEffect ------------- */
 
-  const fetchData = async () => {
+  const fetchLastJournals = () => {
     try {
       setLoading(true);
-      const [journalEntryResult, moodJournalResult] = await Promise.all([fetchLastEntry(), fetchLastMoodJournal()]);
+      //const [journalEntryResult, moodJournalResult] = await Promise.all([fetchLastEntry(), fetchLastMoodJournal()]);
+      const [journalEntryResult, moodJournalResult] = [fetchLastEntry(), fetchLastMoodJournal()]
+      //console.log("journalEntryResult: ", journalEntryResult)
+      //console.log("moodJournalResult: ", moodJournalResult)
       return { journalEntryResult, moodJournalResult };
 
     }
     catch (error) {
-      console.error("Error fetching data:", error);
+      console.log("Error fetching data:", error);
       return { journalEntryResult: undefined, moodJournalResult: undefined };
 
     }
@@ -479,56 +574,80 @@ const Page = () => {
     }
   }, [selectedTracking]);
 
-  //Initaliser function
-  useEffect(() => {
-    const fetchDataAndAssignData = async () => {
-      try {
-        const fetchedObject = await fetchData();
-        //If the fetchData returns two promises set up the data accordingly 
-        if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
-          //useState variable setup for which is used for the toggle buttons
-          setJournalEntry(fetchedObject.journalEntryResult)
-          setMoodJournalEntry(fetchedObject.moodJournalResult)
+  const fetchDataAndAssignData = async () => {
+    try {
+      const fetchedObject = fetchLastJournals();
+      //If the fetchData returns two promises set up the data accordingly 
+      if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
 
-          //Inital Bar Chart setup
-          const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult)
-          setTrackingPoints(returnedTrackingPoints);
-          const defaultSelectedValue = assignChartData(returnedTrackingPoints);
+        //useState variable setup for which is used for the toggle buttons
+        setJournalEntry(fetchedObject.journalEntryResult)
+        setMoodJournalEntry(fetchedObject.moodJournalResult)
 
-          //Word Bubble setup - using semantic Analysis modules
-          if (defaultSelectedValue) {
-            assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue)
-          }
+        //Inital Bar Chart setup
+        const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult)
+        //console.log()
+        //console.log("returnedTrackingPoints: ", returnedTrackingPoints)
+        setTrackingPoints(returnedTrackingPoints);
+        //console.log("returnedTrackingPoints: ", returnedTrackingPoints)
+        const defaultSelectedValue = assignChartData(returnedTrackingPoints);
 
-          //Theme Analysis setup - using multiple Alogrithmns
-          const themesArray = applyThemeAnalysis(fetchedObject.journalEntryResult.body);
-          //console.log("themesArray: ", themesArray)
-          const themeObject: JournalTheme = {
-            peopleAndActorsAnalysis: themesArray[0],
-            placesAnalysis: themesArray[1],
-            activitiesAnalysis: themesArray[2]
-          }
-          setJournalThemes(themeObject);
-          console.log("themeObject: ", themeObject)
+        //console.log("defaultSelectedValue: ", defaultSelectedValue)
+        //Word Bubble setup - using semantic Analysis modules
+        if (defaultSelectedValue) {
+          //console.log("teting")
+          assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue[0])
         }
-      }
-      catch (error) {
-        console.error("Error fetching data:", error);
-      }
-      finally {
-        setLoading(false);
-      }
-    };
 
-    fetchDataAndAssignData();
-
-    const positiveToNegative = testConjunctionAndSplit();
-    if (positiveToNegative) {
-      //console.log("testing here!! ", positiveToNegative )
-      setConjunctiveSentence(positiveToNegative);
+        //Theme Analysis setup - using multiple Alogrithmns
+        const themesArray = applyThemeAnalysis(fetchedObject.journalEntryResult.body);
+        //console.log("themesArray: ", themesArray)
+        const themeObject: JournalTheme = {
+          peopleAndActorsAnalysis: themesArray[0],
+          placesAnalysis: themesArray[1],
+          activitiesAnalysis: themesArray[2]
+        }
+        setJournalThemes(themeObject);
+        //console.log("themeObject: ", themeObject)
+      }
     }
+    catch (error) {
+      console.error("Error fetching data:", error);
+    }
+    finally {
+      setLoading(false);
+    }
+  };
 
-  }, []);
+  // //Initaliser function
+  // useEffect(() => {
+  //   setLoading(true)
+  //   fetchDataAndAssignData();
+
+  //   const positiveToNegative = testConjunctionAndSplit();
+  //   if (positiveToNegative) {
+  //     //console.log("testing here!! ", positiveToNegative )
+  //     setConjunctiveSentence(positiveToNegative);
+  //   }
+  //   setLoading(false)
+  // }, []);
+
+  useEffect(() => {
+    if (pageFocused) {
+      //console.log("testing here!! " )
+      setLoading(true)
+      fetchDataAndAssignData();
+
+      const positiveToNegative = testConjunctionAndSplit();
+      if (positiveToNegative) {
+
+        setConjunctiveSentence(positiveToNegative);
+      }
+      setLoading(false)
+    }
+  }, [pageFocused])
+
+
 
 
   return (
@@ -542,15 +661,18 @@ const Page = () => {
               <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
               {/* Timeline Navigation - (Daily, weekly, monthly) */}
               <View style={styles.timelineNav}>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>Daily</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>Weekly</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>Monthly</Text>
-                </TouchableOpacity>
+                {['Daily', 'Weekly', 'Monthly'].map(option => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.button,
+                      selectedTimeline === option && styles.selectedBubble, // Apply selected style
+                    ]}
+                    onPress={() => handleOptionPress(option)}
+                  >
+                    <Text style={styles.buttonText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
@@ -768,8 +890,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     //elevation: 10,
-    shadowColor: "pink",
-    shadowOpacity: 0.5,
 
   },
   buttonText: {

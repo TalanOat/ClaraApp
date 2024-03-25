@@ -158,6 +158,7 @@ const Page = () => {
       Math.round(sliderValue2),
       Math.round(sliderValue3)
     )
+    
 
     setTimeout(() => {
       setFlashNotification(false);

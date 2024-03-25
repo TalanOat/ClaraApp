@@ -437,7 +437,7 @@ export class DatabaseService {
   //   })
   // }
 
-  public getMoodJournalByID(moodJournalID: number): Promise<any> { // Changed return type
+  public getMoodJournalByID(moodJournalID: number): Promise<any> { 
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -467,7 +467,7 @@ export class DatabaseService {
     });
   }
 
-  public getLatestMoodJournal(): Promise<any> { // Changed return type
+  public getLatestMoodJournal(): Promise<any> { 
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(

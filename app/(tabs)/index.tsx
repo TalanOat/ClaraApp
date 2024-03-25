@@ -165,8 +165,6 @@ const Page = () => {
     return { prefix, id };
   }
 
-
-
   /* -------------------- renderRows (for each userElement) ------------------- */
 
   const renderRow: ListRenderItem<UserElement> = ({ item }) => {
