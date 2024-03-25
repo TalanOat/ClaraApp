@@ -13,6 +13,7 @@ import SmallerHeader from '@/components/smallerHeader';
 import { databaseService } from '@/model/databaseService';
 
 import DateProvider from '@/components/contexts/dateProvider';
+import { JournalsProvider } from '@/components/contexts/journalProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -72,19 +73,21 @@ function RootLayoutNav() {
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
         <CustomStatusBar />
         <DateProvider>
-          <Stack>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                header: () => <ExpandedHeader/>,
+          <JournalsProvider>
+            <Stack>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  header: () => <ExpandedHeader />,
 
-              }} />
-            <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-            <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-          </Stack>
+                }} />
+              <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+              <Stack.Screen name="element/settings" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+            </Stack>
+          </JournalsProvider>
         </DateProvider>
 
 

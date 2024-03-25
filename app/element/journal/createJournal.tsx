@@ -1,6 +1,6 @@
 import { View, Text, TextInput, StyleSheet, Touchable, TouchableOpacity, } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { defaultStyles } from '@/constants/Styles'
 
@@ -8,13 +8,18 @@ import Animated, {
   FadeInDown,
   FadeOutUp,
   SlideInDown,
+  ZoomIn,
+  ZoomOut,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
 
+import { JournalsContext } from '@/components/contexts/journalProvider'
+
 const createJournal = () => {
   const [text, setText] = useState('');
   const [flashNotification, setFlashNotification] = useState(false);
+  const { fetchData } = useContext(JournalsContext);
 
   const handleInputChange = (input: string) => {
     setText(input);
@@ -26,7 +31,7 @@ const createJournal = () => {
   useEffect(() => {
     setTimeout(() => {
       textInputRef.current?.focus();
-    }, 600); 
+    }, 600);
   }, []);
 
   async function databaseCreateJournalEntry() {
@@ -35,20 +40,22 @@ const createJournal = () => {
       //TODO add the ability to set the title manually 
       await databaseService.createJournalEntry("Journal Entry", text, currentTime);
     }
-
     catch (error) {
       console.error("update error:", error);
+    }
+    finally {
+      fetchData();
     }
   }
 
 
   const handleSubmit = () => {
     databaseCreateJournalEntry()
-    setFlashNotification(true); 
+    setFlashNotification(true);
 
     setTimeout(() => {
-      setFlashNotification(false); 
-    }, 1000); 
+      setFlashNotification(false);
+    }, 1000);
   }
 
 
@@ -62,7 +69,7 @@ const createJournal = () => {
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
           <Text style={styles.elementTitle}>Title Here</Text>
-          <TouchableOpacity  onPress={() => { handleSubmit(); }} >
+          <TouchableOpacity onPress={() => { handleSubmit(); }} >
             <MaterialCommunityIcons name="check" size={40} color="white" />
           </TouchableOpacity>
 
@@ -79,8 +86,8 @@ const createJournal = () => {
         </View>
       </Animated.ScrollView>
       {flashNotification && (
-        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
-          <Text style={flashMessage.innerText}>Success</Text>
+        <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
+          <Text style={flashMessage.innerText}>Added</Text>
         </Animated.View>
       )}
     </LinearGradient>
@@ -130,14 +137,15 @@ const styles = StyleSheet.create({
 
 const flashMessage = StyleSheet.create({
   container: {
-    flex: 1, 
+    flex: 1,
     position: "absolute",
     top: 0,
     left: 0,
-    right: 0, 
+    right: 0,
     bottom: 0,
-    alignItems: 'center',   
-    justifyContent: 'center',    
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
   },
   innerText: {
     padding: 20,
@@ -146,7 +154,7 @@ const flashMessage = StyleSheet.create({
     fontSize: 15,
 
     backgroundColor: Colors.pink,
-    borderRadius: 10,
+    borderRadius: 16,
     //margin: 50
   }
 })

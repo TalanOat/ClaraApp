@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { defaultStyles } from '@/constants/Styles'
 import emotionsData from '@/assets/data/emotionsUpdated.json';
@@ -15,6 +15,7 @@ import Animated, {
 import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
 import Slider from '@react-native-community/slider'
+import { JournalsContext } from '@/components/contexts/journalProvider'
 
 interface TrackingName {
     id: number;
@@ -46,6 +47,8 @@ const createJournal = () => {
     const [sliderValue1, setSliderValue1] = useState<number>(0);
     const [sliderValue2, setSliderValue2] = useState<number>(0);
     const [sliderValue3, setSliderValue3] = useState<number>(0);
+
+    const { fetchData } = useContext(JournalsContext);
 
 
     const fetchTrackingValues = async () => {
@@ -128,10 +131,6 @@ const createJournal = () => {
         setSelectedEmotions([]);
     };
 
-    // useEffect(() => {
-    //     console.log(selectedEmotions)
-    // }, [selectedEmotions]);
-
     //-----------------------------------------------------------------------------------------
 
     //TODO check that this is only run after the create Tracking Data as it needs the trackingID
@@ -148,9 +147,15 @@ const createJournal = () => {
                 return null;
             }
 
-        } catch (error) {
+        } 
+        catch (error) {
             console.error("error inserting mood Journal:", error);
         }
+        finally{
+            //! TODO - move this to after the emotions have been linked?
+            fetchData();
+        }
+
     }
 
     async function databaseCreateAndLinkEmotions(selectedEmotions: SelectedEmotion[], moodJournalID: number) {

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Touchable, TouchableOpacity } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import testData from '@/assets/data/testData.json';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,12 +11,15 @@ import Animated, {
   FadeInDown,
   FadeOutUp,
   SlideInDown,
+  ZoomIn,
+  ZoomOut,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 
 import emotionsData from '@/assets/data/emotionsUpdated.json';
 import Slider from '@react-native-community/slider'
+import { JournalsContext } from '@/components/contexts/journalProvider'
 
 interface TrackingValues {
   id: number;
@@ -51,6 +54,9 @@ const Page = () => {
   const [sliderValue1, setSliderValue1] = useState<number>(0);
   const [sliderValue2, setSliderValue2] = useState<number>(0);
   const [sliderValue3, setSliderValue3] = useState<number>(0);
+
+
+  const { fetchData } = useContext(JournalsContext);
 
 
   const fetchMoodJournal = async (): Promise<MoodJournal | undefined> => {
@@ -139,25 +145,19 @@ const Page = () => {
     catch (error) {
       console.error(error, "there was an problem updating the mood Journal")
     }
+    finally{
+      fetchData();
+    }
   }
 
   const handleUpdate = () => {
-    //console.log("sliderValue1: ", sliderValue1, "id: ", id)
-    //console.log("handle submit")
-
     setFlashNotification(true);
-    //const currentTime = new Date().toISOString()
-    //console.log("moodJournalEntry: ", moodJournalEntry)
-
-    //console.log("inputMoodJournal: ", inputMoodJournal)
 
     databaseUpdateMoodJournalEntry(
       Math.round(sliderValue1),
       Math.round(sliderValue2),
       Math.round(sliderValue3)
     )
-
-
 
     setTimeout(() => {
       setFlashNotification(false);
@@ -176,7 +176,6 @@ const Page = () => {
         setSliderValue2(tempMoodJournal.figure2);
         setSliderValue3(tempMoodJournal.figure3);
       }
-
     }
     fetchData().finally(() => {
       setLoading(false)
@@ -254,8 +253,8 @@ const Page = () => {
         </View>
       </Animated.ScrollView>
       {flashNotification && (
-        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
-          <Text style={flashMessage.innerText}>Success</Text>
+        <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
+          <Text style={flashMessage.innerText}>Updated</Text>
         </Animated.View>
       )}
     </LinearGradient>

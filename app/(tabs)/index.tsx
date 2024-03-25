@@ -18,6 +18,7 @@ import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 
 import { DateContext } from '@/components/contexts/dateProvider';
+import { JournalsContext } from '@/components/contexts/journalProvider';
 
 import ProgressBar from '@/components/progressBar';
 
@@ -59,17 +60,30 @@ const Page = () => {
     };
   }, [navigation]);
 
-  /* ---------------------------- date change logic ---------------------------- */
 
-  //!TODO add the code to change the fetch functions based off of the "headerDate" const
-  const { headerDate, setHeaderDate } = useContext(DateContext)
-  //const { previousHeaderDate, setPreviousHeaderDate } = useState<>
-
-  //note: headerDate context will always be updated on inital app load
   useEffect(() => {
-    onRefresh();
-    console.log("headerDateChanged")
-  }, [headerDate])
+    if (pageFocused) {
+      setTimeout(() => {
+        setAnimating(true);
+        setAnimating(false);
+      }, 500);
+    }
+  }, [pageFocused])
+
+  /* ------------------------ journals context code ------------------------ */
+
+  const { journals, setJournals, fetchData } = useContext(JournalsContext);
+
+  useEffect(() => {
+    setUserElements(journals)
+    setLoading(true);
+    setTimeout(() => {
+      setAnimating(true);
+      setAnimating(false);
+      
+    }, 500);
+    setLoading(false)
+  }, [journals]);
 
 
   /* ------------------------------- daviewLogic ------------------------------ */
@@ -79,64 +93,6 @@ const Page = () => {
   const [animating, setAnimating] = useState(false);
   const [userElements, setUserElements] = useState<UserElement[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [fetchComplete, setFetchComplete] = useState(false);
-
-  useEffect(() => {
-    if (pageFocused) {
-      console.log("focus fetch")
-      setFetchComplete(false)
-      onRefresh();
-    }
-    else {
-      setAnimating(false);
-    }
-    //setFetchComplete(true)
-  }, [pageFocused])
-
-
-  // const fetchJournalEntries = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const databaseResult = await databaseService.getAllJournalEntries();
-  //     const entries: UserElement[] = databaseResult.map(journal => ({
-  //       id: "journal_" + journal.id,
-  //       type: 'journal',
-  //       title: journal.title,
-  //       time: moment(journal.createdAt).format('HH:mm')
-  //     }));
-  //     setUserElements(entries);
-  //   }
-  //   catch (error) {
-  //     console.error('Error fetching entries:', error);
-  //   }
-  //   finally {
-  //     setLoading(false);
-  //   }
-  // }
-
-  const fetchJournalEntries = async () => {
-    setLoading(true);
-    try {
-      const inputDate = moment(headerDate.date).format("YYYY-MM-DD")
-      const databaseResult = await databaseService.getAllJournalsForDate(inputDate);
-      // if(databaseResult){
-      //   console.log("databaseResult: ", databaseResult)
-      // }
-      const entries: UserElement[] = databaseResult.map(journal => ({
-        id: "journal_" + journal.id,
-        type: 'journal',
-        title: journal.title,
-        time: moment(journal.createdAt).format('HH:mm')
-      }));
-      setUserElements(entries);
-    }
-    catch (error) {
-      console.error('Error fetching entries:', error);
-    }
-    finally {
-      setLoading(false);
-    }
-  }
 
   const handleDeleteJournalEntry = (title: string, id: string) => {
     //(1) First get the id without the prefix
@@ -151,7 +107,8 @@ const Page = () => {
       {
         text: 'OK', onPress: () => {
           databaseService.deleteJournalEntryByID(idWithNoPreix)
-          onRefresh();
+          fetchData(); 
+          //onRefresh();
         }
       },
     ]);
@@ -170,7 +127,7 @@ const Page = () => {
       {
         text: 'OK', onPress: () => {
           databaseService.deleteMoodJournalEntryByID(idWithNoPreix)
-          onRefresh();
+          fetchData();
         }
       },
     ]);
@@ -178,9 +135,9 @@ const Page = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setLoading(true);
     try {
-      await fetchJournalEntries();
-      await fetchMoodJournalEntries();
+      setUserElements(journals)
     }
     catch (error) {
       console.error("Refresh error:", error);
@@ -191,42 +148,11 @@ const Page = () => {
         setAnimating(true);
         setAnimating(false);
       }, 500);
-      setFetchComplete(true)
+      setLoading(false)
+      //setFetchComplete(true)
     }
   };
 
-  const fetchMoodJournalEntries = async () => {
-    setLoading(true);
-    try {
-      //console.log("in fetch Mood Journals ")
-      const inputDate = moment(headerDate.date).format("YYYY-MM-DD")
-      //console.log("testDateFormat: ", test)
-      const tempMoodJournals = await databaseService.getAllMoodJournalsForDate(inputDate);
-      if (tempMoodJournals) {
-        const entries: UserElement[] = tempMoodJournals.map((moodJournal: any) => ({
-          id: "mood_" + moodJournal.id,
-          type: 'mood',
-          title: 'Mood Journal',
-          time: moment(moodJournal.createdAt).format('HH:mm'),
-          trackingName1: moodJournal.tracking_name1,
-          trackingValue1: moodJournal.tracking_value1,
-          trackingName2: moodJournal.tracking_name2,
-          trackingValue2: moodJournal.tracking_value2,
-          trackingName3: moodJournal.tracking_name3,
-          trackingValue3: moodJournal.tracking_value3
-        }));
-
-        //console.log(entries);
-        //setUserElements(prevElements => [...prevElements, ...entries]);
-
-      }
-
-    } catch (error) {
-      console.error("error getting mood Journals:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function splitId(prefixedId: string) {
     const parts = prefixedId.split("_");
@@ -239,34 +165,6 @@ const Page = () => {
     return { prefix, id };
   }
 
-
-  const fetchData = async () => {
-
-    try {
-      setLoading(true);
-
-      await Promise.all([fetchJournalEntries(), fetchMoodJournalEntries()]);
-
-    }
-    catch (error) {
-      console.error("Error fetching data:", error);
-    }
-    finally {
-      setLoading(false);
-      setAnimating(true);
-      setTimeout(() => setAnimating(false), 500);
-      setFetchComplete(true);
-    }
-  };
-
-  // inital load useEffect
-  // useEffect(() => {
-  //   console.log("")
-  //   if (!fetchComplete) {
-  //     fetchData();
-  //   }
-
-  // }, []);
 
 
   /* -------------------- renderRows (for each userElement) ------------------- */

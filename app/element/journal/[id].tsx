@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Touchable, TouchableOpacity } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import testData from '@/assets/data/testData.json';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,10 +11,12 @@ import Animated, {
   FadeInDown,
   FadeOutUp,
   SlideInDown,
+  ZoomIn,
+  ZoomOut,
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
-
+import { JournalsContext } from '@/components/contexts/journalProvider';
 
 
 interface Journal {
@@ -30,6 +32,8 @@ const Page = () => {
   const [textInputValue, setTextInputValue] = useState('');
   const [text, setText] = useState('');
   const [flashNotification, setFlashNotification] = useState(false);
+
+  const { fetchData } = useContext(JournalsContext);
 
   const handleInputChange = (input: string) => {
     setTextInputValue(input);
@@ -90,11 +94,14 @@ const Page = () => {
         setFlashNotification(false);
       }, 1000);
     }
+    finally {
+      fetchData();
+    }
   }
 
   const handleUpdate = (e: any) => {
     e.preventDefault();
-    console.log("handle submit");
+    //console.log("handle submit");
     databaseUpdateJournalEntry();
   }
 
@@ -123,7 +130,7 @@ const Page = () => {
         </View>
       </Animated.ScrollView>
       {flashNotification && (
-        <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+        <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
           <Text style={flashMessage.innerText}>Success</Text>
         </Animated.View>
       )}
@@ -181,6 +188,7 @@ const flashMessage = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 16,
   },
   innerText: {
     padding: 20,
@@ -189,7 +197,7 @@ const flashMessage = StyleSheet.create({
     fontSize: 15,
 
     backgroundColor: Colors.pink,
-    borderRadius: 10,
+    borderRadius: 16,
     //margin: 50
   }
 })
