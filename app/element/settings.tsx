@@ -1,9 +1,10 @@
 import { View, Text, TouchableOpacity, TextInput, Alert, StyleSheet } from 'react-native'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { adminDatabaseService } from '@/model/adminDatabaseService'
 import { defaultStyles } from '@/constants/Styles';
 import Colors from '@/constants/Colors';
 import { databaseService } from '@/model/databaseService';
+import { DetectionContext } from '@/components/contexts/detectionContext';
 
 const settings = () => {
     const [dropText, setDropText] = useState('');
@@ -11,6 +12,9 @@ const settings = () => {
     const [tracking1, setTracking1] = useState('');
     const [tracking2, setTracking2] = useState('');
     const [tracking3, setTracking3] = useState('');
+    const [notificationBody, setNotificationBody] = useState('');
+
+    
 
     const handleInput1Change = (input: string) => {
         setDropText(input);
@@ -57,13 +61,18 @@ const settings = () => {
         ]);
     }
 
-
     const handleInput2Change = (input: string) => {
         setSelectText(input);
     }
 
     const handleSelectSubmit = () => {
         adminDatabaseService.selectAllFromTable(selectText)
+    }
+
+    const { sendNotificationNow } = useContext(DetectionContext);
+
+    const handleTestNotification = () => {
+        sendNotificationNow("test Title", notificationBody)
     }
 
     return (
@@ -117,6 +126,18 @@ const settings = () => {
                     placeholder="Value 3"
                 />
                 <TouchableOpacity style={styles.button} onPress={() => handleTrackingSubmit()}>
+                    <Text>Confirm</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={styles.firstForm}>
+                <Text style={styles.header1}>Send a notification</Text>
+                <TextInput
+                    onChangeText={(text) => setNotificationBody(text)}
+                    value={notificationBody}
+                    style={styles.basicInput}
+                    placeholder="notification body"
+                />
+                <TouchableOpacity style={styles.button} onPress={() => handleTestNotification()}>
                     <Text>Confirm</Text>
                 </TouchableOpacity>
             </View>

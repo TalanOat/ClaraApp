@@ -78,9 +78,7 @@ interface TrackingValue {
   invertScore?: boolean;
 }
 
-import { calculateCompleteTrackingValues } from '@/components/helpers/moodTrackingHelper';
-import { testConjunctionAndSplit } from '@/components/helpers/conjuctiveHelper';
-import { applyThemeAnalysis } from '@/components/helpers/themeHelper';
+import { assignTrackingValues } from '@/components/helpers/analysisHelper';
 
 
 //! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
@@ -183,6 +181,60 @@ const Page = () => {
     return { prefix, id };
   }
 
+  // const fetchLastEntry = async () => {
+  //   //console.log("fetching")
+  //   try {
+  //     const entry = await databaseService.getLastJournalEntry();
+  //     if (entry) {
+  //       const returnedEntry: Journal = ({
+  //         id: entry.id,
+  //         title: entry.title,
+  //         body: entry.body,
+  //         time: moment(entry.createdAt).format('HH:mm')
+  //       });
+  //       return returnedEntry
+  //     }
+  //     else {
+  //       console.error("entry not found, or no entries exist")
+  //       // TODO: entry not found
+  //     }
+  //   } catch (error) {
+  //     console.error('error:', error);
+  //   }
+  // }
+
+  // const fetchLastMoodJournal = async () => {
+  //   //console.log("fetching mood")
+  //   setLoading(true);
+  //   try {
+  //     const tempMoodJournal = await databaseService.getLatestMoodJournal();
+  //     // if (tempMoodJournal) {
+  //     //   console.log("tempMoodJournal: ", tempMoodJournal);
+  //     // }
+  //     const returnedMoodJournal: MoodJournal = ({
+  //       id: tempMoodJournal.id,
+  //       createdAt: tempMoodJournal.created_at,
+  //       trackingName1: tempMoodJournal.tracking_name1,
+  //       figure1: tempMoodJournal.tracking_value1,
+  //       trackingName2: tempMoodJournal.tracking_name2,
+  //       figure2: tempMoodJournal.tracking_value2,
+  //       trackingName3: tempMoodJournal.tracking_name3,
+  //       figure3: tempMoodJournal.tracking_value3,
+  //     });
+  //     return (returnedMoodJournal);
+  //   }
+  //   catch (error) {
+  //     console.error("error getting mood Journals:", error);
+  //   }
+  //   finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+
+  //* SEMANTIC ANALYSIS
+
   const semanticSearch = async (journalBody: string, searchScore: number) => {
     var Sentiment = require('sentiment');
     var sentiment = new Sentiment();
@@ -204,6 +256,56 @@ const Page = () => {
   /* -------------------------- mood journal analysis ------------------------- */
 
   const [trackingPoints, setTrackingPoints] = useState<TrackingValue[]>()
+
+
+  const assignScoreToTrackingValue = (trackingValue: TrackingValue) => {
+    let actualValue = trackingValue.value;
+    if (trackingValue.invertScore) {
+      actualValue = 100 - actualValue;
+    }
+
+    if (actualValue <= 25) {
+      trackingValue.score = "very_positive";
+    } else if (actualValue < 50) {
+      trackingValue.score = "positive";
+    } else if (actualValue < 75) {
+      trackingValue.score = "negative";
+    } else {
+      trackingValue.score = "very_negative";
+    }
+  }
+
+  // const assignTrackingValues = (moodJournalInput: MoodJournal) => {
+  //   //console.log("moodJournalInput: ", moodJournalInput)
+  //   const results: TrackingValue[] = [];
+  //   const trackingProperties = [
+  //     ["trackingName1", "figure1"],
+  //     ["trackingName2", "figure2"],
+  //     ["trackingName3", "figure3"]
+  //   ] as const;
+
+  //   for (const [nameKey, valueKey] of trackingProperties) {
+  //     let shouldInvert = false;
+  //     if ((moodJournalInput[nameKey] as string) === "Happiness") {
+  //       shouldInvert = true;
+  //     }
+
+  //     const trackingValue: TrackingValue = {
+  //       name: moodJournalInput[nameKey] as string,
+  //       value: moodJournalInput[valueKey] as number,
+  //       score: undefined,
+  //       invertScore: shouldInvert
+  //     };
+  //     assignScoreToTrackingValue(trackingValue);
+
+  //     results.push(trackingValue);
+  //   }
+  //   //console.log("results", results)
+  //   //setTrackingPoints(results);
+  //   return results
+
+
+  // }
 
   /* -------------------------- emotion Bubble setup -------------------------- */
 
@@ -313,6 +415,49 @@ const Page = () => {
   //! ToDO allow for multiple sentences!
   const [conjunctiveSentence, setConjunctiveSentence] = useState<string[]>();
 
+  const semanticScore = (textInput: string) => {
+    var Sentiment = require('sentiment');
+    var sentiment = new Sentiment();
+    var result = sentiment.analyze(textInput);
+    const semanticCalculationArray = result.score;
+
+    return semanticCalculationArray;
+  }
+
+  const testConjunctionAndSplit = () => {
+    setLoading(true);
+
+    const testPhrase = "I hate fish. I'm happy because I went to the gym, but I felt so lazy because I was only there for 30 minutes. I like fish";
+    const doc = nlp(testPhrase);
+    const conjunctiveSentence = doc.if('but').text();
+    const splitIndex = conjunctiveSentence.indexOf(' but ');
+
+    if (conjunctiveSentence.length > 0) {
+      const splitSentence = conjunctiveSentence.split(' but ');
+      const [before, after] = splitSentence
+      const middle = 'but';
+
+      const beforeScore = semanticScore(before);
+      const afterScore = semanticScore(after);
+
+      //console.log("beforeSemantics :", beforeScore);
+      //console.log("afterSemantics :", afterScore);
+
+      if (beforeScore >= 1 && afterScore <= -1) {
+        //console.log("flagged string")
+        setLoading(false);
+        //const returnedSentence = 
+        return [before, middle, after];
+
+      }
+    }
+    else {
+      console.log("no 'but' found!");
+      setLoading(false);
+      return (false)
+    }
+  }
+
   /* ---------------------------- journal analysis ---------------------------- */
 
   interface JournalTheme {
@@ -323,6 +468,72 @@ const Page = () => {
 
   const [journalThemes, setJournalThemes] = useState<JournalTheme>()
 
+  interface WordCount {
+    [word: string]: number;
+  }
+
+  function compareDescending(a: [string, number], b: [string, number]): number {
+    //only compare the second index being the count
+    const [, countA] = a;
+    const [, countB] = b;
+    return countB - countA;
+  }
+
+  const analyiseWordProbabilty = (text: string) => {
+    const wordCounts: WordCount = {};
+    //(1) split the input into separate strings for each word and remove (".")
+    const words = text.toLowerCase()
+      .split(/\s+/)
+    //.map(word => word.replace(/\.$/, ''));
+
+    //(2) count the word occurrences
+    words.forEach(word => {
+      if (!wordCounts[word]) {
+        wordCounts[word] = 0;
+      }
+      wordCounts[word]++;
+    });
+
+    //(3) sort the words based off of the occurance (decending order)
+    const sortedWordCounts = Object.entries(wordCounts).sort(compareDescending);
+    //console.log("sortedWordCounts: ", sortedWordCounts)
+
+    return sortedWordCounts;
+  }
+
+
+  const applyThemeAnalysis = (journalBody: string) => {
+    const doc = nlp(journalBody);
+    const filteredPeople = doc.match("#Person")
+      .out('array');
+
+    const filteredActors = doc.match("#Actor")
+      .not('my')
+      .out('array');
+
+    const filteredPlaces = doc.match('#Place')
+      .out('array');
+
+    const filteredActivities = doc.match("#Activity")
+      .not('')
+      .out('array')
+
+    //console.log("filteredActivities: ", filteredActivities)
+
+    // combine the people and actors
+    const combinedPeopleAndActors = filteredPeople.concat(filteredActors);
+
+    const peopleAndActorsAnalysis = combinedPeopleAndActors.length > 0 ?
+      analyiseWordProbabilty(combinedPeopleAndActors.join(' ')) : [];
+
+    const placesAnalysis = filteredPlaces.length > 0 ?
+      analyiseWordProbabilty(filteredPlaces.join(' ')) : [];
+
+    const activitiesAnalysis = filteredActivities.length > 0 ?
+      analyiseWordProbabilty(filteredActivities.join(' ')) : [];
+
+    return [peopleAndActorsAnalysis, placesAnalysis, activitiesAnalysis]
+  }
 
   /* ------------------------------ timeline code ----------------------------- */
   const [selectedTimeline, setSelectedTimeline] = useState('Daily'); // Initial selection
@@ -363,6 +574,7 @@ const Page = () => {
     }
   }, [selectedTracking]);
 
+  // const fetchDataAndAssignData = async () => {
 
   const fetchDataAndAssignData = async () => {
     try {
@@ -371,8 +583,9 @@ const Page = () => {
       if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
         setJournalEntry(fetchedObject.journalEntryResult);
         setMoodJournalEntry(fetchedObject.moodJournalResult);
+  
         // Initial Bar Chart setup
-        const returnedTrackingPoints = calculateCompleteTrackingValues(fetchedObject.moodJournalResult);
+        const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult);
         setTrackingPoints(returnedTrackingPoints);
         const defaultSelectedValue = assignChartData(returnedTrackingPoints); 
   
@@ -396,6 +609,59 @@ const Page = () => {
       setLoading(false);
     }
   };
+  //   try {
+  //     const fetchedObject = fetchLastJournals();
+  //     //If the fetchData returns two promises set up the data accordingly 
+  //     if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
+  //       //useState variable setup for which is used for the toggle buttons
+  //       setJournalEntry(fetchedObject.journalEntryResult)
+  //       setMoodJournalEntry(fetchedObject.moodJournalResult)
+
+  //       //Inital Bar Chart setup
+  //       const returnedTrackingPoints = assignTrackingValues(fetchedObject.moodJournalResult)
+  //       setTrackingPoints(returnedTrackingPoints);
+  //       //console.log("returnedTrackingPoints: ", returnedTrackingPoints)
+  //       const defaultSelectedValue = assignChartData(returnedTrackingPoints);
+
+  //       //console.log("defaultSelectedValue: ", defaultSelectedValue)
+  //       //Word Bubble setup - using semantic Analysis modules
+  //       if (defaultSelectedValue) {
+  //         //console.log("teting")
+  //         assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue[0])
+  //       }
+
+  //       //Theme Analysis setup - using multiple Alogrithmns
+  //       const themesArray = applyThemeAnalysis(fetchedObject.journalEntryResult.body);
+  //       //console.log("themesArray: ", themesArray)
+  //       const themeObject: JournalTheme = {
+  //         peopleAndActorsAnalysis: themesArray[0],
+  //         placesAnalysis: themesArray[1],
+  //         activitiesAnalysis: themesArray[2]
+  //       }
+  //       setJournalThemes(themeObject);
+  //       //console.log("themeObject: ", themeObject)
+  //     }
+  //   }
+  //   catch (error) {
+  //     console.error("Error fetching data:", error);
+  //   }
+  //   finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // //Initaliser function
+  // useEffect(() => {
+  //   setLoading(true)
+  //   fetchDataAndAssignData();
+
+  //   const positiveToNegative = testConjunctionAndSplit();
+  //   if (positiveToNegative) {
+  //     //console.log("testing here!! ", positiveToNegative )
+  //     setConjunctiveSentence(positiveToNegative);
+  //   }
+  //   setLoading(false)
+  // }, []);
 
   useEffect(() => {
     if (pageFocused) {
@@ -411,6 +677,8 @@ const Page = () => {
       setLoading(false)
     }
   }, [pageFocused])
+
+
 
 
   return (
@@ -642,12 +910,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     //elevation: 10,
   },
-  buttonText: {
-    color: "white",
-    fontFamily: "mon-b",
-    alignSelf: "center",
-    fontSize: 12
-  },
   wordBubble: {
     backgroundColor: Colors.transparentPrimary,
     padding: 12,
@@ -660,6 +922,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     //elevation: 10,
 
+  },
+  buttonText: {
+    color: "white",
+    fontFamily: "mon-b",
+    alignSelf: "center",
+    fontSize: 12
   },
   header: {
     paddingBottom: 10
