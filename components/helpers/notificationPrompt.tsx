@@ -70,10 +70,10 @@ const SadFeedback = ({ handleCloseNotification }: FeebackProps) => {
     const handleSendSMS = async () => {
         if (smsAvailable) {
             const { result } = await SMS.sendSMSAsync(
-                [emergencyContact], 
+                [emergencyContact],
                 `I'm struggling mentally right now and need your support. Can we talk or can you please come be with me?`
             );
-            console.log(result); 
+            console.log(result);
         } else {
             console.log('SMS not available on this device');
         }
@@ -143,53 +143,53 @@ const NotificationPrompt = ({ onVisibilityChanged }: NotificationPromptProps) =>
     };
 
     return (
-        <BlurView style={styles.notificationContainer} intensity={40} tint="light" >
-            <BlurView style={styles.formContainer} intensity={100} tint="light">
-                <View style={styles.closeContainerNav}>
-                    <TouchableOpacity style={styles.closeButton} onPress={(() => handleCloseNotification())}>
-                        <MaterialCommunityIcons name="close" size={30} color="white" />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.formContent}>
-                    {selectedEmotion === "" && (
-                        <View style={styles.startingFormContent}>
-                            <Text style={styles.titleHeader}>You haven't interacted with the app in a while</Text>
-                            <Text style={styles.header1}>How are you feeling?</Text>
-                            <View style={styles.formRow}>
-                                <TouchableOpacity onPress={(() => setSelectedEmotion("happy"))}>
-                                    <MaterialCommunityIcons name="emoticon-happy" size={50} color={Colors.pink} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={(() => setSelectedEmotion("neutral"))}>
-                                    <MaterialCommunityIcons name="emoticon-neutral" size={50} color={Colors.pink} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={(() => setSelectedEmotion("sad"))}>
-                                    <MaterialCommunityIcons name="emoticon-sad" size={50} color={Colors.pink} />
-                                </TouchableOpacity>
+
+            <BlurView style={styles.notificationContainer} intensity={40} tint="light" >
+                <BlurView style={styles.formContainer} intensity={100} tint="light">
+                    <View style={styles.closeContainerNav}>
+                        <TouchableOpacity style={styles.closeButton} onPress={(() => handleCloseNotification())}>
+                            <MaterialCommunityIcons name="close" size={30} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.formContent}>
+                        {selectedEmotion === "" && (
+                            <View style={styles.startingFormContent}>
+                                <Text style={styles.titleHeader}>You haven't interacted with the app in a while</Text>
+                                <Text style={styles.header1}>How are you feeling?</Text>
+                                <View style={styles.formRow}>
+                                    <TouchableOpacity onPress={(() => setSelectedEmotion("happy"))}>
+                                        <MaterialCommunityIcons name="emoticon-happy" size={50} color={Colors.pink} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={(() => setSelectedEmotion("neutral"))}>
+                                        <MaterialCommunityIcons name="emoticon-neutral" size={50} color={Colors.pink} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={(() => setSelectedEmotion("sad"))}>
+                                        <MaterialCommunityIcons name="emoticon-sad" size={50} color={Colors.pink} />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
-                    )}
+                        )}
 
-                    {selectedEmotion === "happy" && (
-                        <HappyFeedback handleCloseNotification={handleCloseNotification}></HappyFeedback>
-                    )}
-                    {selectedEmotion === "neutral" && (
-                        <NeutralFeedback handleCloseNotification={handleCloseNotification}></NeutralFeedback>
-                    )}
-                    {selectedEmotion === "sad" && (
-                        <SadFeedback handleCloseNotification={handleCloseNotification}></SadFeedback>
-                    )}
-                </View>
-
-
+                        {selectedEmotion === "happy" && (
+                            <HappyFeedback handleCloseNotification={handleCloseNotification}></HappyFeedback>
+                        )}
+                        {selectedEmotion === "neutral" && (
+                            <NeutralFeedback handleCloseNotification={handleCloseNotification}></NeutralFeedback>
+                        )}
+                        {selectedEmotion === "sad" && (
+                            <SadFeedback handleCloseNotification={handleCloseNotification}></SadFeedback>
+                        )}
+                    </View>
+                </BlurView>
             </BlurView>
 
-        </BlurView>
 
 
     )
 }
 
 const styles = StyleSheet.create({
+    
     notificationContainer: {
         width: "100%",
         height: "100%",
@@ -307,6 +307,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-evenly",
         //
     }
+
 })
 
 export default NotificationPrompt
