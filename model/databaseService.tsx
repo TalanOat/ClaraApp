@@ -78,6 +78,15 @@ export class DatabaseService {
           FOREIGN KEY (emotion_id) REFERENCES emotions(id) 
         )`
       );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS usage_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          createdAt TEXT,
+          type TEXT,
+          start TEXT, 
+          end TEXT
+        )`
+      );
     }, (error) => {
       console.error('database init error:', error);
     });
@@ -149,18 +158,18 @@ export class DatabaseService {
 
   //TODO: add code to protect against SQL injection
   public createJournalEntry(title: string, body: string, createdAt: string): Promise<void> {
-    return new Promise((resolve, reject) => { // Wrap in a promise
+    return new Promise((resolve, reject) => { 
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO journals (title, body, createdAt) VALUES (?, ?, ?)',
           [title, body, createdAt],
           (txObject, resultSet) => {
             console.log('insert successful', resultSet);
-            resolve(); // Signal success
+            resolve();
           },
           (txObject, error) => {
             console.error('insert error:', error);
-            reject(error); // Signal failure
+            reject(error); 
             return true;
           }
         );
@@ -332,7 +341,7 @@ export class DatabaseService {
   }
 
   public addEmotion(baseEmotion: number, extendedEmotion?: string): Promise<number> {
-    return new Promise<number>((resolve, reject) => { // Specify Promise type
+    return new Promise<number>((resolve, reject) => { 
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO emotions (base_emotion, extended_emotion) VALUES (?, ?)',
@@ -399,43 +408,6 @@ export class DatabaseService {
     });
   }
 
-
-  // public getAllMoodJournalsWithTrackingData(): Promise<any[]> {
-  //   return new Promise((resolve, reject) => {
-  //     db.transaction((tx) => {
-  //       tx.executeSql(
-  //         `SELECT 
-  //           mj.id, mj.created_at, mj.tracking_data_id,
-  //           td.figure1, td.figure2, td.figure3 
-  //           FROM mood_journals mj
-  //           JOIN tracking_data td ON td.id = mj.tracking_data_id
-  //           ORDER BY mj.created_at DESC`,
-  //         [],
-  //         (txObject, result) => {
-  //           const moodJournalEntries = [];
-  //           for (let i = 0; i < result.rows.length; i++) {
-  //             const row = result.rows.item(i);
-  //             moodJournalEntries.push({
-  //               id: row.id,
-  //               createdAt: row.created_at,
-  //               trackingData: {
-  //                 figure1: row.figure1,
-  //                 figure2: row.figure2,
-  //                 figure3: row.figure3
-  //               }
-  //               // TODO add other mood journal fields 
-  //             });
-  //           }
-  //           resolve(moodJournalEntries);
-  //         },
-  //         (txObject, error) => {
-  //           reject(error);
-  //           return true;
-  //         }
-  //       );
-  //     })
-  //   })
-  // }
 
   public getMoodJournalByID(moodJournalID: number): Promise<any> { 
     return new Promise((resolve, reject) => {
@@ -526,7 +498,6 @@ export class DatabaseService {
   }
 
 
-
   public deleteMoodJournalEntryByID(id: number): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -566,6 +537,45 @@ export class DatabaseService {
               });
             }
             resolve(emotionsArray);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public createUsageLog(createdAt: string, type: string, start: string, end: string): Promise<void> {
+    return new Promise((resolve, reject) => { 
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO usage_logs (createdAt, type, start, end) VALUES (?, ?, ?, ?)',
+          [createdAt, type, start, end],
+          (txObject, resultSet) => {
+            console.log('insert successful', resultSet);
+            resolve(); 
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error); 
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getAllUsageLogs(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT * FROM usage_logs 
+            ORDER BY createdAt DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
           },
           (txObject, error) => {
             reject(error);

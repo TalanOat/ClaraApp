@@ -15,11 +15,21 @@ import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
 
 import { JournalsContext } from '@/components/contexts/journalProvider'
+import { DetectionContext } from '@/components/contexts/detectionContext'
+
+enum usageTypes {
+  JOURNAL_LOG = "journal_add",
+  MOOD_LOG = "mood_add",
+  MAP_USE = "map_use"
+}
 
 const createJournal = () => {
   const [text, setText] = useState('');
   const [flashNotification, setFlashNotification] = useState(false);
+
+  //context useStates
   const { fetchData } = useContext(JournalsContext);
+  const { logWindowStart, logWindowEnd } = useContext(DetectionContext);
 
   const handleInputChange = (input: string) => {
     setText(input);
@@ -32,6 +42,7 @@ const createJournal = () => {
     setTimeout(() => {
       textInputRef.current?.focus();
     }, 600);
+    logWindowStart(usageTypes.JOURNAL_LOG);
   }, []);
 
   async function databaseCreateJournalEntry() {
@@ -45,6 +56,7 @@ const createJournal = () => {
     }
     finally {
       fetchData();
+      logWindowEnd(usageTypes.JOURNAL_LOG);
     }
   }
 
