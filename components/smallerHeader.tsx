@@ -1,11 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link, useNavigation } from 'expo-router'
 import Colors from '@/constants/Colors'
+import moment from 'moment'
 
 const SmallerHeader = () => {
     const navigation = useNavigation();
+
+    //const currentDate = moment(new Date())
     return (
         <View style={styles.headerContainer}>
             <View style={styles.actionRow}>
@@ -13,8 +16,8 @@ const SmallerHeader = () => {
                     <MaterialCommunityIcons name="arrow-left" color="white" size={35} />
                 </TouchableOpacity>
                 <View style={styles.dateRow}>
-                    <Text style={styles.day}>Sunday</Text>
-                    <Text style={styles.date}>4th Feb</Text>
+                    <Text style={styles.day}>{moment().format('dddd')}</Text>
+                    <Text style={styles.date}>{moment().format('Do MMM')}</Text>
                 </View>
                 <TouchableOpacity style={styles.touchAreaButton}>
                     <MaterialCommunityIcons name='cog'

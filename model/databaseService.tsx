@@ -243,7 +243,7 @@ export class DatabaseService {
 
 
   //! TODO add checks to make suer that there is at least three values in the table
-  public createThreeTrackingNames(value1: string, value2: string, value3: string): Promise<void> {
+  public createThreeTrackingNames(value1: string, value2: string, value3: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -251,11 +251,12 @@ export class DatabaseService {
           [value1, value2, value3],
           (txObject, resultSet) => {
             console.log('tracking names added');
-            resolve();
+            resolve(true);
           },
           (txObject, error) => {
             console.error('tracking name adding error:', error);
             reject(error);
+            resolve(false);
             return true;
           }
         );

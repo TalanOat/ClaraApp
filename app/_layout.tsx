@@ -15,6 +15,7 @@ import { databaseService } from '@/model/databaseService';
 import DateProvider from '@/components/contexts/dateProvider';
 import { JournalsProvider } from '@/components/contexts/journalProvider';
 import { DetectionProvider } from '@/components/contexts/detectionContext';
+import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -88,8 +89,9 @@ function RootLayoutNav() {
                 <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
 
-                <Stack.Screen name="element/settings/settingsMenu" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/trackingValues" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/settingsMenu" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/trackingValues" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/userDetails" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
               </Stack>
             </DetectionProvider>
           </JournalsProvider>

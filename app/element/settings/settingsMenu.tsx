@@ -29,10 +29,20 @@ const settings = () => {
             <View style={styles.mainHeaderContainer}>
                 <Text style={styles.titleHeader}>Settings</Text>
             </View>
-            <ScrollView>
+            <ScrollView>      
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Preferences</Text>
-                    <Link href={'/element/settings/children/trackingValues'} asChild>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>User Details</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
                             <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
@@ -43,6 +53,52 @@ const settings = () => {
                         </TouchableOpacity>
                     </Link>
                 </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Privacy</Text>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>User Details</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Tracking values</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                </View>    
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Apperance</Text>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>User Details</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Tracking values</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                </View>   
             </ScrollView>
         </LinearGradient>
     )
@@ -106,6 +162,9 @@ const styles = StyleSheet.create({
     rowNavigationIcon: {
         flex: 1,
         textAlign: "right"
+    },
+    sectionLink: {
+        marginBottom: 10
     }
 
 
