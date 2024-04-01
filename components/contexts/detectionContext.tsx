@@ -190,7 +190,7 @@ export const DetectionProvider = ({ children }: DetectionProviderProps) => {
                 if(inWindow){
                     if (element.type === usageTypes.JOURNAL_LOG){
                         console.log("element in widnow: ", element)
-                       sendNotificationNow("Hi, would you like to journal?", "You normally add a journal around this time.");
+                       //sendNotificationNow("Hi, would you like to journal?", "You normally add a journal around this time.");
                     }
                 }
             });
@@ -204,7 +204,6 @@ export const DetectionProvider = ({ children }: DetectionProviderProps) => {
                 const token = await registerForPushNotificationsAsync();
                 if (token) {
                     setExpoPushToken(token);
-                    //schedule notifications...
                     
                 }
                 const returnedLogs = await loadUsageLogs();

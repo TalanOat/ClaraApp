@@ -1,0 +1,115 @@
+import { View, Text, TouchableOpacity, TextInput, Alert, StyleSheet, ScrollView } from 'react-native'
+import React, { useContext, useState } from 'react'
+import { adminDatabaseService } from '@/model/adminDatabaseService'
+import { defaultStyles } from '@/constants/Styles';
+import Colors from '@/constants/Colors';
+import { databaseService } from '@/model/databaseService';
+import { DetectionContext } from '@/components/contexts/detectionContext';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import Animated, {
+    useSharedValue,
+    withTiming,
+    Easing,
+    SlideInDown,
+    SlideInUp,
+    FadeInDown,
+} from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+import { Link, useNavigation } from 'expo-router';
+
+const settings = () => {
+
+    return (
+        <LinearGradient
+            style={styles.container}
+            colors={["#20115B", "#C876FF"]}>
+
+            <View style={styles.mainHeaderContainer}>
+                <Text style={styles.titleHeader}>Settings</Text>
+            </View>
+            <ScrollView>
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Preferences</Text>
+                    <Link href={'/element/settings/children/trackingValues'} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Tracking values</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                </View>
+            </ScrollView>
+        </LinearGradient>
+    )
+}
+
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        padding: 20,
+        paddingHorizontal: 20,
+
+    },
+    mainHeaderContainer: {
+        marginTop: 20
+    },
+    header1: {
+        color: "white",
+        fontSize: 16,
+        fontFamily: "mon-sb",
+        textAlign: "center"
+    },
+    titleHeader: {
+        color: "white",
+        fontSize: 22,
+        fontFamily: "mon-b",
+        marginBottom: 20
+    },
+    section: {
+        //paddingHorizontal: 20,
+    },
+    sectionHeader: {
+        paddingVertical: 10,
+        color: "gray",
+        fontSize: 16,
+        fontFamily: "mon-sb",
+    },
+    rowIcon: {
+        marginRight: 10
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: Colors.transparentWhite,
+        //padding: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderRadius: 12,
+        flex: 1,
+        width: "100%"
+        //height: 45
+    },
+    rowLabel: {
+        color: "white",
+        fontFamily: "mon-sb",
+        fontSize: 15
+    },
+    rowNavigationIcon: {
+        flex: 1,
+        textAlign: "right"
+    }
+
+
+})
+
+
+export default settings

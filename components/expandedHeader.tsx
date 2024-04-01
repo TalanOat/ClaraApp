@@ -60,7 +60,7 @@ const ExpandedHeader = () => {
         <View style={styles.container}>
             <View style={styles.actionRow}>
                 {formatDate && Platform.OS === "ios" && (
-                    <Animated.View entering={ZoomIn.delay(200)} style={styles.dateRow}>
+                    <Animated.View style={styles.dateRow}>
                         <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
                         <DateTimePicker
                             value={date}
@@ -86,7 +86,7 @@ const ExpandedHeader = () => {
                         )}
                     </TouchableOpacity>
                 )}
-                <Link href={'/element/settings'} asChild style={styles.touchAreaButton}>
+                <Link href={'/element/settings/settingsMenu'} asChild style={styles.touchAreaButton}>
                     <TouchableOpacity >
                         <MaterialCommunityIcons name='cog'
                             color={"white"}
