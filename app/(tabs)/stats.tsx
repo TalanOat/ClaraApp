@@ -419,7 +419,7 @@ const Page = () => {
       colors={["#20115B", "#C876FF"]}>
       <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
         {!loading && (
-          <Animated.ScrollView style={styles.statsContainer} entering={ZoomIn.delay(100)}>
+          <Animated.ScrollView style={styles.statsContainer} >
             <View style={styles.moodFeedbackContainer}>
               <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
               {/* Timeline Navigation - (Daily, weekly, monthly) */}
@@ -492,7 +492,7 @@ const Page = () => {
             )}
             <View style={styles.textIconRow}>
               <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
-              <Animated.View entering={SlideInLeft.delay(50)} >
+              <Animated.View  >
                 <TouchableOpacity >
                   <MaterialCommunityIcons name='cog'
                     color={"white"}

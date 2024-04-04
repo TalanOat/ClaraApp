@@ -97,7 +97,7 @@ const TrackingValuesSettings = () => {
                 colors={["#20115B", "#C876FF"]}>
                 <View style={styles.headerRow}>
                     <View style={styles.mainHeaderContainer}>
-                        <Text style={styles.titleHeader}>Tracking Values</Text>
+                        <Text style={styles.titleHeader}>Mood Log Values</Text>
                     </View>
                     <TouchableOpacity style={styles.saveButton} onPress={(() => { handleSave() })}>
                         <Text style={styles.buttonText}>Save</Text>
@@ -108,7 +108,7 @@ const TrackingValuesSettings = () => {
                     keyboardShouldPersistTaps={'always'} >
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Suggested Tracking Values:</Text>
+                        <Text style={styles.sectionHeader}>Suggested Values:</Text>
                         <View style={styles.suggestedContainer}>
                             {trackingValuesList.map((value, index) => (
                                 <TouchableOpacity key={index}
@@ -124,20 +124,20 @@ const TrackingValuesSettings = () => {
                         </View>
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>First Tracking Value</Text>
-                        <View style={styles.inputRow}>
+                        <Text style={styles.sectionHeaderLocked}>First Value</Text>
+                        <View style={styles.inputRow} pointerEvents='none'>
                             <TextInput
-                                style={styles.trackingInput}
+                                style={styles.trackingInputLocked}
                                 onChangeText={onTextChanged1}
                                 value={input1}
+                                
                                 onFocus={() => setFocusedInput('input1')}
                                 onBlur={() => setFocusedInput('')}
                             />
-
                         </View>
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>First Tracking Value</Text>
+                        <Text style={styles.sectionHeader}>Second Value</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={styles.trackingInput}
@@ -146,11 +146,10 @@ const TrackingValuesSettings = () => {
                                 onFocus={() => setFocusedInput('input2')}
                                 onBlur={() => setFocusedInput('')}
                             />
-
                         </View>
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>First Tracking Value</Text>
+                        <Text style={styles.sectionHeader}>Third Value</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={styles.trackingInput}
@@ -159,15 +158,9 @@ const TrackingValuesSettings = () => {
                                 onFocus={() => setFocusedInput('input3')}
                                 onBlur={() => setFocusedInput('')}
                             />
-
                         </View>
                     </View>
-
-
-
-
-
-                </ScrollView>
+                </ScrollView> 
             </LinearGradient>
         </KeyboardAvoidingView>
 
@@ -210,6 +203,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "mon-sb",
     },
+    sectionHeaderLocked: {
+        paddingVertical: 10,
+        color: "gray",
+        fontSize: 16,
+        fontFamily: "mon-sb",
+    },
 
     inputRow: {
         alignItems: "center",
@@ -226,6 +225,16 @@ const styles = StyleSheet.create({
         height: 50,
         fontSize: 16,
         color: "white"
+    },
+    trackingInputLocked: {
+        flex: 1,
+        width: "100%",
+        backgroundColor: Colors.transparentWhite,
+        padding: 15,
+        borderRadius: 10,
+        height: 50,
+        fontSize: 16,
+        color: "gray"
     },
     saveButton: {
         backgroundColor: Colors.pink,

@@ -87,6 +87,16 @@ export class DatabaseService {
           end TEXT
         )`
       );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS goals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          createdAt TEXT,
+          step INTEGER, 
+          steps INTEGER, 
+          daily TEXT
+        )`
+      );
     }, (error) => {
       console.error('database init error:', error);
     });
@@ -409,7 +419,6 @@ export class DatabaseService {
     });
   }
 
-
   public getMoodJournalByID(moodJournalID: number): Promise<any> { 
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -573,6 +582,95 @@ export class DatabaseService {
       db.transaction(tx => {
         tx.executeSql(
           `SELECT * FROM usage_logs 
+            ORDER BY createdAt DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public createGoal(name: string, createdAt: string, step:number, steps: number, daily: string): Promise<boolean> {
+    return new Promise((resolve, reject) => { 
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO goals (name, createdAt, step, steps, daily) VALUES (?, ?, ?, ?, ?)',
+          [name, createdAt, step, steps, daily],
+          (txObject, resultSet) => {
+            console.log('insert successful', resultSet);
+            resolve(true);
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error); 
+            resolve(false)
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public addOneToGoal(id: number): Promise<number> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `UPDATE goals 
+           SET step = step + 1 
+           WHERE id = ?
+           RETURNING step`,
+          [id],
+          (txObject, resultSet) => {
+            if (resultSet.rows.length > 0) {
+              const newStep = resultSet.rows.item(0).step;
+              resolve(newStep); 
+            } else {
+              reject(new Error("Goal not found or update failed"));
+            }
+          },
+          (txObject, error) => {
+            console.error('update error:', error);
+            reject(error);
+            return(false);
+          }
+        );
+      });
+    });
+  }
+
+  public subtractOneFromGoal(id: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `UPDATE goals 
+           SET step = CASE WHEN step > 0 THEN step - 1 ELSE 0 END 
+           WHERE id = ?`,
+          [id],
+          (txObject, resultSet) => {
+            //console.log('update successful', resultSet);
+            resolve(true); 
+          },
+          (txObject, error) => {
+            console.error('update error:', error);
+            reject(error);
+            return(false);
+          }
+        );
+      });
+    });
+  }
+
+  public getAllGoals(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT * FROM goals 
             ORDER BY createdAt DESC`,
           [],
           (txObject, result) => {

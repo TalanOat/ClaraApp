@@ -19,14 +19,14 @@ type NavigationProps = {
   navigate: (value: string) => void;
 }
 
-interface Props  {
+interface Props {
   headerDate: Date
 }
 
 const Layout = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const { navigate } = useNavigation<NavigationProps>()
-  
+
 
   function handleAddNavigation(path: string) {
     setShowAddMenu(false)
@@ -82,19 +82,25 @@ const Layout = () => {
           </Tabs.Screen>
 
 
-          <Tabs.Screen name="add" options={{
-            tabBarItemStyle: tabStyles.addButton,
-            tabBarLabel: () => null,
-            tabBarIcon: ({ color, size }) =>
-              <TouchableOpacity onPress={() => {
-                setShowAddMenu(true);
-              }}>
-                <MaterialCommunityIcons name='plus-circle'
-                  color={color}
-                  size={60}>
-                </MaterialCommunityIcons>
-              </TouchableOpacity>
-          }}>
+          <Tabs.Screen name="add"
+            listeners={{
+              tabPress: (e) => {
+                e.preventDefault();
+              },
+            }}
+            options={{
+              tabBarItemStyle: tabStyles.addButton,
+              tabBarLabel: () => null,
+              tabBarIcon: ({ color, size }) =>
+                <TouchableOpacity onPress={(e) => {
+                  setShowAddMenu(true);
+                }}>
+                  <MaterialCommunityIcons name='plus-circle'
+                    color={color}
+                    size={60}>
+                  </MaterialCommunityIcons>
+                </TouchableOpacity>
+            }}>
           </Tabs.Screen>
 
           <Tabs.Screen name="map" options={{

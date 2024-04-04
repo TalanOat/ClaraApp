@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
-import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps'
+import MapView, { Callout, Marker, PROVIDER_GOOGLE, Circle } from 'react-native-maps'
 import Colors from '@/constants/Colors'
 import mapStyle from '@/assets/data/mapStyle.json';
 
@@ -11,6 +11,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import MapViewDirections from 'react-native-maps-directions';
 import { GOOGLE_API_KEY } from '@/environments'
+import { Image } from 'expo-image'
+
+
+
 
 //import * as turf from '@turf/turf';
 
@@ -38,13 +42,9 @@ const Page = () => {
     latitude: 52.62128509709368, latitudeDelta: LATITUDE_DELTA, longitude: 1.2566833989723016, longitudeDelta: LONGITUDE_DELTA
   });
 
-  //!TODO random point generation:
   const [randomMarkers, setRandomMarkers] = useState<Location[]>([]);
-
   const [destination, setDestination] = useState<Location>();
-
   const [origin, setOrigin] = useState<Location>();
-
   const [randomPointsGenerated, setRandomPointsGenerated] = useState(false);
 
 
@@ -80,7 +80,6 @@ const Page = () => {
 
         console.log("reverseGeocode Results: ", results);
 
-        // Do something with the results: e.g., display in the Callout
       }
     } catch (error) {
       console.error("Error in reverseGeocode:", error);
@@ -110,11 +109,11 @@ const Page = () => {
     })
 
 
-    if (location && !randomPointsGenerated) { // Only generate if needed
+    if (location && !randomPointsGenerated) {
       const generatedPoints = generateRandomPoints(
         location.coords,
-        0.01, // Radius of 0.05 degrees (adjust as needed)
-        10    // Number of points to generate
+        0.01,
+        10
       );
       setRandomMarkers(generatedPoints);
       setDestination(generatedPoints[0]);
@@ -169,7 +168,12 @@ const Page = () => {
             strokeWidth={4}
             strokeColor="red"
           />
-          {/* {showLocations()} */}
+          {origin && (
+            <Marker
+              coordinate={origin}>
+              <MaterialCommunityIcons name="pencil-circle" size={40} color="black" />
+            </Marker>
+          )}
 
           {randomMarkers.map((marker, index) => (
             <Marker
@@ -180,14 +184,13 @@ const Page = () => {
               {selectedMarker && (
                 <Callout key={index}
                   onPress={() => switchDestination(selectedMarker)}>
-                  <Text>Marker Info</Text>
+                  <Text>Navigate to marker</Text>
                 </Callout>
               )}
             </Marker>
           ))}
 
         </MapView>
-        {/* Loading Indicator */}
         {isLoading && (
           <View style={styles.loadingPopup}>
             <ActivityIndicator size="large" color={Colors.pink} />
@@ -241,6 +244,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center'
   },
+  markerImage: {
+    width: 35,
+    height: 35
+  }
 })
 
 export default Page

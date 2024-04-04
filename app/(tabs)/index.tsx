@@ -67,6 +67,7 @@ const Page = () => {
         setAnimating(true);
         setAnimating(false);
       }, 500);
+      console.log("lenght of journals", journals.length)
     }
   }, [pageFocused])
 
@@ -80,13 +81,11 @@ const Page = () => {
     setTimeout(() => {
       setAnimating(true);
       setAnimating(false);
-      
+
     }, 500);
     setLoading(false)
   }, [journals]);
 
-
-  /* ------------------------------- daviewLogic ------------------------------ */
 
   const [loading, setLoading] = useState(false);
   const listRef = useRef<FlatList>(null);
@@ -107,7 +106,7 @@ const Page = () => {
       {
         text: 'OK', onPress: () => {
           databaseService.deleteJournalEntryByID(idWithNoPreix)
-          fetchData(); 
+          fetchData();
           //onRefresh();
         }
       },
@@ -165,7 +164,7 @@ const Page = () => {
     return { prefix, id };
   }
 
-  
+
 
   /* -------------------- renderRows (for each userElement) ------------------- */
 
@@ -250,7 +249,21 @@ const Page = () => {
           onRefresh={onRefresh}
         >
         </Animated.FlatList>
+        {journals.length === 0 && (
+          <View style={styles.addWarning}>
+            <View style={styles.linkContainer} >
+              <TouchableOpacity style={styles.listElement}>
+                <View style={styles.topRow}>
+                  <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
+                  <Text style={styles.elementTitle}>Your Entries Will Show Here...</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+        )}
       </View>
+
     </LinearGradient>
   )
 }
@@ -302,6 +315,12 @@ const styles = StyleSheet.create({
     fontFamily: "mon-b",
   },
   moodType: {},
+  addWarning: {
+    //backgroundColor: "pink",
+    height: "100%",
+    paddingHorizontal: 10,
+    marginTop: -10
+  }
 
 })
 

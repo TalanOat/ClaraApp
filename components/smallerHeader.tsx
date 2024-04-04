@@ -19,13 +19,15 @@ const SmallerHeader = () => {
                     <Text style={styles.day}>{moment().format('dddd')}</Text>
                     <Text style={styles.date}>{moment().format('Do MMM')}</Text>
                 </View>
-                <TouchableOpacity style={styles.touchAreaButton}>
-                    <MaterialCommunityIcons name='cog'
-                        color={"white"}
-                        size={35}
-                        style={styles.settingsButton}>
-                    </MaterialCommunityIcons>
-                </TouchableOpacity>
+                <Link href={'/element/settings/settingsMenu'} asChild style={styles.touchAreaButton}>
+                    <TouchableOpacity >
+                        <MaterialCommunityIcons name='cog'
+                            color={"white"}
+                            size={35}
+                            style={styles.settingsButton}>
+                        </MaterialCommunityIcons>
+                    </TouchableOpacity>
+                </Link>
             </View>
 
         </View>

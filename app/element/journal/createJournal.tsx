@@ -23,8 +23,16 @@ enum usageTypes {
   MAP_USE = "map_use"
 }
 
+const placeholderValues = [
+  "What's on your mind?",
+  "How are you feeling today?",
+  "Write about a memorable moment...",
+];
+
 const createJournal = () => {
   const [text, setText] = useState('');
+  const [placeholder, setPlaceholder] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [flashNotification, setFlashNotification] = useState(false);
 
   //context useStates
@@ -38,11 +46,16 @@ const createJournal = () => {
 
   const textInputRef = useRef<TextInput>(null);
 
+
+
   useEffect(() => {
     setTimeout(() => {
       textInputRef.current?.focus();
     }, 600);
+
     logWindowStart(usageTypes.JOURNAL_LOG);
+
+
   }, []);
 
   async function databaseCreateJournalEntry() {
@@ -60,6 +73,15 @@ const createJournal = () => {
     }
   }
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setPlaceholderIndex(prevIndex => (prevIndex + 1) % placeholderValues.length);
+    }, 5000); 
+  
+    return () => clearInterval(intervalId);
+  }, []); 
+
+
 
   const handleSubmit = () => {
     databaseCreateJournalEntry()
@@ -70,8 +92,6 @@ const createJournal = () => {
     }, 1000);
   }
 
-
-
   return (
     <LinearGradient
       style={styles.container}
@@ -80,7 +100,7 @@ const createJournal = () => {
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
-          <Text style={styles.elementTitle}>Title Here</Text>
+          <Text style={styles.elementTitle}>Add Journal</Text>
           <TouchableOpacity onPress={() => { handleSubmit(); }} >
             <MaterialCommunityIcons name="check" size={40} color="white" />
           </TouchableOpacity>
@@ -91,6 +111,8 @@ const createJournal = () => {
             style={styles.journalInput}
             onChangeText={handleInputChange}
             value={text}
+            placeholder={placeholderValues[placeholderIndex]}
+            placeholderTextColor="gray"
             multiline={true}
             numberOfLines={20}
             ref={textInputRef}
@@ -157,7 +179,8 @@ const flashMessage = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    //borderRadius: 10,
+    overflow: "hidden"
   },
   innerText: {
     padding: 20,
@@ -166,8 +189,9 @@ const flashMessage = StyleSheet.create({
     fontSize: 15,
 
     backgroundColor: Colors.pink,
-    borderRadius: 16,
+    borderRadius: 10,
     //margin: 50
+    overflow: "hidden"
   }
 })
 

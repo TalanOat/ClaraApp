@@ -20,7 +20,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useNavigation } from 'expo-router';
 
 const settings = () => {
-
     return (
         <LinearGradient
             style={styles.container}
@@ -29,50 +28,70 @@ const settings = () => {
             <View style={styles.mainHeaderContainer}>
                 <Text style={styles.titleHeader}>Settings</Text>
             </View>
-            <ScrollView>      
+            <ScrollView showsVerticalScrollIndicator={false}>      
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Preferences</Text>
                     <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='human-greeting' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>User Details</Text>
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
                     <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
+                            <MaterialCommunityIcons color="#fff" name='emoticon-happy' size={25} style={styles.rowIcon} />
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <Text style={styles.rowLabel}>Mood Log Values</Text>
 
-                            <Text style={styles.rowLabel}>Tracking values</Text>
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+                            <MaterialCommunityIcons color="#fff" name='page-previous' size={25} style={styles.rowIcon} />
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <Text style={styles.rowLabel}>Journal Templates</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/notificationSettings'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+                            <MaterialCommunityIcons color="#fff" name='notification-clear-all' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Notifications</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
                 </View>
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Privacy</Text>
-                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                    <Link href={'/element/settings/children/thirdParty'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='map-check' size={25} style={styles.rowIcon} />
 
-                            <Text style={styles.rowLabel}>User Details</Text>
+                            <Text style={styles.rowLabel}>Third Party Settings</Text>
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
-                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
+                </View>    
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Backup Data</Text>
+                    <Link href={'/element/settings/children/cloudSync'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='cloud-check' size={25} style={styles.rowIcon} />
 
-                            <Text style={styles.rowLabel}>Tracking values</Text>
+                            <Text style={styles.rowLabel}>Sync Data to the cloud</Text>
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
                 </View>    
@@ -83,19 +102,45 @@ const settings = () => {
 
                             <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
 
-                            <Text style={styles.rowLabel}>User Details</Text>
+                            <Text style={styles.rowLabel}>Theme</Text>
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
-                    <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
+                </View>   
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Accesibility</Text>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
                             <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
 
-                            <Text style={styles.rowLabel}>Tracking values</Text>
+                            <Text style={styles.rowLabel}>Theme</Text>
 
-                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                </View>   
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Help & Feedback</Text>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Guides</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Feedback Hub</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
                 </View>   
@@ -110,12 +155,12 @@ const styles = StyleSheet.create({
         flex: 1,
         width: "100%",
         height: "100%",
-        padding: 20,
+        //padding: 20,
         paddingHorizontal: 20,
 
     },
     mainHeaderContainer: {
-        marginTop: 20
+        //marginTop: 20
     },
     header1: {
         color: "white",
@@ -134,7 +179,7 @@ const styles = StyleSheet.create({
     },
     sectionHeader: {
         paddingVertical: 10,
-        color: "gray",
+        color: Colors.offWhite,
         fontSize: 16,
         fontFamily: "mon-sb",
     },

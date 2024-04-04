@@ -82,7 +82,6 @@ function RootLayoutNav() {
                   name="(tabs)"
                   options={{
                     header: () => <ExpandedHeader />,
-
                   }} />
                 <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
@@ -92,6 +91,9 @@ function RootLayoutNav() {
                 <Stack.Screen name="element/settings/settingsMenu" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/trackingValues" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/userDetails" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/thirdParty" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/cloudSync" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/notificationSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
               </Stack>
             </DetectionProvider>
           </JournalsProvider>

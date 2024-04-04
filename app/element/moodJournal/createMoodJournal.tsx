@@ -16,6 +16,8 @@ import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
 import Slider from '@react-native-community/slider'
 import { JournalsContext } from '@/components/contexts/journalProvider'
+import * as SecureStore from 'expo-secure-store';
+import NegativeEmotionPrompt from '@/components/helpers/negativeEmotionPrompt'
 
 interface TrackingName {
     id: number;
@@ -43,7 +45,6 @@ const createJournal = () => {
     const [flashNotification, setFlashNotification] = useState(false);
     const [userTrackingVals, setUserTrackingVals] = useState<TrackingName[]>([]);
 
-    /* ------------------------- BACKEND FOR THE SLIDERS ------------------------ */
     const [sliderValue1, setSliderValue1] = useState<number>(0);
     const [sliderValue2, setSliderValue2] = useState<number>(0);
     const [sliderValue3, setSliderValue3] = useState<number>(0);
@@ -67,9 +68,6 @@ const createJournal = () => {
         return (formula);
     }
 
-    //-----------------------------------------------------------------
-
-    //ANCHOR EMOTIONS BACKEND
     const [selectedEmotions, setSelectedEmotions] = useState<SelectedEmotion[]>([]);
     const [extendedOpenKeys, setExtendedOpenKeys] = useState<number[]>([]);
 
@@ -134,7 +132,7 @@ const createJournal = () => {
     //-----------------------------------------------------------------------------------------
 
     //TODO check that this is only run after the create Tracking Data as it needs the trackingID
-    const databaseCreateMoodJournal = async (inputMoodJournal:MoodJournal) => {
+    const databaseCreateMoodJournal = async (inputMoodJournal: MoodJournal) => {
         //console.log("in tracking set")
         try {
             const returnedMoodJournalID = await databaseService.createMoodJournal(inputMoodJournal);
@@ -147,11 +145,11 @@ const createJournal = () => {
                 return null;
             }
 
-        } 
+        }
         catch (error) {
             console.error("error inserting mood Journal:", error);
         }
-        finally{
+        finally {
             //! TODO - move this to after the emotions have been linked?
             fetchData();
         }
@@ -163,10 +161,10 @@ const createJournal = () => {
             try {
 
                 const emotionId = await databaseService.addEmotion(emotion.baseKey, emotion.extendedKey);
-                if(emotionId){
+                if (emotionId) {
                     console.log("Added emotion with ID: ", emotionId);
                     await databaseService.addMoodJournalEmotion(moodJournalID, emotionId);
-                }                
+                }
 
             } catch (error) {
                 console.error(`Error adding emotion ${emotion.baseKey} - ${emotion.extendedKey}:`, error);
@@ -186,14 +184,21 @@ const createJournal = () => {
             figure3: calculatePercentage(sliderValue3)
         });
         console.log("inputMoodJournal: ", inputMoodJournal)
-        
+
         const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
         if (moodJournalID) {
-             databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
-         }
+            databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+        }
+
+
         setTimeout(() => {
             setFlashNotification(false);
         }, 1000);
+
+        if (inputMoodJournal.figure1 <= 50) {
+            //console.log("negative happiness")
+            setShowEmotionPrompt(true)
+        }
     }
 
     useEffect(() => {
@@ -204,134 +209,162 @@ const createJournal = () => {
         }
     }, [userTrackingVals]);
 
+    const [userName, setUserName] = useState<string>('');
+
+    const loadName = async () => {
+        try {
+            const storedName = await SecureStore.getItemAsync('userName');
+            if (storedName) {
+                setUserName(storedName);
+            }
+        } catch (error) {
+            console.error('Error loading name:', error);
+        }
+    };
+
+    const [showEmotionPrompt, setShowEmotionPrompt] = useState(false);
+
+    const onPromptVisibilityChanged = (visible: boolean) => {
+        setShowEmotionPrompt(visible);
+    }
+
+
     useEffect(() => {
         setLoading(true);
         fetchTrackingValues().then(() => {
             setLoading(false);
         })
+        loadName();
     }, []);
 
     return (
-        <LinearGradient
-            style={styles.container}
-            colors={["#20115B", "#C876FF"]}
-        >
-            <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
-                <View style={styles.topRow}>
-                    <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
-                    <Text style={styles.elementTitle}>Check In</Text>
-                    <TouchableOpacity onPress={() => { handleSubmit(); }} >
-                        <MaterialCommunityIcons name="check" size={40} color="white" />
-                    </TouchableOpacity>
+        <>
+            <LinearGradient
+                style={styles.container}
+                colors={["#20115B", "#C876FF"]}
+            >
+                <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
+                    <View style={styles.topRow}>
+                        <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
+                        <Text style={styles.elementTitle}>Check In</Text>
+                        <TouchableOpacity onPress={() => { handleSubmit(); }} >
+                            <MaterialCommunityIcons name="check" size={40} color="white" />
+                        </TouchableOpacity>
 
-                </View>
-                <View style={styles.contentRow}>
-                    <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning John</Text>
-                    {/* first slider row : user interaction affects the sliderValue using a range from 0-1*/}
-                    {!loading && (
-                        <View style={styles.sliderRow}>
-                            <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals[2]?.name}
-                            </Text>
-                            <Slider style={{ width: 200, height: 40 }}
-                                value={sliderValue1}
-                                onValueChange={(value) => { setSliderValue1(value) }}
-                                minimumValue={0}
-                                maximumValue={1}
-                                minimumTrackTintColor={Colors.pink}
-                                maximumTrackTintColor={Colors.primary} />
-                        </View>
-                    )}
-                    {/* second slider row */}
-                    {!loading && (
-                        <View style={styles.sliderRow}>
-                            <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals[1]?.name}
-                            </Text>
-                            <Slider style={{ width: 200, height: 40 }}
-                                value={sliderValue2}
-                                onValueChange={(value) => { setSliderValue2(value) }}
-                                minimumValue={0}
-                                maximumValue={1}
-                                minimumTrackTintColor={Colors.pink}
-                                maximumTrackTintColor={Colors.primary} />
-                        </View>
-                    )}
-                    {/* third slider row */}
-                    {!loading && (
-                        <View style={styles.sliderRow}>
-                            <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
-                                {userTrackingVals[0]?.name}
-                            </Text>
-                            <Slider style={{ width: 200, height: 40 }}
-                                value={sliderValue3}
-                                onValueChange={(value) => { setSliderValue3(value) }}
-                                minimumValue={0}
-                                maximumValue={1}
-                                minimumTrackTintColor={Colors.pink}
-                                maximumTrackTintColor={Colors.primary} />
-                        </View>
-                    )}
-                    {/* Emotions container */}
-                    <View style={emotionsStyles.emotionsContainer}>
-                        {/* Base emotions Mapping */}
-                        {emotionsData.map((emotion) => (
-                            <Animated.View key={emotion.key} entering={FadeInDown.delay(200)}>
+                    </View>
+                    <View style={styles.contentRow}>
+                        <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning {userName}</Text>
+                        {/* first slider row : user interaction affects the sliderValue using a range from 0-1*/}
+                        {!loading && (
+                            <View style={styles.sliderRow}>
+                                <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                                    {userTrackingVals[2]?.name}
+                                </Text>
+                                <Slider style={{ width: 200, height: 40 }}
+                                    value={sliderValue1}
+                                    onValueChange={(value) => { setSliderValue1(value) }}
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    minimumTrackTintColor={Colors.pink}
+                                    maximumTrackTintColor={Colors.primary} />
+                            </View>
+                        )}
+                        {/* second slider row */}
+                        {!loading && (
+                            <View style={styles.sliderRow}>
+                                <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                                    {userTrackingVals[1]?.name}
+                                </Text>
+                                <Slider style={{ width: 200, height: 40 }}
+                                    value={sliderValue2}
+                                    onValueChange={(value) => { setSliderValue2(value) }}
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    minimumTrackTintColor={Colors.pink}
+                                    maximumTrackTintColor={Colors.primary} />
+                            </View>
+                        )}
+                        {/* third slider row */}
+                        {!loading && (
+                            <View style={styles.sliderRow}>
+                                <Text style={[defaultStyles.defaultFontGrey, styles.progressText]}>
+                                    {userTrackingVals[0]?.name}
+                                </Text>
+                                <Slider style={{ width: 200, height: 40 }}
+                                    value={sliderValue3}
+                                    onValueChange={(value) => { setSliderValue3(value) }}
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    minimumTrackTintColor={Colors.pink}
+                                    maximumTrackTintColor={Colors.primary} />
+                            </View>
+                        )}
+                        {/* Emotions container */}
+                        <View style={emotionsStyles.emotionsContainer}>
+                            {/* Base emotions Mapping */}
+                            {emotionsData.map((emotion) => (
+                                <Animated.View key={emotion.key} entering={FadeInDown.delay(200)}>
+                                    <TouchableOpacity
+                                        style={[
+                                            emotionsStyles.button,
+                                            { backgroundColor: emotion.backgroundColor },
+                                            //if at least one of the selectedEmotions by the user is the same 
+                                            //  as the base emotion, and the extendedKey is not selected then add 
+                                            //  the selectedButton style
+                                            selectedEmotions.some(em =>
+                                                em.baseKey === emotion.key && em.extendedKey === "null"
+                                            ) ? emotionsStyles.selectedButton : null
+                                        ]}
+                                        onPress={() => handleEmotionPressed(emotion.key)}>
+                                        <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
+                                    </TouchableOpacity>
+                                    {/* Extended emotions Mapping */}
+                                    {extendedOpenKeys.includes(emotion.key) && (
+                                        <View style={emotionsStyles.extendedEmotionsContainer}>
+                                            {emotion.extendedEmotions?.map(extEmotion => (
+                                                <TouchableOpacity
+                                                    key={extEmotion.key}
+                                                    style={[
+                                                        emotionsStyles.button,
+                                                        { backgroundColor: extEmotion.backgroundColor },
+                                                        selectedEmotions.some(ext =>
+                                                            ext.baseKey === emotion.key && ext.extendedKey === extEmotion.key
+                                                        ) ? emotionsStyles.selectedButton : null,
+                                                    ]}
+                                                    onPress={() => handleEmotionPressed(emotion.key, extEmotion.key)}>
+                                                    <Text style={emotionsStyles.buttonText}>{extEmotion.name}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
+                                </Animated.View>
+                            ))}
+                            <Animated.View style={emotionsStyles.cancelButtonContainer} entering={FadeInDown.delay(100)}>
                                 <TouchableOpacity
                                     style={[
-                                        emotionsStyles.button,
-                                        { backgroundColor: emotion.backgroundColor },
-                                        //if at least one of the selectedEmotions by the user is the same 
-                                        //  as the base emotion, and the extendedKey is not selected then add 
-                                        //  the selectedButton style
-                                        selectedEmotions.some(em =>
-                                            em.baseKey === emotion.key && em.extendedKey === "null"
-                                        ) ? emotionsStyles.selectedButton : null
+                                        emotionsStyles.cancelButton,
                                     ]}
-                                    onPress={() => handleEmotionPressed(emotion.key)}>
-                                    <Text style={emotionsStyles.buttonText}>{emotion.name}</Text>
+                                    onPress={() => handleCancelEmotion()}>
+                                    {/* <Text style={emotionsStyles.buttonText}>Cancel</Text> */}
+                                    <MaterialCommunityIcons name="window-close" size={25} color="white" />
                                 </TouchableOpacity>
-                                {/* Extended emotions Mapping */}
-                                {extendedOpenKeys.includes(emotion.key) && (
-                                    <View style={emotionsStyles.extendedEmotionsContainer}>
-                                        {emotion.extendedEmotions?.map(extEmotion => (
-                                            <TouchableOpacity
-                                                key={extEmotion.key}
-                                                style={[
-                                                    emotionsStyles.button,
-                                                    { backgroundColor: extEmotion.backgroundColor },
-                                                    selectedEmotions.some(ext =>
-                                                        ext.baseKey === emotion.key && ext.extendedKey === extEmotion.key
-                                                    ) ? emotionsStyles.selectedButton : null,
-                                                ]}
-                                                onPress={() => handleEmotionPressed(emotion.key, extEmotion.key)}>
-                                                <Text style={emotionsStyles.buttonText}>{extEmotion.name}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                )}
                             </Animated.View>
-                        ))}
-                        <Animated.View style={emotionsStyles.cancelButtonContainer} entering={FadeInDown.delay(100)}>
-                            <TouchableOpacity
-                                style={[
-                                    emotionsStyles.cancelButton,
-                                ]}
-                                onPress={() => handleCancelEmotion()}>
-                                {/* <Text style={emotionsStyles.buttonText}>Cancel</Text> */}
-                                <MaterialCommunityIcons name="window-close" size={25} color="white" />
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </View>
+                        </View>
 
-                </View>
-            </Animated.ScrollView>
-            {flashNotification && (
-                <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
-                    <Text style={flashMessage.innerText}>Success</Text>
-                </Animated.View>
+                    </View>
+                </Animated.ScrollView>
+                {flashNotification && (
+                    <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+                        <Text style={flashMessage.innerText}>Added Mood Log</Text>
+                    </Animated.View>
+                )}
+
+
+            </LinearGradient>
+            {showEmotionPrompt && (
+                <NegativeEmotionPrompt onVisibilityChanged={onPromptVisibilityChanged}></NegativeEmotionPrompt>
             )}
-        </LinearGradient>
+        </>
     )
 }
 
@@ -429,6 +462,7 @@ const flashMessage = StyleSheet.create({
         bottom: 0,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: "hidden"
     },
     innerText: {
         padding: 20,
@@ -438,7 +472,7 @@ const flashMessage = StyleSheet.create({
 
         backgroundColor: Colors.pink,
         borderRadius: 10,
-        //margin: 50
+        overflow: "hidden"
     }
 })
 
