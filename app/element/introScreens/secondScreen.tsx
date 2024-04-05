@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 
 import { useEffect, useRef, useState } from 'react';
@@ -23,17 +23,14 @@ const trackingValuesList = [
     { label: "Body Image", value: "Body Image" },
 ];
 
-const TrackingValuesSettings = () => {
 
-    const [input1, setInput1] = useState('');
+
+const SecondScreen = () => {
     const [input2, setInput2] = useState('');
     const [input3, setInput3] = useState('');
 
     const [focusedInput, setFocusedInput] = useState("");
 
-    const onTextChanged1 = (itemValue: string) => {
-        setInput1(itemValue)
-    }
 
     const onTextChanged2 = (itemValue: string) => {
         setInput2(itemValue)
@@ -44,24 +41,14 @@ const TrackingValuesSettings = () => {
     }
 
     const fetchTrackingValues = async () => {
-        try {
-            const returnedValues = await databaseService.getLastThreeTrackingNames();
-            if (returnedValues) {
-                setInput1(returnedValues[2].name)
-                setInput2(returnedValues[1].name)
-                setInput3(returnedValues[0].name)
-            }
-        } catch (error) {
-            console.error("error getting values:", error);
-        }
+
+        setInput2(trackingValuesList[1].value)
+        setInput3(trackingValuesList[4].value)
+
     };
 
     const handleSuggestedPressed = (suggested: string) => {
         switch (focusedInput) {
-            case "input1": {
-                setInput1(suggested);
-                break;
-            }
             case "input2": {
                 setInput2(suggested);
                 break;
@@ -78,19 +65,20 @@ const TrackingValuesSettings = () => {
     }
 
     const handleSave = async () => {
-        const success = await databaseService.createThreeTrackingNames(input1, input2, input3)
+        const success = await databaseService.createThreeTrackingNames("Happiness", input2, input3)
         if(success){
-            console.log("successfully added tracking values")
+           console.log("successfully added tracking values")
         }
+        router.push("/element/introScreens/thirdScreen")
     }
 
     useEffect(() => {
         fetchTrackingValues();
-    },[])
+    }, [])
 
     return (
 
-        <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={100}>
+        <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" keyboardVerticalOffset={40}>
             <LinearGradient
                 style={styles.container}
                 colors={["#20115B", "#C876FF"]}>
@@ -98,15 +86,16 @@ const TrackingValuesSettings = () => {
                     <View style={styles.mainHeaderContainer}>
                         <Text style={styles.titleHeader}>Mood Log Values</Text>
                     </View>
-                    <TouchableOpacity style={styles.saveButton} onPress={(() => { handleSave() })}>
-                        <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
+
+                </View>
+                <View style={styles.subHeaderRow}>
+                    <Text style={styles.subHeaderText}>Which values would you like to track in your mood journal?</Text>
                 </View>
 
                 <ScrollView
-                    keyboardShouldPersistTaps={'always'} >
+                    keyboardShouldPersistTaps={'always'}>
 
-                    <View style={styles.section}>
+                    <View style={styles.suggestionRow}>
                         <Text style={styles.sectionHeader}>Suggested Values:</Text>
                         <View style={styles.suggestedContainer}>
                             {trackingValuesList.map((value, index) => (
@@ -123,20 +112,7 @@ const TrackingValuesSettings = () => {
                         </View>
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeaderLocked}>First Value</Text>
-                        <View style={styles.inputRow} pointerEvents='none'>
-                            <TextInput
-                                style={styles.trackingInputLocked}
-                                onChangeText={onTextChanged1}
-                                value={input1}
-                                
-                                onFocus={() => setFocusedInput('input1')}
-                                onBlur={() => setFocusedInput('')}
-                            />
-                        </View>
-                    </View>
-                    <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Second Value</Text>
+                        <Text style={styles.sectionHeader}>First Value</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={styles.trackingInput}
@@ -148,7 +124,7 @@ const TrackingValuesSettings = () => {
                         </View>
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Third Value</Text>
+                        <Text style={styles.sectionHeader}>Second Value</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={styles.trackingInput}
@@ -159,7 +135,16 @@ const TrackingValuesSettings = () => {
                             />
                         </View>
                     </View>
-                </ScrollView> 
+                    <View style={styles.navigationButtons}>
+                        <TouchableOpacity style={styles.saveButtonLocked} onPress={(() => { handleSave() })}>
+                            <MaterialCommunityIcons name="chevron-left" size={24} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.saveButton} onPress={(() => { handleSave() })}>
+                            <MaterialCommunityIcons name="chevron-right" size={24} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+
             </LinearGradient>
         </KeyboardAvoidingView>
 
@@ -177,6 +162,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
 
     },
+    suggestionRow: {
+        marginTop: 20,
+        marginBottom: 20,
+    },
     mainHeaderContainer: {
         marginTop: 0,
 
@@ -189,9 +178,9 @@ const styles = StyleSheet.create({
     },
     titleHeader: {
         color: "white",
-        fontSize: 22,
+        fontSize: 24,
         fontFamily: "mon-b",
-        //marginBottom: 20
+        marginVertical: 10
     },
     section: {
         //paddingHorizontal: 20,
@@ -240,6 +229,11 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
     },
+    saveButtonLocked: {
+        backgroundColor: Colors.transparentWhite,
+        padding: 15,
+        borderRadius: 10,
+    },
     buttonText: {
         color: "white",
         fontFamily: "mon-b",
@@ -260,8 +254,24 @@ const styles = StyleSheet.create({
         color: Colors.offWhite,
     },
 
+    subHeaderRow: {
+
+    },
+    subHeaderText: {
+        color: "white",
+        fontFamily: "mon",
+        fontSize: 16,
+        //textAlign: "center"
+    },
+    navigationButtons: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 20,
+        marginTop: 30
+    }
+
 
 
 })
 
-export default TrackingValuesSettings;
+export default SecondScreen;

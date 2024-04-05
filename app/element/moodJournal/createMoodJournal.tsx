@@ -40,6 +40,8 @@ interface MoodJournal {
 }
 
 
+
+
 const createJournal = () => {
     const [loading, setLoading] = useState(false);
     const [flashNotification, setFlashNotification] = useState(false);
@@ -159,7 +161,6 @@ const createJournal = () => {
     async function databaseCreateAndLinkEmotions(selectedEmotions: SelectedEmotion[], moodJournalID: number) {
         for (const emotion of selectedEmotions) {
             try {
-
                 const emotionId = await databaseService.addEmotion(emotion.baseKey, emotion.extendedKey);
                 if (emotionId) {
                     console.log("Added emotion with ID: ", emotionId);
@@ -171,6 +172,7 @@ const createJournal = () => {
             }
         }
     }
+
     const handleSubmit = async () => {
         setFlashNotification(true);
         const currentTime = new Date().toISOString()

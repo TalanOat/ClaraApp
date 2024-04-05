@@ -1,8 +1,6 @@
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions, ViewStyle } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
-import { databaseService } from '@/model/databaseService'
-import moment from 'moment';
 import Colors from '@/constants/Colors';
 import { useNavigation } from 'expo-router';
 import { defaultStyles } from '@/constants/Styles';
@@ -34,7 +32,6 @@ import Animated, {
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import nlp from 'compromise';
 
 interface Journal {
   id: number;
@@ -54,22 +51,6 @@ interface MoodJournal {
   figure3: number;
 }
 
-interface JournalElement {
-  id: string;
-  type: 'journal' | 'mood' | 'goal';
-  title: string;
-  time: string;
-  body?: string;
-  trackingName1?: string;
-  trackingValue1?: number;
-  trackingName2?: string;
-  trackingValue2?: number;
-  trackingName3?: string;
-  trackingValue3?: number;
-  goalName?: string;
-  goalTarget?: number;
-  goalValue?: number;
-}
 
 interface TrackingValue {
   name: string;

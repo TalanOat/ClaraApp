@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { Stack, useNavigation } from 'expo-router';
+import { Stack, router, useNavigation } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { Fragment, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,29 @@ import DateProvider from '@/components/contexts/dateProvider';
 import { JournalsProvider } from '@/components/contexts/journalProvider';
 import { DetectionProvider } from '@/components/contexts/detectionContext';
 import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
+import * as SecureStore from 'expo-secure-store';
+
+const tokenRead = {
+  async getToken(key: string) {
+    try {
+      return SecureStore.getItemAsync(key)
+    }
+    catch (error) {
+      return null;
+    }
+  }
+}
+
+const tokenWrite = {
+  async setToken(key: string, value: string) {
+    try {
+      return SecureStore.setItemAsync(key, value)
+    }
+    catch (error) {
+      return null;
+    }
+  }
+}
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -70,6 +93,22 @@ function RootLayoutNav() {
     return <StatusBar style="light" backgroundColor={Colors.primary} />;
   }
 
+  const checkOnboarding = async () => {
+    try {
+      const onboardingCompleted = await SecureStore.getItemAsync("onboardingComplete")
+      if (!onboardingCompleted) {
+        router.push("/element/introScreens/firstScreen")
+      }
+    }
+    catch (error) {
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    checkOnboarding();
+  }, [])
+
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
@@ -83,6 +122,10 @@ function RootLayoutNav() {
                   options={{
                     header: () => <ExpandedHeader />,
                   }} />
+                <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
+                <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />
+                <Stack.Screen name="element/introScreens/thirdScreen" options={{ headerShown: false }} />
+                <Stack.Screen name="element/introScreens/finalScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />

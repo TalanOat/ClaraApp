@@ -161,8 +161,8 @@ const NegativeEmotionPrompt = ({ onVisibilityChanged }: NotificationPromptProps)
 
     return (
 
-        <BlurView style={styles.notificationContainer} intensity={40} tint="light" >
-            <BlurView style={styles.formContainer} intensity={100} tint="light">
+        <BlurView style={styles.notificationContainer} intensity={40} tint="light" experimentalBlurMethod='dimezisBlurView'>
+            <BlurView style={styles.formContainer} intensity={100} tint="light" experimentalBlurMethod='dimezisBlurView'>
                 <View style={styles.closeContainerNav}>
                     <TouchableOpacity style={styles.closeButton} onPress={(() => handleCloseNotification())}>
                         <MaterialCommunityIcons name="close" size={30} color="white" />
