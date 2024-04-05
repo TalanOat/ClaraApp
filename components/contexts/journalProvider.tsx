@@ -77,7 +77,7 @@ export const JournalsProvider = ({ children }: JournalsProviderProps) => {
                     id: "mood_" + moodJournal.id,
                     type: 'mood',
                     title: 'Mood Journal',
-                    time: moment(moodJournal.createdAt).format('HH:mm'),
+                    time: moment(moodJournal.created_at).format('HH:mm'),
                     trackingName1: moodJournal.tracking_name1,
                     trackingValue1: moodJournal.tracking_value1,
                     trackingName2: moodJournal.tracking_name2,
@@ -85,7 +85,6 @@ export const JournalsProvider = ({ children }: JournalsProviderProps) => {
                     trackingName3: moodJournal.tracking_name3,
                     trackingValue3: moodJournal.tracking_value3
                 }));
-
                 setJournals(prevJournals => [...prevJournals, ...entries]);
             }
 

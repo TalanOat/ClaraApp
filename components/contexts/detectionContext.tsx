@@ -6,6 +6,8 @@ import NotificationPrompt from "../helpers/notificationPrompt";
 import moment from 'moment';
 import { databaseService } from "@/model/databaseService";
 
+import * as SecureStore from 'expo-secure-store';
+
 enum usageTypes {
     JOURNAL_LOG = "journal_add",
     MOOD_LOG = "mood_add",
@@ -53,10 +55,13 @@ export const DetectionProvider = ({ children }: DetectionProviderProps) => {
     const responseListener = useRef<Notifications.Subscription>();
 
     const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false)
 
     const onPromptVisibilityChanged = (visible: boolean) => {
         setShowNotificationPrompt(visible);
     }
+
+
 
     const sendNotificationNow = async (title: string, body: string) => {
         const message = {
@@ -165,13 +170,24 @@ export const DetectionProvider = ({ children }: DetectionProviderProps) => {
         return(hourWindows);
     }
 
+    const loadSetting = async () => {
+        try {
+            const storedSetting = await SecureStore.getItemAsync('notificationsEnabled');
+
+            if (storedSetting) {
+                const storedSettingAsBoolean = (storedSetting.toLowerCase() === "true"); 
+                setNotificationsEnabled(storedSettingAsBoolean);
+            }
+        } catch (error) {
+            console.error('Error loading name:', error);
+        }
+    };
+
     const checkInWindow = (window: timeWindow) => {
-        //time format = "15" 
         const currentHour = new Date().getHours();
     
         if (currentHour === window.start ) 
         {
-            //await sendNotificationNow(title, body);
             return(true)
         } 
         else
@@ -180,27 +196,30 @@ export const DetectionProvider = ({ children }: DetectionProviderProps) => {
         }
     };
 
+    
+
     useEffect(() => {
         //scheduleNotificationFor();
-        if(expoPushToken && hourWindows){
+        if(expoPushToken && hourWindows && notificationsEnabled){
             //for now just get the first hourWindow:
 
             hourWindows.forEach(element => {
                 const inWindow = checkInWindow(element)
                 if(inWindow){
-                    if (element.type === usageTypes.JOURNAL_LOG){
+                    if (element.type === usageTypes.JOURNAL_LOG && notificationsEnabled){
                         console.log("element in widnow: ", element)
-                       //sendNotificationNow("Hi, would you like to journal?", "You normally add a journal around this time.");
+                       sendNotificationNow("Hi, would you like to journal?", "You normally add a journal around this time.");
                     }
                 }
             });
 
         }   
-    },[expoPushToken, hourWindows])
+    },[expoPushToken, hourWindows, notificationsEnabled])
 
     useEffect(() => {
         const initialize = async () => {
             try {
+                loadSetting();
                 const token = await registerForPushNotificationsAsync();
                 if (token) {
                     setExpoPushToken(token);

@@ -59,9 +59,9 @@ interface TrackingValue {
   invertScore?: boolean;
 }
 
-import { calculateCompleteTrackingValues } from '@/components/helpers/moodTrackingHelper';
-import { testConjunctionAndSplit } from '@/components/helpers/conjuctiveHelper';
-import { applyThemeAnalysis } from '@/components/helpers/themeHelper';
+import { calculateCompleteTrackingValues } from '@/components/helpers/statsHelpers/scoreTrackingValues';
+import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
+import ConjuctiveComponent from '@/components/helpers/statsHelpers/conjuctiveComponent';
 
 
 //! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
@@ -182,12 +182,7 @@ const Page = () => {
     return matchingKeys;
   }
 
-  /* -------------------------- mood journal analysis ------------------------- */
-
   const [trackingPoints, setTrackingPoints] = useState<TrackingValue[]>()
-
-  /* -------------------------- emotion Bubble setup -------------------------- */
-
   const [wordBubble, setWordBubble] = useState<string[]>([]);
 
   const assignWordBubble = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
@@ -234,8 +229,6 @@ const Page = () => {
 
   }
 
-  /* ----------------------------- BarChart setup ----------------------------- */
-
   const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
     let filteredTrackingPoints;
     setLoading(true);
@@ -270,7 +263,6 @@ const Page = () => {
 
   const handleLayout = (event: any) => {
     const { width } = event.nativeEvent.layout;
-    //console.log("width: ", width)
     setChartWidth(width);
   };
 
@@ -280,40 +272,17 @@ const Page = () => {
   }
 
   const [chartData, setChartData] = useState<ChartData>();
-
-  /* ---------------------------- trackingNav code ---------------------------- */
-
   const [selectedTracking, setSelectedTracking] = useState<TrackingValue>();
 
   const handleTrackingPress = (selectedTrackingInput: TrackingValue) => {
     setSelectedTracking(selectedTrackingInput);
   };
 
-  /* --------------------------- conjuctive analysis -------------------------- */
-
-  //! ToDO allow for multiple sentences!
-  const [conjunctiveSentence, setConjunctiveSentence] = useState<string[]>();
-
-  /* ---------------------------- journal analysis ---------------------------- */
-
-  interface JournalTheme {
-    peopleAndActorsAnalysis: [string, number][]
-    placesAnalysis: [string, number][]
-    activitiesAnalysis: [string, number][]
-  }
-
-  const [journalThemes, setJournalThemes] = useState<JournalTheme>()
-
-
-  /* ------------------------------ timeline code ----------------------------- */
-  const [selectedTimeline, setSelectedTimeline] = useState('Daily'); // Initial selection
+  const [selectedTimeline, setSelectedTimeline] = useState('Daily');
 
   const handleOptionPress = (option: string) => {
-    //console.log("timeline option: ", option)
     setSelectedTimeline(option);
   };
-
-  /* -------------- other code - including the first load useEffect ------------- */
 
   const fetchLastJournals = () => {
     try {
@@ -335,12 +304,10 @@ const Page = () => {
     }
   };
 
-  //if the selected tracking is changed
   useEffect(() => {
     if (trackingPoints && journalEntry && selectedTracking) {
       assignChartData(trackingPoints);
       assignWordBubble(journalEntry, selectedTracking);
-      //console.log("trackingPoints: ", trackingPoints)
     }
   }, [selectedTracking]);
 
@@ -348,28 +315,17 @@ const Page = () => {
   const fetchDataAndAssignData = async () => {
     try {
       const fetchedObject = fetchLastJournals();
-  
+
       if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
         setJournalEntry(fetchedObject.journalEntryResult);
         setMoodJournalEntry(fetchedObject.moodJournalResult);
-        // Initial Bar Chart setup
         const returnedTrackingPoints = calculateCompleteTrackingValues(fetchedObject.moodJournalResult);
         setTrackingPoints(returnedTrackingPoints);
-        const defaultSelectedValue = assignChartData(returnedTrackingPoints); 
-  
-        // Word Bubble setup - (assuming assignWordBubble is unchanged)
+        const defaultSelectedValue = assignChartData(returnedTrackingPoints);
+
         if (defaultSelectedValue) {
           assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue[0]);
         }
-  
-        // Theme Analysis setup 
-        const themesArray = applyThemeAnalysis(fetchedObject.journalEntryResult.body);
-        const themeObject: JournalTheme = {
-          peopleAndActorsAnalysis: themesArray[0],
-          placesAnalysis: themesArray[1],
-          activitiesAnalysis: themesArray[2]
-        };
-        setJournalThemes(themeObject);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -380,15 +336,13 @@ const Page = () => {
 
   useEffect(() => {
     if (pageFocused) {
-      //console.log("testing here!! " )
       setLoading(true)
       fetchDataAndAssignData();
 
-      const positiveToNegative = testConjunctionAndSplit();
-      if (positiveToNegative) {
-
-        setConjunctiveSentence(positiveToNegative);
-      }
+      // const positiveToNegative = testConjunctionAndSplit();
+      // if (positiveToNegative) {
+      //   setConjunctiveSentence(positiveToNegative);
+      // }
       setLoading(false)
     }
   }, [pageFocused])
@@ -410,7 +364,7 @@ const Page = () => {
                     key={option}
                     style={[
                       styles.button,
-                      selectedTimeline === option && styles.selectedBubble, // Apply selected style
+                      selectedTimeline === option && styles.selectedBubble, 
                     ]}
                     onPress={() => handleOptionPress(option)}
                   >
@@ -492,71 +446,13 @@ const Page = () => {
                 </Animated.View>
               ))}
             </Animated.View>
-            {journalThemes && (
-              <View>
-                <Text style={[defaultStyles.subTitleHeader, styles.header]}>Key Themes</Text>
-                <View style={styles.themesContainer}>
-                  {journalThemes.activitiesAnalysis.length > 0 && (
-                    <View style={styles.themeTypeContainer}>
-                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Activities</Text>
-                      <View style={styles.themeWordsContainer}>
-                        {journalThemes.activitiesAnalysis.map(([word, count]) => (
-                          <View key={word} style={styles.wordBubble}>
-                            <Text style={styles.buttonText} >
-                              {word}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                  {journalThemes.peopleAndActorsAnalysis.length > 0 && (
-                    <View style={styles.themeTypeContainer}>
-                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>People</Text>
-                      <View style={styles.themeWordsContainer}>
-                        {journalThemes.peopleAndActorsAnalysis.map(([word, count]) => (
-                          <View key={word} style={styles.wordBubble}>
-                            <Text style={styles.buttonText} >
-                              {word}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                  {journalThemes.placesAnalysis.length > 0 && (
-                    <View style={styles.themeTypeContainer}>
-                      <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Places</Text>
-                      <View style={styles.themeWordsContainer}>
-                        {journalThemes.placesAnalysis.map(([word, count]) => (
-                          <View key={word} style={styles.wordBubble}>
-                            <Text style={styles.buttonText} >
-                              {word}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
+
+            {journalEntry?.body && !loading && (
+              <JournalThemesComponent journalBody={journalEntry.body}></JournalThemesComponent>
             )}
-            {conjunctiveSentence && (
-              <View>
-                <Text style={[defaultStyles.subTitleHeader, styles.header]}>Conjuctive Analysis</Text>
-                <View style={styles.conjunctiveContainer}>
-                  <Text style={[defaultStyles.paragraph, styles.description]}>You might have turned a positive into a negative</Text>
-                  <View style={[styles.conjunctiveElement, styles.positive]}>
-                    <Text style={[styles.analysisText]}>{conjunctiveSentence[0]}</Text>
-                  </View>
-                  <View style={[styles.conjunctiveElement, styles.but]}>
-                    <Text style={[styles.analysisText]}>{conjunctiveSentence[1]}</Text>
-                  </View>
-                  <View style={[styles.conjunctiveElement, styles.negative]}>
-                    <Text style={[styles.analysisText]}>{conjunctiveSentence[2]}</Text>
-                  </View>
-                </View>
-              </View>
+            
+            {journalEntry?.body && !loading && (
+              <ConjuctiveComponent journalBody={journalEntry.body}></ConjuctiveComponent>
             )}
           </Animated.ScrollView>
         )}
