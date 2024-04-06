@@ -23,17 +23,13 @@ const assignScoreToTrackingValue = (trackingValue: TrackingValue) => {
     if (trackingValue.invertScore) {
         actualValue = 100 - actualValue;
     }
-
-    if (actualValue <= 25) {
-        trackingValue.score = "very_positive";
-    } else if (actualValue < 50) {
+    if (actualValue <= 50) {
         trackingValue.score = "positive";
-    } else if (actualValue < 75) {
+    } else if (actualValue < 50) {
         trackingValue.score = "negative";
-    } else {
-        trackingValue.score = "very_negative";
     }
 }
+
 
 const calculateCompleteTrackingValues = (moodJournalInput: MoodJournal) => {
     const results: TrackingValue[] = [];
@@ -59,7 +55,7 @@ const calculateCompleteTrackingValues = (moodJournalInput: MoodJournal) => {
 
         results.push(trackingValue);
     }
-    console.log("results: ", results)
+    //console.log("results: ", results)
     return results
 }
 

@@ -46,7 +46,9 @@ const ConjuctiveComponent = ({ journalBody }: { journalBody: string }) => {
         if (positiveToNegative) {
             setConjunctiveSentence(positiveToNegative);
         }
-    }, [])
+    }, [journalBody])
+
+    
 
     return (
         <>

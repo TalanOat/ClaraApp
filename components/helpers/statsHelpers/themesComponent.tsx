@@ -84,15 +84,16 @@ const JournalThemesComponent = ({ journalBody }: { journalBody: string }) => {
   const [journalThemes, setJournalThemes] = useState<JournalTheme>()
 
   useEffect(() => {
+    console.log("journalBody in JournalThemesComponent: ", journalBody)
     const themesArray = applyThemeAnalysis(journalBody);
     const themeObject: JournalTheme = {
       peopleAndActorsAnalysis: themesArray[0],
       placesAnalysis: themesArray[1],
       activitiesAnalysis: themesArray[2]
     };
-    console.log("themeObject: ", themeObject)
+    //console.log("themeObject: ", themeObject)
     setJournalThemes(themeObject);
-  },[])
+  },[journalBody])
 
   return (
     <>

@@ -5,8 +5,6 @@ import Colors from '@/constants/Colors';
 import { useNavigation } from 'expo-router';
 import { defaultStyles } from '@/constants/Styles';
 import { JournalsContext } from '@/components/contexts/journalProvider';
-
-//chart imports
 import {
   LineChart,
   BarChart,
@@ -15,7 +13,6 @@ import {
   ContributionGraph,
   StackedBarChart
 } from "react-native-chart-kit";
-
 import Animated, {
   useSharedValue,
   withTiming,
@@ -29,9 +26,7 @@ import Animated, {
   useAnimatedStyle,
   ZoomIn,
 } from 'react-native-reanimated';
-
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 
 interface Journal {
   id: number;
@@ -51,7 +46,6 @@ interface MoodJournal {
   figure3: number;
 }
 
-
 interface TrackingValue {
   name: string;
   value: number;
@@ -63,10 +57,6 @@ import { calculateCompleteTrackingValues } from '@/components/helpers/statsHelpe
 import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
 import ConjuctiveComponent from '@/components/helpers/statsHelpers/conjuctiveComponent';
 
-
-//! does not reload the data after updates to moodJounrals/journal needs a whole app reload to persist changes
-
-//! TODO implement loading state and animation
 const Page = () => {
   const navigation = useNavigation();
   const [pageFocused, setpageFocused] = useState(false);
@@ -88,11 +78,10 @@ const Page = () => {
     };
   }, [navigation]);
 
-
   const [journalEntry, setJournalEntry] = useState<Journal>()
   const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal | null>(null);
   const [loading, setLoading] = useState(false);
-  const { journals, setJournals, fetchData } = useContext(JournalsContext);
+  const { journals } = useContext(JournalsContext);
 
   const fetchLastEntry = () => {
     //setLoading(true);
@@ -232,8 +221,6 @@ const Page = () => {
   const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
     let filteredTrackingPoints;
     setLoading(true);
-    //console.log("in assign chart data")
-    //if no button has been pressed...
     if (selectedTracking?.name === undefined) {
       // select the first point
       filteredTrackingPoints = [inputTrackingPoints[0]];
@@ -314,6 +301,8 @@ const Page = () => {
 
   const fetchDataAndAssignData = async () => {
     try {
+      //setLoading(true)
+      setLoading(true)
       const fetchedObject = fetchLastJournals();
 
       if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
@@ -330,22 +319,16 @@ const Page = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      //setLoading(false);
     }
   };
 
   useEffect(() => {
     if (pageFocused) {
-      setLoading(true)
       fetchDataAndAssignData();
-
-      // const positiveToNegative = testConjunctionAndSplit();
-      // if (positiveToNegative) {
-      //   setConjunctiveSentence(positiveToNegative);
-      // }
-      setLoading(false)
     }
   }, [pageFocused])
+
 
 
   return (
@@ -452,7 +435,7 @@ const Page = () => {
             )}
             
             {journalEntry?.body && !loading && (
-              <ConjuctiveComponent journalBody={journalEntry.body}></ConjuctiveComponent>
+              <ConjuctiveComponent  journalBody={journalEntry.body}></ConjuctiveComponent>
             )}
           </Animated.ScrollView>
         )}
@@ -535,8 +518,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pink,
     padding: 12,
     borderRadius: 10,
-    //elevation: 10,
-
   },
   header: {
     paddingBottom: 10
@@ -549,13 +530,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20
   },
-  wordBubbleAdd: {
-    backgroundColor: Colors.transparentPrimary,
-    padding: 12,
-    borderRadius: 10,
-    //elevation: 10,
-    alignSelf: "flex-end"
-  },
+
   textIconRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -564,66 +539,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingTop: 20
   },
-  positive: {
-    backgroundColor: "rgba(98, 171, 96, 0.7)"
-  },
-  but: {
-    backgroundColor: "rgba(208, 187, 1, 0.7)"
-  },
-  negative: {
-    backgroundColor: "rgba(156, 50, 50, 0.7)"
-  },
-  analysisText: {
-    color: "white",
-    fontFamily: "mon-sb",
-
-  },
-  conjunctiveContainer: {
-    //backgroundColor: Colors.transparentWhite,
-    //padding: 10'
-    paddingTop: 10,
-    justifyContent: "flex-end",
-    gap: 12,
-    flexWrap: "wrap",
-    flexDirection: "row"
-  },
-  conjunctiveElement: {
-    backgroundColor: Colors.transparentWhite,
-    padding: 15,
-    borderRadius: 16,
-    //width:  50
-    //shadowColor: "pink",
-    //shadowOpacity: 0.5,
-
-  },
-  description: {
-    paddingBottom: 10
-  },
-  themesContainer: {
-    paddingTop: 10,
-    paddingBottom: 15,
-  },
-  themeWord: {
-    backgroundColor: Colors.transparentWhite,
-    padding: 15,
-    borderRadius: 16,
-  },
-  themeTypeContainer: {
-    //flexDirection: "row"
-  },
-  themeDescription: {
-    flex: 1,
-    paddingTop: 10,
-    fontFamily: "mon-sb",
-  },
-  themeWordsContainer: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-    paddingTop: 10
-  }
-
 
 })
 
