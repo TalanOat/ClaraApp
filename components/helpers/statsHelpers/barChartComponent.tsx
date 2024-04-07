@@ -64,9 +64,15 @@ interface Journal {
     tracking_value1?: number;
 }
 
+interface BarChartProps {
+    journalParam: Journal
+    moodJournalParam: MoodJournal
+    handleTimelineChanged: (selectedTimeline: string) => void; 
+}
 
 
-const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: Journal, moodJournalParam: MoodJournal }) => {
+
+const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChanged }: BarChartProps) => {
     const [loading, setLoading] = useState<boolean>(false);
 
     const [selectedTimeline, setSelectedTimeline] = useState('Daily');
@@ -78,8 +84,11 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
     const [linkingWords, setLinkingWords] = useState<string[]>([]);
     const [barWidth, setBarWidth] = useState<number>(4)
 
+    const [noDailyEntries, setNoDailyEntries] = useState(false)
+
     const handleTimelineOptionPressed = (option: string) => {
         setSelectedTimeline(option);
+        handleTimelineChanged(option);
     };
 
     const handleLayout = (event: any) => {
@@ -188,11 +197,11 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
 
         inputJournals.forEach((journal) => {
             if (journal.created_at) {
-                const formattedDay = moment(journal.created_at).format('DD/MM') 
-                days.push(formattedDay); 
-    
+                const formattedDay = moment(journal.created_at).format('DD/MM')
+                days.push(formattedDay);
+
                 if (journal.tracking_value1 !== undefined) {
-                    values.push(journal.tracking_value1); 
+                    values.push(journal.tracking_value1);
                 } else {
                     values.push(0);
                 }
@@ -207,16 +216,57 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
         });
     };
 
-    
+
 
 
     const SetupWeeklyGraphValues = async () => {
         try {
             //assign the chart data from happiness only
             const currentDate = new Date().toISOString();
-            const weeklyJournalEntries = await databaseService.getAllMoodJournalsForWeekFromDate(currentDate)
+            const weeklyJournalEntries = await databaseService.getAllMoodJournalsForDaysFromDate(currentDate, 7)
             if (weeklyJournalEntries) {
                 assignWeeklyChartData(weeklyJournalEntries)
+            }
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            //setLoading(false);
+        }
+    };
+
+    const assignMonthlyChartData = (inputJournals: Journal[]) => {
+        const days: string[] = [];
+        const values: number[] = [];
+
+        inputJournals.forEach((journal) => {
+            if (journal.created_at) {
+                const formattedDay = moment(journal.created_at).format('DD/MM')
+                days.push(formattedDay);
+
+                if (journal.tracking_value1 !== undefined) {
+                    values.push(journal.tracking_value1);
+                } else {
+                    values.push(0);
+                }
+            }
+        });
+
+        setBarWidth(1)
+
+        setChartData({
+            labels: days,
+            datasets: [{ data: values }]
+        });
+    };
+
+    const SetupMonthlyGraphValues = async () => {
+        try {
+            //assign the chart data from happiness only
+            const currentDate = new Date().toISOString();
+            const monthlyJournalEntries = await databaseService.getAllMoodJournalsForDaysFromDate(currentDate, 28)
+            if (monthlyJournalEntries) {
+                assignMonthlyChartData(monthlyJournalEntries)
             }
 
         } catch (error) {
@@ -244,11 +294,18 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
         if (selectedTimeline === "Weekly") {
             SetupWeeklyGraphValues();
         }
+        if (selectedTimeline === "Monthly") {
+            SetupMonthlyGraphValues();
+        }
     }, [selectedTimeline])
 
     useEffect(() => {
-        if (journalParam && moodJournalParam) {
+        if (journalParam.id !== -1 && moodJournalParam.id !== -1) {
             SetupDailyGraphValues(journalParam, moodJournalParam);
+        }
+        else {
+            setSelectedTimeline("Weekly")
+            setNoDailyEntries(true);
         }
     }, [journalParam, moodJournalParam])
 
@@ -257,26 +314,45 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
     return (
         <>
             <View style={styles.moodFeedbackContainer}>
-                <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
+                <Text style={[defaultStyles.titleHeader, styles.header]}>{selectedTimeline} Analysis</Text>
                 {/* Timeline Navigation - (Daily, weekly, monthly) */}
-                <View style={styles.timelineNav}>
-                    {['Daily', 'Weekly', 'Monthly'].map(option => (
-                        <TouchableOpacity
-                            key={option}
-                            style={[
-                                styles.button,
-                                selectedTimeline === option && styles.selectedBubble,
-                            ]}
-                            onPress={() => handleTimelineOptionPressed(option)}
-                        >
-                            <Text style={styles.buttonText}>{option}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {!noDailyEntries && (
+                    <View style={styles.timelineNav}>
+                        {['Daily', 'Weekly', 'Monthly'].map(option => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[
+                                    styles.button,
+                                    selectedTimeline === option && styles.selectedBubble,
+                                ]}
+                                onPress={() => handleTimelineOptionPressed(option)}
+                            >
+                                <Text style={styles.buttonText}>{option}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+                {noDailyEntries && (
+                    <View style={styles.timelineNav}>
+                        {['Weekly', 'Monthly'].map(option => (
+                            <TouchableOpacity
+                                key={option}
+                                style={[
+                                    styles.button,
+                                    selectedTimeline === option && styles.selectedBubble,
+                                ]}
+                                onPress={() => handleTimelineOptionPressed(option)}
+                            >
+                                <Text style={styles.buttonText}>{option}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
 
                 <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
                     {/* Bar Chart */}
-                    {chartData && barWidth &&(
+                    {chartData && barWidth && (
                         <BarChart
                             data={chartData}
                             width={chartWidth}
@@ -310,43 +386,47 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
                     )}
                 </View>
             </View>
-            {trackingValues !== undefined && (
-                <View style={styles.trackingNav}>
-                    {trackingValues.map((value, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.button,
-                                selectedTracking?.name === value.name ? styles.selectedBubble : null
-                            ]}
-                            onPress={() => handleTrackingPress(value)}
-                        >
-                            <Text style={styles.buttonText}>{value.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
-            <View style={styles.textIconRow}>
-                <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
-                <Animated.View  >
-                    <TouchableOpacity >
-                        <MaterialCommunityIcons name='cog'
-                            color={"white"}
-                            size={30}>
-                        </MaterialCommunityIcons>
-                    </TouchableOpacity>
-                </Animated.View>
-            </View>
 
-            <Animated.View style={styles.wordBubbleContainer} entering={FadeInDown.delay(200)}>
-                {linkingWords.map((word) => (
-                    <Animated.View key={word} entering={SlideInLeft.delay(50)}>
-                        <TouchableOpacity style={styles.wordBubble} >
-                            <Text style={styles.buttonText}>{word}</Text>
-                        </TouchableOpacity>
+            {trackingValues !== undefined && selectedTimeline === "Daily" && (
+                <>
+                    <View style={styles.trackingNav}>
+                        {trackingValues.map((value, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.button,
+                                    selectedTracking?.name === value.name ? styles.selectedBubble : null
+                                ]}
+                                onPress={() => handleTrackingPress(value)}
+                            >
+                                <Text style={styles.buttonText}>{value.name}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={styles.textIconRow}>
+                        <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
+                        <Animated.View  >
+                            <TouchableOpacity >
+                                <MaterialCommunityIcons name='cog'
+                                    color={"white"}
+                                    size={30}>
+                                </MaterialCommunityIcons>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    </View>
+
+                    <Animated.View style={styles.wordBubbleContainer} entering={FadeInDown.delay(200)}>
+                        {linkingWords.map((word) => (
+                            <Animated.View key={word} entering={SlideInLeft.delay(50)}>
+                                <TouchableOpacity style={styles.wordBubble} >
+                                    <Text style={styles.buttonText}>{word}</Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        ))}
                     </Animated.View>
-                ))}
-            </Animated.View>
+                </>
+            )}
         </>
     );
 }

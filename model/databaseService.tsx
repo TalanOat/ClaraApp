@@ -503,14 +503,14 @@ export class DatabaseService {
     });
   }
 
-  public getAllMoodJournalsForWeekFromDate(date: string): Promise<any[]> {
+  public getAllMoodJournalsForDaysFromDate(date: string, days: number): Promise<any[]> {
     return new Promise((resolve, reject) => {
-        const startDate = new Date(date);
-        startDate.setDate(startDate.getDate() - 7);
+      const startDate = new Date(date);
+      startDate.setDate(startDate.getDate() - days);
 
-        db.transaction((tx) => {
-            tx.executeSql(
-                `SELECT * FROM (
+      db.transaction((tx) => {
+        tx.executeSql(
+          `SELECT * FROM (
                    SELECT mj.*, 
                           tn1.name AS tracking_name1, 
                           tn2.name AS tracking_name2, 
@@ -521,19 +521,19 @@ export class DatabaseService {
                    LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
                    LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
                    WHERE DATE(mj.created_at) >= ? AND DATE(mj.created_at) <= ?
-                ) WHERE rank = 1`, 
-                [startDate.toISOString().slice(0, 10), date],
-                (txObject, resultSet) => {
-                   resolve(resultSet.rows._array);
-                },
-                (txObject, error) => {
-                    reject(error);
-                    return true;
-                }
-            );
-        });
+                ) WHERE rank = 1`,
+          [startDate.toISOString().slice(0, 10), date],
+          (txObject, resultSet) => {
+            resolve(resultSet.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
     });
-}
+  }
 
 
   public deleteMoodJournalEntryByID(id: number): Promise<void> {

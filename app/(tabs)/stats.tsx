@@ -39,6 +39,7 @@ interface MoodJournal {
 import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
 import ConjuctiveComponent from '@/components/helpers/statsHelpers/conjuctiveComponent';
 import BarChartComponent from '@/components/helpers/statsHelpers/barChartComponent';
+import { defaultStyles } from '@/constants/Styles';
 
 const Page = () => {
   const navigation = useNavigation();
@@ -64,10 +65,11 @@ const Page = () => {
   const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal | null>(null);
   const [loading, setLoading] = useState(false);
   const { journals } = useContext(JournalsContext);
+  const [selectedTimeline, setSelectedTimeline] = useState<string>("Daily")
 
   const fetchLastEntry = () => {
     //setLoading(true);
-
+    console.log("in lastJoruanl; ")
     const latestJournal = journals
       .filter(journal => journal.type === 'journal')
       .sort((a, b) => {
@@ -82,20 +84,17 @@ const Page = () => {
         body: latestJournal?.body,
         time: latestJournal.time
       });
-      //console.log("returnedEntry; ", returnedEntry)
+      console.log("returnedEntry; ", returnedEntry)
       return returnedEntry
     }
     else {
       console.error("entry not found, or no entries exist")
     }
-
-
-
   }
 
   const fetchLastMoodJournal = () => {
     //setLoading(true);
-
+    console.log("in moodJournal; ")
     const latestMoodJournal = journals
       .filter(journal => journal.type === 'mood')
       .sort((a, b) => {
@@ -135,20 +134,43 @@ const Page = () => {
     return { prefix, id };
   }
 
+
   const fetchLastJournals = () => {
     try {
       setLoading(true);
-      //const [journalEntryResult, moodJournalResult] = await Promise.all([fetchLastEntry(), fetchLastMoodJournal()]);
-      const [journalEntryResult, moodJournalResult] = [fetchLastEntry(), fetchLastMoodJournal()]
-      //console.log("journalEntryResult: ", journalEntryResult)
-      //console.log("moodJournalResult: ", moodJournalResult)
-      return { journalEntryResult, moodJournalResult };
+      if (journals.length === 0) {
+        console.log("No mood Journal or Text Journal");
 
+        const currentTime = new Date().toISOString()
+
+        const journalEntryResult: Journal = ({
+          id: -1,
+          title: "placeholder",
+          body: "placeholder",
+          time: currentTime
+        });
+
+        const moodJournalResult: MoodJournal = ({
+          id: -1,
+          createdAt: currentTime,
+          trackingName1: "placeholder",
+          figure1: 0,
+          trackingName2: "placeholder",
+          figure2: 0,
+          trackingName3: "placeholder",
+          figure3: 0,
+        });
+
+        return { journalEntryResult, moodJournalResult }
+      }
+      else {
+        const [journalEntryResult, moodJournalResult] = [fetchLastEntry(), fetchLastMoodJournal()]
+        return { journalEntryResult, moodJournalResult };
+      }
     }
     catch (error) {
-      console.log("Error fetching data:", error);
+      console.log("error fetching data:", error);
       return { journalEntryResult: undefined, moodJournalResult: undefined };
-
     }
     finally {
       setLoading(false);
@@ -162,18 +184,26 @@ const Page = () => {
       const fetchedObject = fetchLastJournals();
 
       if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
+        console.log("fetchedObject.journalEntryResult: ", fetchedObject.journalEntryResult)
+        console.log("fetchedObject.moodJournalResult: ", fetchedObject.moodJournalResult)
         setJournalEntry(fetchedObject.journalEntryResult);
         setMoodJournalEntry(fetchedObject.moodJournalResult);
       }
 
-    } 
+    }
     catch (error) {
       console.error("Error fetching data:", error);
-    } 
+    }
     finally {
       setLoading(false);
     }
   };
+
+  const handleTimelineChanged = (timeline: string) => {
+    setSelectedTimeline(timeline)
+  }
+
+
 
   useEffect(() => {
     if (pageFocused) {
@@ -189,17 +219,36 @@ const Page = () => {
         {!loading && (
           <Animated.ScrollView style={styles.statsContainer} >
 
-            {journalEntry && moodJournalEntry && !loading && (
-              <BarChartComponent journalParam={journalEntry} moodJournalParam={moodJournalEntry}></BarChartComponent>
+            {journalEntry?.id === -1 && moodJournalEntry?.id === -1 && !loading && (
+              <View>
+                <BarChartComponent handleTimelineChanged={handleTimelineChanged} journalParam={journalEntry} moodJournalParam={moodJournalEntry}></BarChartComponent>
+                <View style={styles.warningRow}>
+                  <Text style={[defaultStyles.subTitleHeader]}>No Daily Analysis Available:</Text>
+                  <Text style={styles.warningText}>Please add today's mood Journal</Text>
+                  <Text style={styles.warningText}>Please add today's text Journal</Text>
+                </View>
+              </View>
             )}
 
-            {journalEntry?.body && !loading && (
-              <JournalThemesComponent journalBody={journalEntry.body}></JournalThemesComponent>
+            {journalEntry && journalEntry?.id !== -1 && moodJournalEntry && moodJournalEntry?.id !== -1 && !loading && (
+              <>
+                <BarChartComponent handleTimelineChanged={handleTimelineChanged} journalParam={journalEntry} moodJournalParam={moodJournalEntry}></BarChartComponent>
+                {selectedTimeline === "Daily" && (
+                  <>
+                    <JournalThemesComponent journalBody={journalEntry.body}></JournalThemesComponent>
+                    <ConjuctiveComponent journalBody={journalEntry.body}></ConjuctiveComponent>
+                  </>
+                )}
+                {selectedTimeline !== "Daily" && (
+
+                  <View style={styles.warningRow}>
+                    <Text style={[defaultStyles.subTitleHeader]}>No Daily Analysis Available in {selectedTimeline} View</Text>
+                  </View>
+
+                )}
+              </>
             )}
 
-            {journalEntry?.body && !loading && (
-              <ConjuctiveComponent journalBody={journalEntry.body}></ConjuctiveComponent>
-            )}
           </Animated.ScrollView>
         )}
         {loading && (
@@ -302,6 +351,19 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingTop: 20
   },
+  warningRow: {
+    justifyContent: "space-between",
+    //alignItems: "center",
+    //flex: 1,
+    paddingBottom: 10,
+    paddingTop: 20,
+    gap: 5
+  },
+  warningText: {
+    color: "white",
+    fontFamily: "mon-sb",
+    fontSize: 16
+  }
 
 })
 
