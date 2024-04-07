@@ -18,27 +18,6 @@ import { DetectionProvider } from '@/components/contexts/detectionContext';
 import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
 import * as SecureStore from 'expo-secure-store';
 
-const tokenRead = {
-  async getToken(key: string) {
-    try {
-      return SecureStore.getItemAsync(key)
-    }
-    catch (error) {
-      return null;
-    }
-  }
-}
-
-const tokenWrite = {
-  async setToken(key: string, value: string) {
-    try {
-      return SecureStore.setItemAsync(key, value)
-    }
-    catch (error) {
-      return null;
-    }
-  }
-}
 
 export {
   // Catch any errors thrown by the Layout component.

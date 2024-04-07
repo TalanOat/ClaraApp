@@ -23,6 +23,15 @@ const UserDetailsSettings = () => {
         }
     }
 
+    const handleTestThemeChange = async () => {
+        try {
+            await SecureStore.setItemAsync('theme', "dark");
+            console.log('theme saved successfully');
+        } catch (error) {
+            console.error('Error saving name:', error);
+        }
+    }
+
     useEffect(() => {
         const loadName = async () => {
             try {
@@ -36,6 +45,7 @@ const UserDetailsSettings = () => {
         };
     
         loadName();
+        handleTestThemeChange();
     }, []); 
 
     return (
