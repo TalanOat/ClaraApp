@@ -3,16 +3,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import Colors from '@/constants/Colors';
 import { useNavigation } from 'expo-router';
-import { defaultStyles } from '@/constants/Styles';
 import { JournalsContext } from '@/components/contexts/journalProvider';
-import {
-  LineChart,
-  BarChart,
-  PieChart,
-  ProgressChart,
-  ContributionGraph,
-  StackedBarChart
-} from "react-native-chart-kit";
 import Animated, {
   useSharedValue,
   withTiming,
@@ -26,7 +17,6 @@ import Animated, {
   useAnimatedStyle,
   ZoomIn,
 } from 'react-native-reanimated';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface Journal {
   id: number;
@@ -46,22 +36,14 @@ interface MoodJournal {
   figure3: number;
 }
 
-interface TrackingValue {
-  name: string;
-  value: number;
-  score?: string;
-  invertScore?: boolean;
-}
-
-import { calculateCompleteTrackingValues } from '@/components/helpers/statsHelpers/scoreTrackingValues';
 import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
 import ConjuctiveComponent from '@/components/helpers/statsHelpers/conjuctiveComponent';
+import BarChartComponent from '@/components/helpers/statsHelpers/barChartComponent';
 
 const Page = () => {
   const navigation = useNavigation();
   const [pageFocused, setpageFocused] = useState(false);
 
-  //listens for navigation changes, carries out code when this page is focused
   useEffect(() => {
     const navigationListener = navigation.addListener("focus", () => {
       setpageFocused(true);
@@ -153,124 +135,6 @@ const Page = () => {
     return { prefix, id };
   }
 
-  const semanticSearch = async (journalBody: string, searchScore: number) => {
-    var Sentiment = require('sentiment');
-    var sentiment = new Sentiment();
-    var result = sentiment.analyze(journalBody);
-    const semanticCalculationArray = result.calculation;
-    const matchingKeys = [];
-
-    for (const entry of semanticCalculationArray) {
-      for (const [key, value] of Object.entries(entry)) {
-        if (value === searchScore) {
-          matchingKeys.push(key);
-        }
-      }
-    }
-
-    return matchingKeys;
-  }
-
-  const [trackingPoints, setTrackingPoints] = useState<TrackingValue[]>()
-  const [wordBubble, setWordBubble] = useState<string[]>([]);
-
-  const assignWordBubble = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
-    //console.log("journalEntryInput in the bubble: ", journalEntryInput)
-
-    //* if (word) <= -2 : very negative
-    //* if (word) <= -1 : negative
-    //* if (word) >=  1 : positive
-    //* if (word) >=  2 : very positive
-    const inputTrackingScore = inputTrackingPoints.score;
-    //console.log("inputTrackingScore: ", inputTrackingScore)
-
-    let searchValue = 0;
-
-    switch (inputTrackingScore) {
-      case "very_negative":
-        searchValue = -2;
-        break;
-      case "negative":
-        searchValue = -1;
-        break;
-      case "positive":
-        searchValue = 1;
-        break;
-      case "very_positive":
-        searchValue = 3;
-        break;
-      default:
-      // code block
-    }
-
-    const semanticAnalysis = async (searchValue: number) => {
-      const matchingKeys = await semanticSearch(journalEntryInput.body, searchValue);
-      //remove duplicated and convert it back into an array
-      const uniqueKeys = new Set(matchingKeys);
-      return Array.from(uniqueKeys);
-    };
-
-    const tempReturn = await semanticAnalysis(searchValue);
-    if (tempReturn) {
-      //console.log("tempReturn: ", tempReturn);
-      setWordBubble(tempReturn)
-    }
-
-  }
-
-  const assignChartData = (inputTrackingPoints: TrackingValue[]) => {
-    let filteredTrackingPoints;
-    setLoading(true);
-    if (selectedTracking?.name === undefined) {
-      // select the first point
-      filteredTrackingPoints = [inputTrackingPoints[0]];
-      // set the selected point to be the first one by default
-      setSelectedTracking(inputTrackingPoints[0])
-    }
-    else {
-      //console.log("defined in assignings")
-      // filter based on selectedTracking
-      filteredTrackingPoints = inputTrackingPoints.filter(
-        point => point.name === selectedTracking?.name
-      );
-    }
-
-    const trackingLabels = filteredTrackingPoints.map(point => point.name);
-    const trackingValues = filteredTrackingPoints.map(point => point.value);
-    //console.log("trackingLabels", trackingLabels)
-    setChartData({
-      labels: trackingLabels,
-      datasets: [{ data: trackingValues }]
-    });
-    setLoading(false);
-    return filteredTrackingPoints;
-  };
-
-  const [chartWidth, setChartWidth] = useState(0);
-
-  const handleLayout = (event: any) => {
-    const { width } = event.nativeEvent.layout;
-    setChartWidth(width);
-  };
-
-  interface ChartData {
-    labels: string[];
-    datasets: [{ data: number[] }]
-  }
-
-  const [chartData, setChartData] = useState<ChartData>();
-  const [selectedTracking, setSelectedTracking] = useState<TrackingValue>();
-
-  const handleTrackingPress = (selectedTrackingInput: TrackingValue) => {
-    setSelectedTracking(selectedTrackingInput);
-  };
-
-  const [selectedTimeline, setSelectedTimeline] = useState('Daily');
-
-  const handleOptionPress = (option: string) => {
-    setSelectedTimeline(option);
-  };
-
   const fetchLastJournals = () => {
     try {
       setLoading(true);
@@ -291,14 +155,6 @@ const Page = () => {
     }
   };
 
-  useEffect(() => {
-    if (trackingPoints && journalEntry && selectedTracking) {
-      assignChartData(trackingPoints);
-      assignWordBubble(journalEntry, selectedTracking);
-    }
-  }, [selectedTracking]);
-
-
   const fetchDataAndAssignData = async () => {
     try {
       //setLoading(true)
@@ -308,18 +164,14 @@ const Page = () => {
       if (fetchedObject.journalEntryResult && fetchedObject.moodJournalResult) {
         setJournalEntry(fetchedObject.journalEntryResult);
         setMoodJournalEntry(fetchedObject.moodJournalResult);
-        const returnedTrackingPoints = calculateCompleteTrackingValues(fetchedObject.moodJournalResult);
-        setTrackingPoints(returnedTrackingPoints);
-        const defaultSelectedValue = assignChartData(returnedTrackingPoints);
-
-        if (defaultSelectedValue) {
-          assignWordBubble(fetchedObject.journalEntryResult, defaultSelectedValue[0]);
-        }
       }
-    } catch (error) {
+
+    } 
+    catch (error) {
       console.error("Error fetching data:", error);
-    } finally {
-      //setLoading(false);
+    } 
+    finally {
+      setLoading(false);
     }
   };
 
@@ -329,8 +181,6 @@ const Page = () => {
     }
   }, [pageFocused])
 
-
-
   return (
     <LinearGradient
       style={styles.container}
@@ -338,104 +188,17 @@ const Page = () => {
       <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
         {!loading && (
           <Animated.ScrollView style={styles.statsContainer} >
-            <View style={styles.moodFeedbackContainer}>
-              <Text style={[defaultStyles.titleHeader, styles.header]}>Daily Analysis</Text>
-              {/* Timeline Navigation - (Daily, weekly, monthly) */}
-              <View style={styles.timelineNav}>
-                {['Daily', 'Weekly', 'Monthly'].map(option => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.button,
-                      selectedTimeline === option && styles.selectedBubble, 
-                    ]}
-                    onPress={() => handleOptionPress(option)}
-                  >
-                    <Text style={styles.buttonText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
 
-              <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
-                {/* Bar Chart */}
-                {chartData && (
-                  <BarChart
-                    data={chartData}
-                    width={chartWidth}
-                    height={220}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    fromZero
-                    fromNumber={100}
-                    chartConfig={{
-                      backgroundColor: Colors.primary,
-                      backgroundGradientFrom: Colors.primary,
-                      backgroundGradientTo: Colors.pink,
-                      backgroundGradientFromOpacity: 0,
-                      backgroundGradientToOpacity: 0,
-                      color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                      barPercentage: 4,
-                      style: {
-                        borderRadius: 16,
-                      },
-                      propsForBackgroundLines: {
-                        strokeWidth: 1
-                      },
-                      decimalPlaces: 0,
-                    }}
-                    style={{
-                      marginVertical: 2,
-                      borderRadius: 16,
-                    }}
-                  />
-                )}
-              </View>
-            </View>
-            {trackingPoints !== undefined && (
-              <View style={styles.trackingNav}>
-                {trackingPoints.map((trackingPoint, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.button,
-                      selectedTracking?.name === trackingPoint.name ? styles.selectedBubble : null
-                    ]}
-                    onPress={() => handleTrackingPress(trackingPoint)}
-                  >
-                    <Text style={styles.buttonText}>{trackingPoint.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            {journalEntry && moodJournalEntry && !loading && (
+              <BarChartComponent journalParam={journalEntry} moodJournalParam={moodJournalEntry}></BarChartComponent>
             )}
-            <View style={styles.textIconRow}>
-              <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
-              <Animated.View  >
-                <TouchableOpacity >
-                  <MaterialCommunityIcons name='cog'
-                    color={"white"}
-                    size={30}>
-                  </MaterialCommunityIcons>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-
-            <Animated.View style={styles.wordBubbleContainer} entering={FadeInDown.delay(200)}>
-              {wordBubble.map((word) => (
-                <Animated.View key={word} entering={SlideInLeft.delay(50)}>
-                  <TouchableOpacity style={styles.wordBubble} >
-                    <Text style={styles.buttonText}>{word}</Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              ))}
-            </Animated.View>
 
             {journalEntry?.body && !loading && (
               <JournalThemesComponent journalBody={journalEntry.body}></JournalThemesComponent>
             )}
-            
+
             {journalEntry?.body && !loading && (
-              <ConjuctiveComponent  journalBody={journalEntry.body}></ConjuctiveComponent>
+              <ConjuctiveComponent journalBody={journalEntry.body}></ConjuctiveComponent>
             )}
           </Animated.ScrollView>
         )}

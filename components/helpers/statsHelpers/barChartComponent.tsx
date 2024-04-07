@@ -28,11 +28,13 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { calculateCompleteTrackingValues } from '@/components/helpers/statsHelpers/scoreTrackingValues';
+import { databaseService } from '@/model/databaseService';
+import moment from 'moment';
 
 interface TrackingValue {
     name: string;
     value: number;
-    score?: string;
+    positiveScore: boolean;
     invertScore?: boolean;
 }
 
@@ -58,27 +60,27 @@ interface Journal {
     title: string;
     body: string;
     time: string;
+    created_at?: string;
+    tracking_value1?: number;
 }
 
 
 
 const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: Journal, moodJournalParam: MoodJournal }) => {
-    const [journalEntry, setJournalEntry] = useState<Journal>()
-    const [moodJournalEntry, setMoodJournalEntry] = useState<MoodJournal | null>(null);
-    const [loading, setLoading] = useState<Boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const [selectedTimeline, setSelectedTimeline] = useState('Daily');
     const [chartData, setChartData] = useState<ChartData>();
     const [selectedTracking, setSelectedTracking] = useState<TrackingValue>();
 
     const [chartWidth, setChartWidth] = useState(0);
-    const [trackingPoints, setTrackingPoints] = useState<TrackingValue[]>()
+    const [trackingValues, setTrackingValues] = useState<TrackingValue[]>()
     const [linkingWords, setLinkingWords] = useState<string[]>([]);
+    const [barWidth, setBarWidth] = useState<number>(4)
 
     const handleTimelineOptionPressed = (option: string) => {
         setSelectedTimeline(option);
     };
-
 
     const handleLayout = (event: any) => {
         const { width } = event.nativeEvent.layout;
@@ -99,7 +101,6 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
             setSelectedTracking(inputTrackingPoints[0])
         }
         else {
-            //console.log("defined in assignings")
             // filter based on selectedTracking
             filteredTrackingPoints = inputTrackingPoints.filter(
                 point => point.name === selectedTracking?.name
@@ -113,29 +114,34 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
             labels: trackingLabels,
             datasets: [{ data: trackingValues }]
         });
+        setBarWidth(4)
         setLoading(false);
         return filteredTrackingPoints;
     };
 
-    // useEffect(() => {
-    //     if (trackingPoints && journalEntry && selectedTracking) {
-    //         assignChartData(trackingPoints);
-    //         assignWordBubble(journalEntry, selectedTracking);
-    //     }
-    // }, [selectedTracking]);
-
-
-    const semanticSearch = async (journalBody: string, searchScore: number) => {
+    //looks for words in the inputed string that matches either positive/negative
+    const semanticSearch = async (stringInput: string, searchForPositive: boolean) => {
         var Sentiment = require('sentiment');
         var sentiment = new Sentiment();
-        var result = sentiment.analyze(journalBody);
+        var result = sentiment.analyze(stringInput);
         const semanticCalculationArray = result.calculation;
         const matchingKeys = [];
 
-        for (const entry of semanticCalculationArray) {
-            for (const [key, value] of Object.entries(entry)) {
-                if (value === searchScore) {
-                    matchingKeys.push(key);
+        if (searchForPositive) {
+            for (const entry of semanticCalculationArray) {
+                for (const [key, value] of Object.entries(entry)) {
+                    if (typeof (value) === "number" && value >= 1) {
+                        matchingKeys.push(key);
+                    }
+                }
+            }
+        }
+        if (!searchForPositive) {
+            for (const entry of semanticCalculationArray) {
+                for (const [key, value] of Object.entries(entry)) {
+                    if (typeof (value) === "number" && value <= -1) {
+                        matchingKeys.push(key);
+                    }
                 }
             }
         }
@@ -144,39 +150,25 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
     }
 
     const assignLinkingWords = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
-        const inputTrackingScore = inputTrackingPoints.score;
+        const inputTrackingScore = inputTrackingPoints.positiveScore;
 
-        let searchValue = 0;
-        switch (inputTrackingScore) {
-            case "negative":
-                searchValue <= -1;
-                break;
-            case "positive":
-                searchValue >= 1;
-                break;
-            default:
-        }
-
-        const semanticAnalysis = async (searchValue: number) => {
-            const matchingKeys = await semanticSearch(journalEntryInput.body, searchValue);
-            //remove duplicated and convert it back into an array
+        const semanticAnalysis = async (positive: boolean) => {
+            const matchingKeys = await semanticSearch(journalEntryInput.body, positive);
             const uniqueKeys = new Set(matchingKeys);
             return Array.from(uniqueKeys);
         };
 
-        const tempReturn = await semanticAnalysis(searchValue);
+        const tempReturn = await semanticAnalysis(inputTrackingScore);
         if (tempReturn) {
             setLinkingWords(tempReturn)
         }
 
     }
 
-    const AssignGraphStates = async (journalInput: Journal, moodJournalInput: MoodJournal) => {
+    const SetupDailyGraphValues = async (journalInput: Journal, moodJournalInput: MoodJournal) => {
         try {
-            //first get the tracking values and give each one a consistent value
             const returnedTrackingPoints = calculateCompleteTrackingValues(moodJournalInput);
-            //console.log
-            setTrackingPoints(returnedTrackingPoints);
+            setTrackingValues(returnedTrackingPoints);
             const defaultSelectedValue = assignChartData(returnedTrackingPoints);
 
             if (defaultSelectedValue) {
@@ -190,13 +182,75 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
         }
     };
 
+    const assignWeeklyChartData = (inputJournals: Journal[]) => {
+        const days: string[] = [];
+        const values: number[] = [];
+
+        inputJournals.forEach((journal) => {
+            if (journal.created_at) {
+                const formattedDay = moment(journal.created_at).format('DD/MM') 
+                days.push(formattedDay); 
+    
+                if (journal.tracking_value1 !== undefined) {
+                    values.push(journal.tracking_value1); 
+                } else {
+                    values.push(0);
+                }
+            }
+        });
+
+        setBarWidth(1)
+
+        setChartData({
+            labels: days,
+            datasets: [{ data: values }]
+        });
+    };
+
+    
+
+
+    const SetupWeeklyGraphValues = async () => {
+        try {
+            //assign the chart data from happiness only
+            const currentDate = new Date().toISOString();
+            const weeklyJournalEntries = await databaseService.getAllMoodJournalsForWeekFromDate(currentDate)
+            if (weeklyJournalEntries) {
+                assignWeeklyChartData(weeklyJournalEntries)
+            }
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            //setLoading(false);
+        }
+    };
+
+
+
+    //* probably being called twice after selectedTracking has been set and on the inital load as well
+    useEffect(() => {
+        if (trackingValues && journalParam && selectedTracking) {
+            assignChartData(trackingValues);
+            assignLinkingWords(journalParam, selectedTracking);
+        }
+    }, [selectedTracking]);
+
+
+    useEffect(() => {
+        if (selectedTimeline === "Daily") {
+            SetupDailyGraphValues(journalParam, moodJournalParam);
+        }
+        if (selectedTimeline === "Weekly") {
+            SetupWeeklyGraphValues();
+        }
+    }, [selectedTimeline])
+
     useEffect(() => {
         if (journalParam && moodJournalParam) {
-            AssignGraphStates(journalParam, moodJournalParam);
+            SetupDailyGraphValues(journalParam, moodJournalParam);
         }
     }, [journalParam, moodJournalParam])
-
-
 
 
 
@@ -222,7 +276,7 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
 
                 <View style={styles.chartContainer} onLayout={((e) => { handleLayout(e) })}>
                     {/* Bar Chart */}
-                    {chartData && (
+                    {chartData && barWidth &&(
                         <BarChart
                             data={chartData}
                             width={chartWidth}
@@ -239,7 +293,7 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
                                 backgroundGradientToOpacity: 0,
                                 color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                                 labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                                barPercentage: 4,
+                                barPercentage: barWidth,
                                 style: {
                                     borderRadius: 16,
                                 },
@@ -256,18 +310,18 @@ const BarChartComponent = ({ journalParam, moodJournalParam }: { journalParam: J
                     )}
                 </View>
             </View>
-            {trackingPoints !== undefined && (
+            {trackingValues !== undefined && (
                 <View style={styles.trackingNav}>
-                    {trackingPoints.map((trackingPoint, index) => (
+                    {trackingValues.map((value, index) => (
                         <TouchableOpacity
                             key={index}
                             style={[
                                 styles.button,
-                                selectedTracking?.name === trackingPoint.name ? styles.selectedBubble : null
+                                selectedTracking?.name === value.name ? styles.selectedBubble : null
                             ]}
-                            onPress={() => handleTrackingPress(trackingPoint)}
+                            onPress={() => handleTrackingPress(value)}
                         >
-                            <Text style={styles.buttonText}>{trackingPoint.name}</Text>
+                            <Text style={styles.buttonText}>{value.name}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>

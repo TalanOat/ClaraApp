@@ -13,9 +13,10 @@ interface MoodJournal {
 interface TrackingValue {
     name: string;
     value: number;
-    score?: string;
+    positiveScore: boolean;
     invertScore?: boolean;
 }
+
 
 //Tracking Value assigning
 const assignScoreToTrackingValue = (trackingValue: TrackingValue) => {
@@ -23,12 +24,22 @@ const assignScoreToTrackingValue = (trackingValue: TrackingValue) => {
     if (trackingValue.invertScore) {
         actualValue = 100 - actualValue;
     }
+
     if (actualValue <= 50) {
-        trackingValue.score = "positive";
-    } else if (actualValue < 50) {
-        trackingValue.score = "negative";
+        trackingValue.positiveScore = true;
+    } else {
+        trackingValue.positiveScore = false;
     }
 }
+
+
+const semanticAnalysis = (stringInput: string) => {
+    var Sentiment = require('sentiment');
+    var sentiment = new Sentiment();
+    var result = sentiment.analyze(stringInput);
+    return result.score
+}
+
 
 
 const calculateCompleteTrackingValues = (moodJournalInput: MoodJournal) => {
@@ -41,14 +52,18 @@ const calculateCompleteTrackingValues = (moodJournalInput: MoodJournal) => {
 
     for (const [nameKey, valueKey] of trackingProperties) {
         let shouldInvert = false;
-        if ((moodJournalInput[nameKey] as string) === "Happiness") {
+        //search to try and guess whether the word is positive or negative:
+
+        const testScore = semanticAnalysis(moodJournalInput[nameKey] as string);
+        if(testScore >= 0){
             shouldInvert = true;
         }
+
 
         const trackingValue: TrackingValue = {
             name: moodJournalInput[nameKey] as string,
             value: moodJournalInput[valueKey] as number,
-            score: undefined,
+            positiveScore: true,
             invertScore: shouldInvert
         };
         assignScoreToTrackingValue(trackingValue);

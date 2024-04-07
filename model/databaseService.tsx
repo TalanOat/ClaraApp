@@ -153,22 +153,21 @@ export class DatabaseService {
           `SELECT * FROM journals 
            WHERE DATE(createdAt) = ?
            ORDER BY createdAt DESC`,
-          [date], 
+          [date],
           (txObject, result) => {
             resolve(result.rows._array);
           },
           (txObject, error) => {
             reject(error);
-            return true; 
+            return true;
           }
         );
       });
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public createJournalEntry(title: string, body: string, createdAt: string): Promise<void> {
-    return new Promise((resolve, reject) => { 
+    return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO journals (title, body, createdAt) VALUES (?, ?, ?)',
@@ -179,7 +178,7 @@ export class DatabaseService {
           },
           (txObject, error) => {
             console.error('insert error:', error);
-            reject(error); 
+            reject(error);
             return true;
           }
         );
@@ -187,7 +186,6 @@ export class DatabaseService {
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public updateJournalEntry(id: number, title: string, body: string): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -208,7 +206,6 @@ export class DatabaseService {
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public deleteJournalEntryByID(id: number): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -250,7 +247,6 @@ export class DatabaseService {
       });
     });
   }
-
 
   //! TODO add checks to make suer that there is at least three values in the table
   public createThreeTrackingNames(value1: string, value2: string, value3: string): Promise<boolean> {
@@ -338,13 +334,13 @@ export class DatabaseService {
           `UPDATE mood_journals 
            SET tracking_value1 = ?, tracking_value2 = ?, tracking_value3 = ?
            WHERE id = ?`,
-          [figure1, figure2, figure3, id], 
+          [figure1, figure2, figure3, id],
           (txObject, resultSet) => {
             resolve(true);
           },
           (txObject, error) => {
             reject(error);
-            return true; 
+            return true;
           }
         );
       });
@@ -352,7 +348,7 @@ export class DatabaseService {
   }
 
   public addEmotion(baseEmotion: number, extendedEmotion?: string): Promise<number> {
-    return new Promise<number>((resolve, reject) => { 
+    return new Promise<number>((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO emotions (base_emotion, extended_emotion) VALUES (?, ?)',
@@ -419,7 +415,7 @@ export class DatabaseService {
     });
   }
 
-  public getMoodJournalByID(moodJournalID: number): Promise<any> { 
+  public getMoodJournalByID(moodJournalID: number): Promise<any> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -431,17 +427,17 @@ export class DatabaseService {
             LEFT JOIN tracking_names tn1 ON mj.tracking_name1_id = tn1.id
             LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
             LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
-            WHERE mj.id = ?`, 
+            WHERE mj.id = ?`,
           [moodJournalID],
           (txObject, resultSet) => {
             if (resultSet.rows.length > 0) {
-              resolve(resultSet.rows.item(0)); 
+              resolve(resultSet.rows.item(0));
             } else {
-              resolve(null); 
+              resolve(null);
             }
           },
           (txObject, error) => {
-            reject(error); 
+            reject(error);
             return true;
           }
         );
@@ -449,7 +445,7 @@ export class DatabaseService {
     });
   }
 
-  public getLatestMoodJournal(): Promise<any> { 
+  public getLatestMoodJournal(): Promise<any> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
@@ -462,17 +458,17 @@ export class DatabaseService {
             LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
             LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
             ORDER BY mj.created_at DESC 
-            LIMIT 1`, 
+            LIMIT 1`,
           [],
           (txObject, resultSet) => {
             if (resultSet.rows.length > 0) {
-              resolve(resultSet.rows.item(0)); 
+              resolve(resultSet.rows.item(0));
             } else {
-              resolve(null); 
+              resolve(null);
             }
           },
           (txObject, error) => {
-            reject(error); 
+            reject(error);
             return true;
           }
         );
@@ -494,7 +490,7 @@ export class DatabaseService {
            LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
            WHERE DATE(mj.created_at) = ?
            ORDER BY mj.created_at DESC`,
-          [date], // Parameterized query 
+          [date],
           (txObject, resultSet) => {
             resolve(resultSet.rows._array);
           },
@@ -506,6 +502,38 @@ export class DatabaseService {
       });
     });
   }
+
+  public getAllMoodJournalsForWeekFromDate(date: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        const startDate = new Date(date);
+        startDate.setDate(startDate.getDate() - 7);
+
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM (
+                   SELECT mj.*, 
+                          tn1.name AS tracking_name1, 
+                          tn2.name AS tracking_name2, 
+                          tn3.name AS tracking_name3,
+                          RANK() OVER (PARTITION BY DATE(mj.created_at) ORDER BY mj.created_at DESC) AS rank
+                   FROM mood_journals mj
+                   LEFT JOIN tracking_names tn1 ON mj.tracking_name1_id = tn1.id
+                   LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
+                   LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
+                   WHERE DATE(mj.created_at) >= ? AND DATE(mj.created_at) <= ?
+                ) WHERE rank = 1`, 
+                [startDate.toISOString().slice(0, 10), date],
+                (txObject, resultSet) => {
+                   resolve(resultSet.rows._array);
+                },
+                (txObject, error) => {
+                    reject(error);
+                    return true;
+                }
+            );
+        });
+    });
+}
 
 
   public deleteMoodJournalEntryByID(id: number): Promise<void> {
@@ -558,18 +586,18 @@ export class DatabaseService {
   }
 
   public createUsageLog(createdAt: string, type: string, start: string, end: string): Promise<void> {
-    return new Promise((resolve, reject) => { 
+    return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO usage_logs (createdAt, type, start, end) VALUES (?, ?, ?, ?)',
           [createdAt, type, start, end],
           (txObject, resultSet) => {
             console.log('insert successful', resultSet);
-            resolve(); 
+            resolve();
           },
           (txObject, error) => {
             console.error('insert error:', error);
-            reject(error); 
+            reject(error);
             return true;
           }
         );
@@ -596,8 +624,8 @@ export class DatabaseService {
     });
   }
 
-  public createGoal(name: string, createdAt: string, step:number, steps: number, daily: string): Promise<boolean> {
-    return new Promise((resolve, reject) => { 
+  public createGoal(name: string, createdAt: string, step: number, steps: number, daily: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
       db.transaction((tx) => {
         tx.executeSql(
           'INSERT INTO goals (name, createdAt, step, steps, daily) VALUES (?, ?, ?, ?, ?)',
@@ -608,7 +636,7 @@ export class DatabaseService {
           },
           (txObject, error) => {
             console.error('insert error:', error);
-            reject(error); 
+            reject(error);
             resolve(false)
             return true;
           }
@@ -629,7 +657,7 @@ export class DatabaseService {
           (txObject, resultSet) => {
             if (resultSet.rows.length > 0) {
               const newStep = resultSet.rows.item(0).step;
-              resolve(newStep); 
+              resolve(newStep);
             } else {
               reject(new Error("Goal not found or update failed"));
             }
@@ -637,7 +665,7 @@ export class DatabaseService {
           (txObject, error) => {
             console.error('update error:', error);
             reject(error);
-            return(false);
+            return (false);
           }
         );
       });
@@ -654,12 +682,12 @@ export class DatabaseService {
           [id],
           (txObject, resultSet) => {
             //console.log('update successful', resultSet);
-            resolve(true); 
+            resolve(true);
           },
           (txObject, error) => {
             console.error('update error:', error);
             reject(error);
-            return(false);
+            return (false);
           }
         );
       });

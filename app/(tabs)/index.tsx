@@ -67,7 +67,7 @@ const Page = () => {
         setAnimating(true);
         setAnimating(false);
       }, 500);
-      console.log("lenght of journals", journals.length)
+      //console.log("lenght of journals", journals.length)
     }
   }, [pageFocused])
 
