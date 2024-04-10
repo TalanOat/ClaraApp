@@ -186,10 +186,10 @@ const createJournal = () => {
         });
         console.log("inputMoodJournal: ", inputMoodJournal)
 
-        // const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
-        // if (moodJournalID) {
-        //     databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
-        // }
+        const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
+        if (moodJournalID) {
+            databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+        }
 
 
         setTimeout(() => {
