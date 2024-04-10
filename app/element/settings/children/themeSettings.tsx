@@ -3,53 +3,79 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
 import { useEffect, useState } from 'react';
 
+import * as Updates from 'expo-updates';
 import * as SecureStore from 'expo-secure-store';
 
+import Animated, {
+    FadeInDown,
+    FadeOutUp,
+    SlideInDown,
 
-const ThirdParty = () => {
-    //by default should be true
-    const [mapIsEnabled, setMapIsEnabled] = useState(true);
-    const [weatherIsEnabled, setWeatherIsEnabled] = useState(true);
+} from 'react-native-reanimated';
+
+
+const ThemeSettings = () => {
+    const [purpleTheme, setPurpleTheme] = useState<boolean>(true);
+    const [orangeTheme, setOrangeTheme] = useState<boolean>(true);
+    const [activeTheme, setActiveTheme] = useState('purple');
+    const [flashNotification, setFlashNotification] = useState(false);
 
     const toggleSwitch1 = () => {
-        setMapIsEnabled(!mapIsEnabled);
+        setPurpleTheme(!purpleTheme);
+        setActiveTheme('purple');
     }
+
     const toggleSwitch2 = () => {
-        setWeatherIsEnabled(!weatherIsEnabled);
+        setOrangeTheme(!orangeTheme);
+        setActiveTheme('orange');
     }
 
-
-    const handleSave = async () => {
+    async function reloadApp() {
         try {
-            await SecureStore.setItemAsync('mapsEnabled', mapIsEnabled.toString());
-            await SecureStore.setItemAsync('weatherEnabled', weatherIsEnabled.toString());
-            console.log('settings saved successfully');
-        } catch (error) {
-            console.error('error saving privacy settings:', error);
+            await Updates.reloadAsync();
+        }
+        catch (error) {
+            console.error(error)
         }
     }
 
-    useEffect(() => {
-        const loadName = async () => {
-            try {
-                const storedMaps = await SecureStore.getItemAsync('mapsEnabled');
-                const storedWeather = await SecureStore.getItemAsync('weatherEnabled');
+    const handleThemeChange = async (theme: string) => {
+        try {
+            await SecureStore.setItemAsync('theme', theme);
+            console.log('theme saved successfully');
 
-                if (storedMaps) {
-                    const storedMapsAsBoolean = (storedMaps.toLowerCase() === "true"); 
-                    setMapIsEnabled(storedMapsAsBoolean);
-                }
-                if (storedWeather) {
-                    const storedWeatherAsBoolean = (storedWeather.toLowerCase() === "true"); 
-                    setWeatherIsEnabled(storedWeatherAsBoolean);
-                }
-            } catch (error) {
-                console.error('Error loading name:', error);
+        } catch (error) {
+            console.error('Error saving name:', error);
+        }
+    }
+
+    const handleSave = () => {
+        console.log("activeTheme: ", activeTheme)
+        handleThemeChange(activeTheme).then(() => {
+            setFlashNotification(true)
+            reloadApp();
+        })
+
+    }
+
+    const loadTheme = async () => {
+        try {
+            const storedName = await SecureStore.getItemAsync('theme');
+            if (storedName) {
+                console.log("storedName: ", storedName)
+                setActiveTheme(storedName);
             }
-        };
+        } catch (error) {
+            console.error('Error loading name:', error);
+        }
+    };
 
-        loadName();
+    useEffect(() => {
+        loadTheme();
+        //handleTestThemeChange();
     }, []);
+
+
 
     return (
 
@@ -59,56 +85,54 @@ const ThirdParty = () => {
                 colors={[Colors.primary, Colors.pink]}>
                 <View style={styles.headerRow}>
                     <View style={styles.mainHeaderContainer}>
-                        <Text style={styles.titleHeader}>Third Party Settings </Text>
+                        <Text style={styles.titleHeader}>Theme Settings </Text>
                     </View>
                     <TouchableOpacity style={styles.saveButton} onPress={(() => { handleSave() })}>
                         <Text style={styles.buttonText}>Save</Text>
                     </TouchableOpacity>
                 </View>
 
-
                 <ScrollView >
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Map Features</Text>
+                        <Text style={styles.sectionHeader}>Purple Sunrise Theme (default)</Text>
                         <View style={styles.switchRow}>
-                            <Text style={styles.rowLabel}>Google Maps Enabled</Text>
+                            <Text style={styles.rowLabel}>Theme Enabled</Text>
                             <Switch
                                 trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
-                                thumbColor={mapIsEnabled ? Colors.pink : Colors.primary}
+                                thumbColor={activeTheme === 'purple' ? Colors.pink : Colors.primary}
                                 ios_backgroundColor={Colors.transparentWhite}
                                 onValueChange={toggleSwitch1}
-                                value={mapIsEnabled}
+                                value={activeTheme === 'purple'}
                             />
+
                         </View>
+
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Weather Features</Text>
+                        <Text style={styles.sectionHeader}>Orange Sunset Theme</Text>
                         <View style={styles.switchRow}>
-                            <Text style={styles.rowLabel}>Weather API enabled</Text>
+                            <Text style={styles.rowLabel}>Theme Enabled</Text>
                             <Switch
                                 trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
-                                thumbColor={weatherIsEnabled ? Colors.pink : Colors.primary}
+                                thumbColor={activeTheme === 'orange' ? Colors.pink : Colors.primary}
                                 ios_backgroundColor={Colors.transparentWhite}
                                 onValueChange={toggleSwitch2}
-                                value={weatherIsEnabled}
+                                value={activeTheme === 'orange'}
                             />
+
                         </View>
+
                     </View>
-                    <View style={styles.section}>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoText}>This app does not directly collect any personal information from you.
-                                However, this app utilizes third-party map services to provide functionality.
-                                These third-party services may collect location data or other information as outlined in their own privacy policies.
-                                We recommend reviewing the privacy policies of any third-party services used within the app for more information. </Text>
-                        </View>
-                    </View>
+
 
                 </ScrollView>
             </LinearGradient>
-        </KeyboardAvoidingView >
-
-
-
+            {flashNotification && (
+                <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+                    <Text style={flashMessage.innerText}>App Restarting...</Text>
+                </Animated.View>
+            )}
+        </KeyboardAvoidingView>
     );
 }
 
@@ -133,8 +157,6 @@ const styles = StyleSheet.create({
         fontFamily: "mon-b",
         //marginBottom: 20
     },
-    infoRow: { paddingTop: 30},
-    infoText: { color:Colors.offWhite, fontFamily: "mon"},
     section: {
         //paddingHorizontal: 20,
     },
@@ -149,6 +171,11 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.pink,
         padding: 15,
         borderRadius: 10,
+
+        //alignContent: "center",
+        //justifyContent: "center",
+        //alignSelf: "flex-end",
+        //width: 60
     },
     buttonText: {
         color: "white",
@@ -185,6 +212,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "white"
     },
+    rowLabel: {
+        color: "white",
+        fontFamily: "mon-sb",
+        fontSize: 15
+    },
     switchRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -197,14 +229,30 @@ const styles = StyleSheet.create({
         flex: 1,
         width: "100%"
     },
-    rowLabel: {
-        color: "white",
-        fontFamily: "mon-sb",
-        fontSize: 15
-    }
-
-
-
 })
 
-export default ThirdParty;
+const flashMessage = StyleSheet.create({
+    container: {
+        flex: 1,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: "hidden"
+    },
+    innerText: {
+        padding: 20,
+        color: "white",
+        fontFamily: "mon-b",
+        fontSize: 15,
+
+        backgroundColor: Colors.pink,
+        borderRadius: 10,
+        overflow: "hidden"
+    }
+})
+
+export default ThemeSettings;

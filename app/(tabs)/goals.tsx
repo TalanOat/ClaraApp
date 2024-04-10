@@ -140,7 +140,7 @@ const Page = () => {
   return (
     <LinearGradient
       style={styles.container}
-      colors={["#20115B", "#C876FF"]}>
+      colors={[Colors.primary, Colors.pink]}>
       <ScrollView style={styles.goalsContainer} keyboardShouldPersistTaps={'always'} >
         <View style={styles.goalsCreateContainer}>
           <View style={styles.mainHeaderContainer}>

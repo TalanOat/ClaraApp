@@ -101,14 +101,13 @@ const Page = () => {
 
   const handleUpdate = (e: any) => {
     e.preventDefault();
-    //console.log("handle submit");
     databaseUpdateJournalEntry();
   }
 
   return (
     <LinearGradient
       style={styles.container}
-      colors={["#20115B", "#C876FF"]}
+      colors={[Colors.primary, Colors.pink]}
     >
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>

@@ -1,7 +1,7 @@
 import { View, Text, Touchable, TouchableOpacity, KeyboardAvoidingView, Keyboard } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { Tabs, useNavigation, useSearchParams } from 'expo-router'
-import Colors from '@/constants/Colors'
+import Colors from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'

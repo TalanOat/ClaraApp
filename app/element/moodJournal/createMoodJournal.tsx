@@ -18,6 +18,7 @@ import Slider from '@react-native-community/slider'
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import * as SecureStore from 'expo-secure-store';
 import NegativeEmotionPrompt from '@/components/helpers/negativeEmotionPrompt'
+import CryptoJS from "react-native-crypto-js";
 
 interface TrackingName {
     id: number;
@@ -85,8 +86,6 @@ const createJournal = () => {
             const duplicateBaseEmotion = prevEmotions.some(emotion =>
                 emotion.baseKey === baseEmotionKey && !extendedEmotionKey
             );
-
-            //console.log("duplicateBaseEmotion: ", duplicateBaseEmotion);
 
             //if duplicated then return the previous emotions in the array and don't change it
             if (duplicateBaseEmotion) {
@@ -187,10 +186,10 @@ const createJournal = () => {
         });
         console.log("inputMoodJournal: ", inputMoodJournal)
 
-        const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
-        if (moodJournalID) {
-            databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
-        }
+        // const moodJournalID = await databaseCreateMoodJournal(inputMoodJournal);
+        // if (moodJournalID) {
+        //     databaseCreateAndLinkEmotions(selectedEmotions, moodJournalID)
+        // }
 
 
         setTimeout(() => {
@@ -243,7 +242,7 @@ const createJournal = () => {
         <>
             <LinearGradient
                 style={styles.container}
-                colors={["#20115B", "#C876FF"]}
+                colors={[Colors.primary, Colors.pink]}
             >
                 <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
                     <View style={styles.topRow}>

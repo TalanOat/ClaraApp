@@ -19,26 +19,4 @@ const orangeTheme = {
 };
 
 
-const initializeTheme = () => {
-  try {
-    const theme = SecureStore.getItem('theme');
-    console.log("theme: ", theme)
-    if(theme === "purple"){
-      return purpleTheme
-    }
-    if(theme === "orange"){
-      return orangeTheme
-    }
-    else{
-      return purpleTheme
-    }
-  } 
-  catch (error) {
-    console.error('Error loading theme:', error);
-    return purpleTheme;
-  }
-};
-
-const currentTheme = initializeTheme();
-
-export default currentTheme;
+export { purpleTheme, orangeTheme };

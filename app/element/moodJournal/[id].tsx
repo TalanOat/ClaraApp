@@ -255,7 +255,7 @@ const Page = () => {
   return (
     <LinearGradient
       style={styles.container}
-      colors={["#20115B", "#C876FF"]}
+      colors={[Colors.primary, Colors.pink]}
     >
       <Animated.ScrollView style={styles.journalContainer} entering={SlideInDown.delay(50)}>
         <View style={styles.topRow}>

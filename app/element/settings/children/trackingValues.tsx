@@ -93,7 +93,7 @@ const TrackingValuesSettings = () => {
         <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={100}>
             <LinearGradient
                 style={styles.container}
-                colors={["#20115B", "#C876FF"]}>
+                colors={[Colors.primary, Colors.pink]}>
                 <View style={styles.headerRow}>
                     <View style={styles.mainHeaderContainer}>
                         <Text style={styles.titleHeader}>Mood Log Values</Text>

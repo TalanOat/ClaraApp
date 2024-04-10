@@ -23,7 +23,7 @@ const settings = () => {
     return (
         <LinearGradient
             style={styles.container}
-            colors={["#20115B", "#C876FF"]}>
+            colors={[Colors.primary, Colors.pink]}>
 
             <View style={styles.mainHeaderContainer}>
                 <Text style={styles.titleHeader}>Settings</Text>
@@ -31,16 +31,6 @@ const settings = () => {
             <ScrollView showsVerticalScrollIndicator={false}>      
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Preferences</Text>
-                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
-                        <TouchableOpacity style={styles.row}>
-
-                            <MaterialCommunityIcons color="#fff" name='human-greeting' size={25} style={styles.rowIcon} />
-
-                            <Text style={styles.rowLabel}>User Details</Text>
-
-                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
-                        </TouchableOpacity>
-                    </Link>
                     <Link href={'/element/settings/children/trackingValues'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
                             <MaterialCommunityIcons color="#fff" name='emoticon-happy' size={25} style={styles.rowIcon} />
@@ -97,7 +87,7 @@ const settings = () => {
                 </View>    
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Apperance</Text>
-                    <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
+                    <Link href={'/element/settings/children/themeSettings'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
                             <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />

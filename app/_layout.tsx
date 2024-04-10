@@ -116,6 +116,7 @@ function RootLayoutNav() {
                 <Stack.Screen name="element/settings/children/thirdParty" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/cloudSync" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/notificationSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/themeSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
               </Stack>
             </DetectionProvider>
           </JournalsProvider>
