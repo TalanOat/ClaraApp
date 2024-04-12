@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Keyboard, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Keyboard, Switch, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
 import { useEffect, useState } from 'react';
@@ -15,48 +15,61 @@ import Animated, {
     FadeInDown,
     ZoomIn,
     ZoomOut,
+    FadeOutUp,
 } from 'react-native-reanimated';
 
 
+
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import * as SQLite from 'expo-sqlite';
+import * as DocumentPicker from 'expo-document-picker';
+import { databaseService } from '@/model/databaseService';
+import * as Updates from 'expo-updates';
+
 const CloudSync = () => {
     //by default should be true
-    const [mapIsEnabled, setMapIsEnabled] = useState(true);
-    const [weatherIsEnabled, setWeatherIsEnabled] = useState(true);
+    const [loading, setLoading] = useState(false)
+    const [flashNotification, setFlashNotification] = useState(false);
 
-    const toggleSwitch1 = () => {
-        setMapIsEnabled(!mapIsEnabled);
+
+    //const [db, setDb] = useState(SQLite.openDatabase('journal.db'));
+
+    const handleExportPressed = async () => {
+        await Sharing.shareAsync(FileSystem.documentDirectory + 'SQLite/journal.db');
     }
 
-    const handleSave = async () => {
-        try {
-            //await SecureStore.setItemAsync('mapsEnabled', mapIsEnabled.toString());
-            //await SecureStore.setItemAsync('weatherEnabled', weatherIsEnabled.toString());
-            console.log('settings saved successfully');
-        } catch (error) {
-            console.error('error saving privacy settings:', error);
+    const handleImportPressed = async () => {
+        let result = await DocumentPicker.getDocumentAsync({
+            copyToCacheDirectory: true
+        });
+        if (!result.canceled && result.assets[0].name === "journal.db") {
+            const base64 = await FileSystem.readAsStringAsync(
+                result.assets[0].uri,
+                {
+                    encoding: FileSystem.EncodingType.Base64
+                }
+            )
+
+            await FileSystem.writeAsStringAsync(FileSystem.documentDirectory +
+                'SQLite/journal.db', base64, { encoding: FileSystem.EncodingType.Base64 })
+
+            await databaseService.closeDB();
+
+            setFlashNotification(true)
+            reloadApp()
+
         }
     }
 
-    useEffect(() => {
-        const loadName = async () => {
-            try {
-                const storedMaps = await SecureStore.getItemAsync('mapsEnabled');
-                const storedWeather = await SecureStore.getItemAsync('weatherEnabled');
-
-                if (storedMaps) {
-                    const storedMapsAsBoolean = (storedMaps.toLowerCase() === "true");
-                    setMapIsEnabled(storedMapsAsBoolean);
-                }
-                if (storedWeather) {
-                    const storedWeatherAsBoolean = (storedWeather.toLowerCase() === "true");
-                    setWeatherIsEnabled(storedWeatherAsBoolean);
-                }
-            } catch (error) {
-                console.error('Error loading name:', error);
-            }
-        };
-        //loadName();
-    }, []);
+    async function reloadApp() {
+        try {
+            await Updates.reloadAsync();
+        }
+        catch (error) {
+            console.error(error)
+        }
+    }
 
     return (
         <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={100}>
@@ -65,42 +78,38 @@ const CloudSync = () => {
                 colors={[Colors.primary, Colors.pink]}>
                 <View style={styles.headerRow}>
                     <View style={styles.mainHeaderContainer}>
-                        <Text style={styles.titleHeader}>Cloud Sync Settings</Text>
+                        <Text style={styles.titleHeader}>Import/Export Your Data</Text>
                     </View>
-                    <TouchableOpacity style={styles.saveButton} onPress={(() => { handleSave() })}>
-                        <Text style={styles.buttonText}>Save</Text>
-                    </TouchableOpacity>
                 </View>
                 <ScrollView >
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Cloud Save</Text>
-                        <TouchableOpacity style={styles.row}>
+                        <Text style={styles.sectionHeader}>Export Data</Text>
+                        <TouchableOpacity style={styles.row} onPress={(() => { handleExportPressed() })}>
                             <MaterialCommunityIcons color="#fff" name='cloud-check' size={25} style={styles.rowIcon} />
-                            <Text style={styles.rowLabel}>Sync using Google Firebase</Text>
+                            <Text style={styles.rowLabel}>Export Your Data</Text>
                             <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
-                        <View style={styles.row}>
-                            <Text style={styles.rowLabel}>Autosave</Text>
-                            <Switch
-                                trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
-                                thumbColor={mapIsEnabled ? Colors.pink : Colors.primary}
-                                ios_backgroundColor={Colors.transparentWhite}
-                                onValueChange={toggleSwitch1}
-                                value={mapIsEnabled}
-                            />
-                        </View>
                     </View>
                     <View style={styles.section}>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoText}>This app does not directly collect any personal information from you.
-                                However, this app utilizes third-party map services to provide functionality.
-                                These third-party services may collect location data or other information as outlined in their own privacy policies.
-                                We recommend reviewing the privacy policies of any third-party services used within the app for more information.
-                            </Text>
-                        </View>
+                        <Text style={styles.sectionHeader}>Import Data</Text>
+                        <TouchableOpacity style={styles.row} onPress={(() => { handleImportPressed() })}>
+                            <MaterialCommunityIcons color="#fff" name='cloud-check' size={25} style={styles.rowIcon} />
+                            <Text style={styles.rowLabel}>Import Your Data</Text>
+                            <MaterialCommunityIcons name="chevron-right" size={25} color="gray" style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </LinearGradient>
+            {loading && (
+                <Animated.View style={styles.loadingPopup} entering={ZoomIn.delay(200)} exiting={SlideInUp.delay(100)}>
+                    <ActivityIndicator size="large" color={Colors.pink} />
+                </Animated.View>
+            )}
+            {flashNotification && (
+                <Animated.View entering={FadeInDown.delay(50)} exiting={FadeOutUp.delay(50)} style={flashMessage.container}>
+                    <Text style={flashMessage.innerText}>App Restarting...</Text>
+                </Animated.View>
+            )}
         </KeyboardAvoidingView>
     );
 }
@@ -202,7 +211,44 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: "right"
     },
+
+    loadingPopup: {
+        alignSelf: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        flex: 1,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center'
+    },
 })
 
+
+const flashMessage = StyleSheet.create({
+    container: {
+        flex: 1,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: "hidden"
+    },
+    innerText: {
+        padding: 20,
+        color: "white",
+        fontFamily: "mon-b",
+        fontSize: 15,
+
+        backgroundColor: Colors.pink,
+        borderRadius: 10,
+        overflow: "hidden"
+    }
+})
 
 export default CloudSync;

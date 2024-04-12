@@ -1,11 +1,5 @@
 import * as SQLite from 'expo-sqlite';
 
-interface JournalEntry {
-  id?: number;
-  title: string;
-  body: string;
-  createdAt?: Date;
-}
 
 interface TrackingName {
   id: number;
@@ -25,9 +19,6 @@ interface MoodJournal {
 const db = SQLite.openDatabase('journal.db');
 
 export class DatabaseService {
-  constructor() {
-    //
-  }
 
   public initDB() {
     //"tx" means transaction 
@@ -100,6 +91,11 @@ export class DatabaseService {
     }, (error) => {
       console.error('database init error:', error);
     });
+  }
+
+  public closeDB() {
+    db.closeAsync();
+
   }
 
   public getAllJournalEntries(): Promise<any[]> {
@@ -248,7 +244,6 @@ export class DatabaseService {
     });
   }
 
-  //! TODO add checks to make suer that there is at least three values in the table
   public createThreeTrackingNames(value1: string, value2: string, value3: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -296,7 +291,6 @@ export class DatabaseService {
     });
   }
 
-  //ANCHOR - New mood Journal Changes
 
   public createMoodJournal(moodJournalData: MoodJournal): Promise<number> {
     return new Promise<number>((resolve, reject) => {
