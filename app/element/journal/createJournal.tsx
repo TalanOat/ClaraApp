@@ -13,6 +13,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { databaseService } from '@/model/databaseService'
 import Colors from '@/constants/Colors'
+import CryptoJS from "react-native-crypto-js";
+import * as SecureStore from 'expo-secure-store';
 
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import { DetectionContext } from '@/components/contexts/detectionContext'
@@ -34,19 +36,27 @@ const createJournal = () => {
   const [placeholder, setPlaceholder] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [flashNotification, setFlashNotification] = useState(false);
+  const [userPin, setUserPin] = useState('');
 
-  //context useStates
   const { fetchData } = useContext(JournalsContext);
   const { logWindowStart, logWindowEnd } = useContext(DetectionContext);
+  const textInputRef = useRef<TextInput>(null);
 
   const handleInputChange = (input: string) => {
     setText(input);
     //console.log(text)
   }
 
-  const textInputRef = useRef<TextInput>(null);
-
-
+  const loadPinSettings = async () => {
+    try {
+      const storedPin = await SecureStore.getItemAsync('userPin');
+      if (storedPin) {
+        setUserPin(storedPin);
+      }
+    } catch (error) {
+      console.error('Error loading name:', error);
+    }
+  };
 
   useEffect(() => {
     setTimeout(() => {
@@ -54,15 +64,31 @@ const createJournal = () => {
     }, 600);
 
     logWindowStart(usageTypes.JOURNAL_LOG);
-
-
+    loadPinSettings();
   }, []);
+
+
 
   async function databaseCreateJournalEntry() {
     try {
-      const currentTime = new Date().toISOString()
-      //TODO add the ability to set the title manually 
-      await databaseService.createJournalEntry("Journal Entry", text, currentTime);
+
+      //console.log("ciphertext: ", cipherText)
+
+      // let bytes = CryptoJS.AES.decrypt(ciphertext, userPin);
+      // let originalText = bytes.toString(CryptoJS.enc.Utf8);
+      //console.log("originalText: ", originalText);
+
+      //encrypt body first then send to the database
+      if(userPin !== "") {
+        const currentTime = new Date().toISOString()
+        //await databaseService.createJournalEntry("Journal Entry", text, currentTime);
+        let cipherText = CryptoJS.AES.encrypt(text, userPin).toString();
+        await databaseService.createJournalEntry("Journal Entry", cipherText, currentTime);
+      }
+      else{
+        console.log("error no pin")
+      }
+      
     }
     catch (error) {
       console.error("update error:", error);
@@ -76,11 +102,10 @@ const createJournal = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setPlaceholderIndex(prevIndex => (prevIndex + 1) % placeholderValues.length);
-    }, 5000); 
-  
-    return () => clearInterval(intervalId);
-  }, []); 
+    }, 5000);
 
+    return () => clearInterval(intervalId);
+  }, []);
 
 
   const handleSubmit = () => {

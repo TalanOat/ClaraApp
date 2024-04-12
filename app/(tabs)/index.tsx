@@ -21,6 +21,7 @@ import { DateContext } from '@/components/contexts/dateProvider';
 import { JournalsContext } from '@/components/contexts/journalProvider';
 
 import ProgressBar from '@/components/progressBar';
+import AuthenticationPrompt from '@/components/helpers/authenticationPrompt';
 
 interface UserElement {
   id: string;
@@ -164,7 +165,15 @@ const Page = () => {
     return { prefix, id };
   }
 
+  const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
 
+  const onToggleAuthPrompt = () => {
+    setShowAuthPrompt(!showAuthPrompt)
+  }
+
+  useEffect(() => {
+    setShowAuthPrompt(true);
+  }, [])
 
   /* -------------------- renderRows (for each userElement) ------------------- */
 
@@ -235,36 +244,40 @@ const Page = () => {
   };
 
   return (
-    <LinearGradient
-      style={styles.container}
-      colors={[Colors.primary, Colors.pink]}>
-      <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
-        <Animated.FlatList
-          renderItem={renderRow}
-          ref={listRef}
-          data={loading ? [] : userElements}
-          style={styles.listContainer}
-          entering={SlideInUp.delay(50)}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        >
-        </Animated.FlatList>
-        {journals.length === 0 && (
-          <View style={styles.addWarning}>
-            <View style={styles.linkContainer} >
-              <TouchableOpacity style={styles.listElement}>
-                <View style={styles.topRow}>
-                  <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
-                  <Text style={styles.elementTitle}>Your Entries Will Show Here...</Text>
-                </View>
-              </TouchableOpacity>
+    <>
+      <LinearGradient
+        style={styles.container}
+        colors={[Colors.primary, Colors.pink]}>
+        <View style={{ flex: 1, paddingBottom: 0, marginBottom: 90 }}>
+          <Animated.FlatList
+            renderItem={renderRow}
+            ref={listRef}
+            data={loading ? [] : userElements}
+            style={styles.listContainer}
+            entering={SlideInUp.delay(50)}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          >
+          </Animated.FlatList>
+          {journals.length === 0 && (
+            <View style={styles.addWarning}>
+              <View style={styles.linkContainer} >
+                <TouchableOpacity style={styles.listElement}>
+                  <View style={styles.topRow}>
+                    <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
+                    <Text style={styles.elementTitle}>Your Entries Will Show Here...</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          )}
+        </View>
 
-        )}
-      </View>
-
-    </LinearGradient>
+      </LinearGradient>
+      {showAuthPrompt && (
+        <AuthenticationPrompt onVisibilityChanged={onToggleAuthPrompt}></AuthenticationPrompt>
+      )}
+    </>
   )
 }
 

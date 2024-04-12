@@ -58,6 +58,16 @@ const settings = () => {
                             <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
+                    <Link href={'/element/settings/children/securitySettings'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='security' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Security Settings</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
                 </View>
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Privacy</Text>
@@ -123,6 +133,7 @@ const settings = () => {
                             <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
                     </Link>
+
                     <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
@@ -134,6 +145,19 @@ const settings = () => {
                         </TouchableOpacity>
                     </Link>
                 </View>   
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>Miscellaneous</Text>
+                    <Link href={'/element/settings/children/onboardingSettings'} style={styles.sectionLink} asChild>
+                        <TouchableOpacity style={styles.row}>
+
+                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+
+                            <Text style={styles.rowLabel}>Re-do Onboarding</Text>
+
+                            <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
+                        </TouchableOpacity>
+                    </Link>
+                </View>  
             </ScrollView>
         </LinearGradient>
     )

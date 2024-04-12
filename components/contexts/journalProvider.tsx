@@ -3,6 +3,9 @@ import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 
 import { DateContext } from './dateProvider';
+import CryptoJS from "react-native-crypto-js";
+import * as SecureStore from 'expo-secure-store';
+
 
 interface JournalElement {
     id: string;
@@ -24,16 +27,12 @@ interface JournalElement {
 interface JournalsContextInterface {
     journals: JournalElement[];
     setJournals: Dispatch<SetStateAction<JournalElement[]>>;
-    fetchJournalEntries: () => Promise<void>;
-    fetchMoodJournalEntries: () => Promise<void>;
     fetchData: () => Promise<void>;
 }
 
 const defaultState = {
     journals: [],
     setJournals: () => { },
-    fetchJournalEntries: () => Promise.resolve(),
-    fetchMoodJournalEntries: () => Promise.resolve(),
     fetchData: () => Promise.resolve(),
 } as JournalsContextInterface;
 
@@ -48,7 +47,25 @@ export const JournalsProvider = ({ children }: JournalsProviderProps) => {
 
     const { headerDate } = useContext(DateContext);
 
-    const fetchJournalEntries = async () => {
+    const loadPinSettings = async () => {
+        try {
+          const storedPin = await SecureStore.getItemAsync('userPin');
+          if (storedPin) {
+            return(storedPin);
+          }
+        } catch (error) {
+          console.error('Error loading name:', error);
+        }
+      };
+    
+      const decryptString = (encryptedText: string, decryptionPin: string) => {
+        const bytes = CryptoJS.AES.decrypt(encryptedText, decryptionPin);
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+        return originalText;
+      }
+    
+
+    const fetchJournalEntries = async (userPin: string) => {
         try {
             const inputDate = moment(headerDate.date).format('YYYY-MM-DD');
             const databaseResult = await databaseService.getAllJournalsForDate(inputDate);
@@ -58,7 +75,7 @@ export const JournalsProvider = ({ children }: JournalsProviderProps) => {
                 type: 'journal',
                 title: journal.title,
                 time: moment(journal.createdAt).format('HH:mm'),
-                body: journal.body
+                body: decryptString(journal.body, userPin)
             }));
 
             setJournals(entries);
@@ -93,22 +110,20 @@ export const JournalsProvider = ({ children }: JournalsProviderProps) => {
         }
     };
 
-    const fetchData = async () => {  
-        await Promise.all([fetchJournalEntries(), fetchMoodJournalEntries()]);
+    const fetchData = async () => { 
+        const userPin = await loadPinSettings();
+        if(userPin){
+            await Promise.all([fetchJournalEntries(userPin), fetchMoodJournalEntries()]);
+        }   
     };
-
-    // useEffect(() => {
-    //     //fetchData(); 
-    //     console.log("inital load")
-    //   }, []); 
-
+    
     useEffect(() => {
         fetchData();
-        //console.log("headerDate Changed")
+
     }, [headerDate]);
 
     return (
-        <JournalsContext.Provider value={{ journals, setJournals, fetchJournalEntries, fetchMoodJournalEntries, fetchData }}>
+        <JournalsContext.Provider value={{ journals, setJournals, fetchData }}>
             {children}
         </JournalsContext.Provider>
     );

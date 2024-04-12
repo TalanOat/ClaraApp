@@ -17,7 +17,8 @@ import Animated, {
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
 import { JournalsContext } from '@/components/contexts/journalProvider';
-
+import * as SecureStore from 'expo-secure-store';
+import CryptoJS from "react-native-crypto-js";
 
 interface Journal {
   id: number;
@@ -30,10 +31,11 @@ const Page = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [journalEntry, setJournalEntry] = useState<Journal>();
   const [textInputValue, setTextInputValue] = useState('');
-  const [text, setText] = useState('');
   const [flashNotification, setFlashNotification] = useState(false);
-
   const { fetchData } = useContext(JournalsContext);
+  const [userPin, setUserPin] = useState('');
+  const [flashNotificationMessage, setFlashNotificationMessage] = useState("Error, please try again...");
+
 
   const handleInputChange = (input: string) => {
     setTextInputValue(input);
@@ -43,52 +45,89 @@ const Page = () => {
   //  cursor is at the top of the input box
   const textInputRef = useRef<TextInput>(null);
 
+  const loadPinSettings = async () => {
+    try {
+      const storedPin = await SecureStore.getItemAsync('userPin');
+      if (storedPin) {
+        setUserPin(storedPin);
+      }
+    } catch (error) {
+      console.error('Error loading name:', error);
+    }
+  };
+
   useEffect(() => {
     setTimeout(() => {
       textInputRef.current?.focus();
     }, 1000);
+
+    loadPinSettings();
   }, []);
 
-  useEffect(() => {
-    const fetchEntry = async () => {
-      try {
-        const entry = await databaseService.getJournalEntryByID(parseInt(id));
-        if (entry) {
-          setJournalEntry({
-            id: entry.id,
-            title: entry.title,
-            body: entry.body,
-            time: moment(entry.createdAt).format('HH:mm')
-          });
-          setTextInputValue(entry.body);
-        } else {
-          // TODO: entry not found
-        }
-      } catch (error) {
-        console.error('error:', error);
+  const encryptString = (normalText: string) => {
+    let encryptedText = CryptoJS.AES.encrypt(normalText, userPin).toString();
+    return encryptedText;
+  }
+
+  const decryptString = (encryptedText: string) => {
+    const bytes = CryptoJS.AES.decrypt(encryptedText, userPin);
+    const originalText = bytes.toString(CryptoJS.enc.Utf8);
+    return originalText;
+  }
+
+  const fetchEntry = async () => {
+    try {
+      const entry = await databaseService.getJournalEntryByID(parseInt(id));
+      if (entry) {
+        const decryptedBody = decryptString(entry.body)
+        setJournalEntry({
+          id: entry.id,
+          title: entry.title,
+          body: decryptedBody,
+          time: moment(entry.createdAt).format('HH:mm')
+        });
+
+        setTextInputValue(decryptedBody);
+      } else {
+        // TODO: entry not found
       }
+    } catch (error) {
+      console.error('error:', error);
     }
-    fetchEntry();
-  }, []);
+  }
+
+  useEffect(() => {
+
+    if (userPin !== "") {
+      fetchEntry();
+    }
+
+  }, [userPin]);
 
   async function databaseUpdateJournalEntry() {
     try {
       //console.log("databae update")
       if (journalEntry) {
-        await databaseService.updateJournalEntry(journalEntry.id, "Journal Entry", textInputValue);
-        //TODO: possibly add loading
-        //TODO: visual feedback to the user that it has worked
+        //first encrypt the data again
+        const encryptedTextInput = encryptString(textInputValue)
+        await databaseService.updateJournalEntry(journalEntry.id, "Journal Entry", encryptedTextInput);
+
+        setFlashNotificationMessage("Updated Journal")
         setFlashNotification(true);
         setTimeout(() => {
           setFlashNotification(false);
         }, 1000);
       }
       else {
-        //TODO:  (VFB) journal not loaded yet
+        setFlashNotificationMessage("An Error Occured")
+        setFlashNotification(true);
+        setTimeout(() => {
+          setFlashNotification(false);
+        }, 1000);
       }
-    } 
+    }
     catch (error) {
-      console.error("update error:", error);
+      setFlashNotificationMessage("An Error Occured")
       setFlashNotification(true);
       setTimeout(() => {
         setFlashNotification(false);
@@ -130,7 +169,7 @@ const Page = () => {
       </Animated.ScrollView>
       {flashNotification && (
         <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
-          <Text style={flashMessage.innerText}>Success</Text>
+          <Text style={flashMessage.innerText}>{flashNotificationMessage}</Text>
         </Animated.View>
       )}
     </LinearGradient>
@@ -177,29 +216,30 @@ const styles = StyleSheet.create({
   },
 })
 
+
 const flashMessage = StyleSheet.create({
   container: {
-    flex: 1,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
+      flex: 1,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      //borderRadius: 10,
+      overflow: "hidden"
   },
   innerText: {
-    padding: 20,
-    color: "white",
-    fontFamily: "mon-b",
-    fontSize: 15,
+      padding: 20,
+      color: "white",
+      fontFamily: "mon-b",
+      fontSize: 15,
 
-    backgroundColor: Colors.pink,
-    borderRadius: 16,
-    //margin: 50
+      backgroundColor: Colors.pink,
+      borderRadius: 10,
+      //margin: 50
+      overflow: "hidden"
   }
 })
-
-
 export default Page

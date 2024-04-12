@@ -8,32 +8,36 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 
+import Animated, {
+    FadeInDown,
+    FadeOutUp,
+    SlideInDown,
+    ZoomIn,
+    ZoomOut,
+  } from 'react-native-reanimated';
 
+const FourthScreen = () => {
+    const [pinInput, setPinInput] = useState('');
+    const [confirmPinInput, setConfirmPinInput] = useState('');
+    const [flashNotification, setFlashNotification] = useState(false);
 
-const ThirdScreen = () => {
-    //by default should be true
-    const [mapIsEnabled, setMapIsEnabled] = useState(true);
-    const [weatherIsEnabled, setWeatherIsEnabled] = useState(true);
-
-    const toggleSwitch1 = () => {
-
-        setMapIsEnabled(!mapIsEnabled);
+    const onTextChanged1 = (pinValue: string) => {
+        setPinInput(pinValue)
     }
-    const toggleSwitch2 = () => {
-        setWeatherIsEnabled(!weatherIsEnabled);
-    }
 
+    const onTextChanged2 = (pinValue: string) => {
+        setConfirmPinInput(pinValue)
+    }
 
     const handleSave = async () => {
         try {
-            await SecureStore.setItemAsync('mapsEnabled', mapIsEnabled.toString());
-            await SecureStore.setItemAsync('weatherEnabled', weatherIsEnabled.toString());
-            console.log('settings saved successfully');
+            await SecureStore.setItemAsync('userPin', pinInput);
+            console.log('settings saved successfully: ', pinInput);
         } catch (error) {
             console.error('error saving privacy settings:', error);
         }
-        finally{
-            router.push('/element/introScreens/fouthScreen')
+        finally {
+            router.push('/element/introScreens/finalScreen')
         }
     }
 
@@ -42,60 +46,61 @@ const ThirdScreen = () => {
     }
 
     const handleRight = async () => {
-        handleSave();
+        if(pinInput === confirmPinInput){
+            handleSave();
+        }
+        else{
+            setFlashNotification(true);
+            setTimeout(() => {
+              setFlashNotification(false);
+            }, 1000);
+        }
+
     }
 
     return (
 
-        <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={100}>
+        <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={40}>
             <LinearGradient
                 style={styles.container}
                 colors={[Colors.primary, Colors.pink]}>
                 <View style={styles.headerRow}>
                     <View style={styles.mainHeaderContainer}>
-                        <Text style={styles.titleHeader}>Third Party Setting</Text>
+                        <Text style={styles.titleHeader}>Journal Pin</Text>
                     </View>
 
                 </View>
                 <View style={styles.subHeaderRow}>
-                    <Text style={styles.subHeaderText}>Would you like to enable recommended features which use third party services?</Text>
+                    <Text style={styles.subHeaderText}>All your journal entries are encrypted using this pin, so please keep it safe and remember it as without it your data will not be recoverable.</Text>
                 </View>
 
 
-                <ScrollView >
+                <ScrollView keyboardShouldPersistTaps={'always'}>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Map Features</Text>
-                        <View style={styles.switchRow}>
-                            <Text style={styles.rowLabel}>Google Maps Enabled</Text>
-                            <Switch
-                                trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
-                                thumbColor={mapIsEnabled ? Colors.pink : Colors.primary}
-                                ios_backgroundColor={Colors.transparentWhite}
-                                onValueChange={toggleSwitch1}
-                                value={mapIsEnabled}
+                        <Text style={styles.sectionHeader}>Pin</Text>
+                        <View style={styles.inputRow}>
+                            <TextInput
+                                style={styles.trackingInput}
+                                secureTextEntry={true}
+                                onChangeText={onTextChanged1}
+                                keyboardType='number-pad'
+                                value={pinInput}
                             />
                         </View>
+
                     </View>
                     <View style={styles.section}>
-                        <Text style={styles.sectionHeader}>Weather Features</Text>
-                        <View style={styles.switchRow}>
-                            <Text style={styles.rowLabel}>Weather API enabled</Text>
-                            <Switch
-                                trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
-                                thumbColor={weatherIsEnabled ? Colors.pink : Colors.primary}
-                                ios_backgroundColor={Colors.transparentWhite}
-                                onValueChange={toggleSwitch2}
-                                value={weatherIsEnabled}
+                        <Text style={styles.sectionHeader}>Confirm Pin</Text>
+                        <View style={styles.inputRow}>
+                            <TextInput
+                                style={styles.trackingInput}
+                                secureTextEntry={true}
+                                onChangeText={onTextChanged2}
+                                keyboardType='number-pad'
+                                value={confirmPinInput}
                             />
                         </View>
-                    </View>
-                    <View style={styles.section}>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoText}>This app does not directly collect any personal information from you.
-                                However, this app utilizes third-party map services to provide functionality.
-                                These third-party services may collect location data or other information as outlined in their own privacy policies.
-                                We recommend reviewing the privacy policies of any third-party services used within the app for more information. </Text>
-                        </View>
+
                     </View>
                     <View style={styles.navigationButtons}>
                         <TouchableOpacity style={styles.navButton} onPress={(() => { handleLeft() })}>
@@ -105,8 +110,12 @@ const ThirdScreen = () => {
                             <MaterialCommunityIcons name="chevron-right" size={24} color="white" />
                         </TouchableOpacity>
                     </View>
-
                 </ScrollView>
+                {flashNotification && (
+                    <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
+                        <Text style={flashMessage.innerText}>Pins do not match try again</Text>
+                    </Animated.View>
+                )}
             </LinearGradient>
         </KeyboardAvoidingView >
 
@@ -222,9 +231,32 @@ const styles = StyleSheet.create({
         gap: 20,
         marginTop: 30
     }
-
-
-
 })
 
-export default ThirdScreen;
+const flashMessage = StyleSheet.create({
+    container: {
+      flex: 1,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+      //borderRadius: 10,
+      overflow: "hidden"
+    },
+    innerText: {
+      padding: 20,
+      color: "white",
+      fontFamily: "mon-b",
+      fontSize: 15,
+  
+      backgroundColor: Colors.pink,
+      borderRadius: 10,
+      //margin: 50
+      overflow: "hidden"
+    }
+  })
+
+export default FourthScreen;

@@ -134,11 +134,25 @@ const Page = () => {
     return { prefix, id };
   }
 
+  function checkOneOfEach() {
+    const textJournalsLength= journals.filter(journal => journal.type === 'journal').length
+    const moodJournalsLength = journals.filter(journal => journal.type === 'mood').length
+    if (textJournalsLength > 0 && moodJournalsLength > 0){
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
   const fetchLastJournals = () => {
     try {
       setLoading(true);
-      if (journals.length === 0) {
+      
+      //if journal or no mood Journnal
+      const atLeastOneOfEachJouranl = checkOneOfEach();
+
+      if (!atLeastOneOfEachJouranl) {
         console.log("No mood Journal or Text Journal");
 
         const currentTime = new Date().toISOString()

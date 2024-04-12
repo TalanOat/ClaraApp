@@ -26,7 +26,7 @@ const FinalScreen = () => {
         <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" keyboardVerticalOffset={40}>
             <LinearGradient
                 style={styles.container}
-                colors={["#20115B", "#C876FF"]}>
+                colors={[Colors.primary, Colors.pink]}>
                 <View style={styles.introContainer}>
                     <View style={styles.headerRow}>
                         <View style={styles.mainHeaderContainer}>

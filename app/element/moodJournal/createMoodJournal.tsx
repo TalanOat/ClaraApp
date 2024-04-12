@@ -18,7 +18,6 @@ import Slider from '@react-native-community/slider'
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import * as SecureStore from 'expo-secure-store';
 import NegativeEmotionPrompt from '@/components/helpers/negativeEmotionPrompt'
-import CryptoJS from "react-native-crypto-js";
 
 interface TrackingName {
     id: number;

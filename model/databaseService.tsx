@@ -592,7 +592,7 @@ export class DatabaseService {
           'INSERT INTO usage_logs (createdAt, type, start, end) VALUES (?, ?, ?, ?)',
           [createdAt, type, start, end],
           (txObject, resultSet) => {
-            console.log('insert successful', resultSet);
+            //console.log('log insert successful', resultSet);
             resolve();
           },
           (txObject, error) => {

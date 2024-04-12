@@ -75,7 +75,8 @@ function RootLayoutNav() {
   const checkOnboarding = async () => {
     try {
       const onboardingCompleted = await SecureStore.getItemAsync("onboardingComplete")
-      if (!onboardingCompleted) {
+      //console.log("onboardingCompleted: ", onboardingCompleted)
+      if (onboardingCompleted === "false") {
         router.push("/element/introScreens/firstScreen")
       }
     }
@@ -104,7 +105,9 @@ function RootLayoutNav() {
                 <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/introScreens/thirdScreen" options={{ headerShown: false }} />
+                <Stack.Screen name="element/introScreens/fouthScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/introScreens/finalScreen" options={{ headerShown: false }} />
+                
                 <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
@@ -117,6 +120,8 @@ function RootLayoutNav() {
                 <Stack.Screen name="element/settings/children/cloudSync" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/notificationSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
                 <Stack.Screen name="element/settings/children/themeSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/onboardingSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                <Stack.Screen name="element/settings/children/securitySettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
               </Stack>
             </DetectionProvider>
           </JournalsProvider>

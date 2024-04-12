@@ -22,7 +22,7 @@ const orangeTheme = {
 const initializeTheme = () => {
   try {
     const theme = SecureStore.getItem('theme');
-    console.log("theme: ", theme)
+    //console.log("theme: ", theme)
     if(theme === "purple"){
       return purpleTheme
     }
