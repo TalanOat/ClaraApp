@@ -12,6 +12,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import MapViewDirections from 'react-native-maps-directions';
 import { GOOGLE_API_KEY } from '@/environments'
 import { Image } from 'expo-image'
+import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from 'expo-router'
 
 
 
@@ -36,6 +38,26 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 
 const Page = () => {
+  const navigation = useNavigation();
+  const [pageFocused, setpageFocused] = useState(false);
+
+  //listens for navigation changes, carries out code when this page is focused
+  useEffect(() => {
+    const navigationListener = navigation.addListener("focus", () => {
+      setpageFocused(true);
+      setTimeout(() => setpageFocused(false), 1000);
+    });
+
+    const blurListener = navigation.addListener("blur", () => {
+      setpageFocused(false);
+    });
+
+    return () => {
+      navigation.removeListener("focus", navigationListener);
+      navigation.removeListener("blur", blurListener);
+    };
+  }, [navigation]);
+
   const [isLoading, setIsLoading] = useState(false);
 
   const [mapRegion, setMapRegion] = useState({
@@ -133,9 +155,31 @@ const Page = () => {
     reverseGeocode(marker);
   }
 
+  const [thirdPartyEnabled, setThirdPartyEnabled] = useState<boolean>(true);
+
+  const loadThirdPartySettings = async () => {
+    try {
+      const storedSetting = await SecureStore.getItemAsync('mapsEnabled');
+      if (storedSetting) {
+        const storedSettingAsBoolean = (storedSetting.toLowerCase() === "true");
+        setThirdPartyEnabled(storedSettingAsBoolean);
+      }
+    } catch (error) {
+      console.error('Error loading name:', error);
+    }
+  };
+
   useEffect(() => {
     handleGetLocation();
+    loadThirdPartySettings();
   }, [])
+
+  useEffect(() => {
+    if (pageFocused) {
+      handleGetLocation();
+      loadThirdPartySettings();
+    }
+  }, [pageFocused])
 
 
 
@@ -151,55 +195,63 @@ const Page = () => {
     <LinearGradient
       style={styles.container}
       colors={[Colors.primary, Colors.pink]}>
-      <View style={styles.navAvoidingView}>
-        <MapView
-          //onRegionChange={onRegionChange}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          region={mapRegion}
-          initialRegion={mapRegion
-          }
-        //customMapStyle={mapStyle}
-        >
-          <MapViewDirections
-            origin={origin}
-            destination={destination}
-            apikey={GOOGLE_MAPS_APIKEY}
-            strokeWidth={4}
-            strokeColor="red"
-          />
-          {origin && (
-            <Marker
-              coordinate={origin}>
-              <MaterialCommunityIcons name="pencil-circle" size={40} color="black" />
-            </Marker>
+      {thirdPartyEnabled && (
+        <View style={styles.navAvoidingView}>
+          <MapView
+            //onRegionChange={onRegionChange}
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            region={mapRegion}
+            initialRegion={mapRegion
+            }
+          //customMapStyle={mapStyle}
+          >
+            <MapViewDirections
+              origin={origin}
+              destination={destination}
+              apikey={GOOGLE_MAPS_APIKEY}
+              strokeWidth={4}
+              strokeColor="red"
+            />
+            {origin && (
+              <Marker
+                coordinate={origin}>
+                <MaterialCommunityIcons name="pencil-circle" size={40} color="black" />
+              </Marker>
+            )}
+
+            {randomMarkers.map((marker, index) => (
+              <Marker
+                key={index}
+                coordinate={marker}
+                onPress={() => { setSelectedMarker(marker); }}
+              >
+                {selectedMarker && (
+                  <Callout key={index}
+                    onPress={() => switchDestination(selectedMarker)}>
+                    <Text>Navigate to marker</Text>
+                  </Callout>
+                )}
+              </Marker>
+            ))}
+
+          </MapView>
+          {isLoading && (
+            <View style={styles.loadingPopup}>
+              <ActivityIndicator size="large" color={Colors.pink} />
+            </View>
           )}
+          <TouchableOpacity style={styles.currentLocationButton} onPress={() => { console.log("Button Pressed"); handleGetLocation() }}>
+            <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+      {!thirdPartyEnabled && (
+        <View style={styles.navAvoidingView}>
+          <Text style={styles.warningText}>Enable third party map settings to see this part of the app</Text>
+        </View>
+      )}
 
-          {randomMarkers.map((marker, index) => (
-            <Marker
-              key={index}
-              coordinate={marker}
-              onPress={() => { setSelectedMarker(marker); }}
-            >
-              {selectedMarker && (
-                <Callout key={index}
-                  onPress={() => switchDestination(selectedMarker)}>
-                  <Text>Navigate to marker</Text>
-                </Callout>
-              )}
-            </Marker>
-          ))}
-
-        </MapView>
-        {isLoading && (
-          <View style={styles.loadingPopup}>
-            <ActivityIndicator size="large" color={Colors.pink} />
-          </View>
-        )}
-        <TouchableOpacity style={styles.currentLocationButton} onPress={() => { console.log("Button Pressed"); handleGetLocation() }}>
-          <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
-        </TouchableOpacity>
-      </View>
 
     </LinearGradient>
   )
@@ -247,6 +299,12 @@ const styles = StyleSheet.create({
   markerImage: {
     width: 35,
     height: 35
+  },
+  warningText: {
+    color: "white",
+    fontSize: 18,
+    fontFamily: "mon-b",
+    padding: 20
   }
 })
 

@@ -241,7 +241,7 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
 
         inputJournals.forEach((journal) => {
             if (journal.created_at) {
-                const formattedDay = moment(journal.created_at).format('DD/MM')
+                const formattedDay = moment(journal.created_at).format('DD')
                 days.push(formattedDay);
 
                 if (journal.tracking_value1 !== undefined) {
@@ -252,7 +252,7 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
             }
         });
 
-        setBarWidth(1)
+        setBarWidth(0.5)
 
         setChartData({
             labels: days,

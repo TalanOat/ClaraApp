@@ -217,19 +217,6 @@ const Page = () => {
     setSelectedEmotions([]);
   };
 
-  const [userName, setUserName] = useState<string>('');
-
-  const loadName = async () => {
-      try {
-          const storedName = await SecureStore.getItemAsync('userName');
-          if (storedName) {
-              setUserName(storedName);
-          }
-      } catch (error) {
-          console.error('Error loading name:', error);
-      }
-  };
-
   useEffect(() => {
     setLoading(true);
     //fetchEmotionsForMoodJournal();
@@ -248,7 +235,6 @@ const Page = () => {
       }
     }
     fetchAllData();
-    loadName();
   }, []);
 
 
@@ -267,7 +253,7 @@ const Page = () => {
 
         </View>
         <View style={styles.contentRow}>
-          <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning {userName}</Text>
+          <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning </Text>
           {/* first slider row : user interaction affects the sliderValue using a range from 0-1*/}
           {!loading && (
             <View style={styles.sliderRow}>

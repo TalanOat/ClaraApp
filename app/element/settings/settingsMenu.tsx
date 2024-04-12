@@ -74,7 +74,7 @@ const settings = () => {
                     <Link href={'/element/settings/children/thirdParty'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='map-check' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='vector-intersection' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>Third Party Settings</Text>
 
@@ -100,7 +100,7 @@ const settings = () => {
                     <Link href={'/element/settings/children/themeSettings'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='theme-light-dark' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>Theme</Text>
 
@@ -113,9 +113,9 @@ const settings = () => {
                     <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='human' size={25} style={styles.rowIcon} />
 
-                            <Text style={styles.rowLabel}>Theme</Text>
+                            <Text style={styles.rowLabel}>Accessiblity Settings</Text>
 
                             <MaterialCommunityIcons name="chevron-right" size={25} color={Colors.offWhite} style={styles.rowNavigationIcon} />
                         </TouchableOpacity>
@@ -126,7 +126,7 @@ const settings = () => {
                     <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='help-circle' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>Guides</Text>
 
@@ -137,7 +137,7 @@ const settings = () => {
                     <Link href={'/element/settings/children/userDetails'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='hubspot' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>Feedback Hub</Text>
 
@@ -150,7 +150,7 @@ const settings = () => {
                     <Link href={'/element/settings/children/onboardingSettings'} style={styles.sectionLink} asChild>
                         <TouchableOpacity style={styles.row}>
 
-                            <MaterialCommunityIcons color="#fff" name='cog' size={25} style={styles.rowIcon} />
+                            <MaterialCommunityIcons color="#fff" name='restart' size={25} style={styles.rowIcon} />
 
                             <Text style={styles.rowLabel}>Re-do Onboarding</Text>
 

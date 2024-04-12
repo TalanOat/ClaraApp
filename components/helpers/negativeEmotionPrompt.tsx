@@ -94,12 +94,17 @@ const NegativeEmotionPrompt = ({ onVisibilityChanged }: NotificationPromptProps)
                 const iconCode = data.weather[0].icon
                 let isWeatherPoor = false;
 
-                if (data.weather[0].description === "shower rain" || data.weather[0].description === "rain"
-                    || data.weather[0].description === "thunderstorm" || data.weather[0].description === "snow"
-                    || data.weather[0].description === "mist") {
-
+                const weatherIDasString = data.weather[0].id.toString();
+                if(!weatherIDasString.startsWith(80)){
                     isWeatherPoor = true;
                 }
+
+                // if (data.weather[0].description === "shower rain" || data.weather[0].description === "rain"
+                //     || data.weather[0].description === "thunderstorm" || data.weather[0].description === "snow"
+                //     || data.weather[0].description === "mist") {
+
+                //     isWeatherPoor = true;
+                // }
 
                 const weatherObject: WeatherValues = {
                     iconURL: `https://openweathermap.org/img/wn/${iconCode}@2x.png`,

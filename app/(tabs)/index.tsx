@@ -272,11 +272,11 @@ const Page = () => {
             </View>
           )}
         </View>
-
+        {showAuthPrompt && (
+          <AuthenticationPrompt onVisibilityChanged={onToggleAuthPrompt}></AuthenticationPrompt>
+        )}
       </LinearGradient>
-      {showAuthPrompt && (
-        <AuthenticationPrompt onVisibilityChanged={onToggleAuthPrompt}></AuthenticationPrompt>
-      )}
+
     </>
   )
 }

@@ -26,7 +26,6 @@ interface Goal {
 }
 
 const Page = () => {
-
   const [nameInput, setNameInput] = useState('');
   const [stepsInput, setStepsInput] = useState('');
   const [repeat, setRepeat] = useState(true);
@@ -35,7 +34,6 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([])
   const [flashNotification, setFlashNotification] = useState(false);
-
   const [selectedGoalType, setSelectedGoalType] = useState('current');
 
 
@@ -62,9 +60,6 @@ const Page = () => {
         }));
 
         setGoals(updatedGoals);
-        //console.log("updatedGoals: ", updatedGoals)
-        //setGoals(returnedGoals);
-        //fetchGoals();
       }
     }
     catch (error) {
@@ -85,15 +80,15 @@ const Page = () => {
     amountRef.current?.blur();
     nameRef.current?.blur();
 
-    try{
+    try {
       const currentTime = new Date().toISOString()
       const startingStep = 0;
       await databaseService.createGoal(nameInput, currentTime, startingStep, parseInt(stepsInput), repeat.toString())
     }
     catch (error) {
-      console.error("error saving goal: ",error)
+      console.error("error saving goal: ", error)
     }
-    finally{
+    finally {
       fetchGoals();
     }
   }
@@ -235,6 +230,36 @@ const Page = () => {
                         disabled={true}>
                         <MaterialCommunityIcons name="plus-circle" size={24} color={Colors.transparentWhite} />
                       </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+            }
+            {selectedGoalType === 'repeated' &&
+              goals.filter(goal => goal.daily === "true")
+                .map((goal, index) => (
+                  <View style={styles.goalRow} key={index}>
+                    <Text style={styles.goalName}>{goal.name}</Text>
+                    <View style={styles.goalTimes}>
+                      <TouchableOpacity onPress={(() => { !loading && handleGoalMinus(goal) })}
+                        disabled={loading}>
+                        <MaterialCommunityIcons name="minus-circle" size={24} color="white" />
+                      </TouchableOpacity>
+                      <Text style={styles.goalStep}>{goal.step}</Text>
+                      <Text style={styles.goalStep}>/</Text>
+                      <Text style={styles.goalStep}>{goal.steps}</Text>
+                      {goal.step === goal.steps && (
+                        <TouchableOpacity
+                          disabled={true}>
+                          <MaterialCommunityIcons name="plus-circle" size={24} color={Colors.transparentWhite} />
+                        </TouchableOpacity>
+                      )}
+                      {goal.step !== goal.steps && (
+                        <TouchableOpacity onPress={(() => { !loading && handleGoalPlus(goal) })}
+                          disabled={loading}>
+                          <MaterialCommunityIcons name="plus-circle" size={24} color="white" />
+                        </TouchableOpacity>
+                      )}
+
                     </View>
                   </View>
                 ))

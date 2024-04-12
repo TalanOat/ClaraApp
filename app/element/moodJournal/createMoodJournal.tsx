@@ -209,23 +209,27 @@ const createJournal = () => {
         }
     }, [userTrackingVals]);
 
-    const [userName, setUserName] = useState<string>('');
-
-    const loadName = async () => {
-        try {
-            const storedName = await SecureStore.getItemAsync('userName');
-            if (storedName) {
-                setUserName(storedName);
-            }
-        } catch (error) {
-            console.error('Error loading name:', error);
-        }
-    };
 
     const [showEmotionPrompt, setShowEmotionPrompt] = useState(false);
 
     const onPromptVisibilityChanged = (visible: boolean) => {
         setShowEmotionPrompt(visible);
+    }
+
+    const [partOfDay, setPartOfDay] = useState<string>("")
+
+    const getPartOfDay = () => {
+        //const currentTime = new Date().toISOString().g
+        const currentHour = new Date().getHours()
+        let partOfDay = "Morning"
+
+        if (currentHour >= 12 && currentHour < 18){
+            partOfDay = "Afternoon"
+        }
+        if (currentHour >= 18 && currentHour <= 24){
+            partOfDay = "Evening"
+        }
+        return partOfDay
     }
 
 
@@ -234,7 +238,8 @@ const createJournal = () => {
         fetchTrackingValues().then(() => {
             setLoading(false);
         })
-        loadName();
+        const partOfDay = getPartOfDay();
+        setPartOfDay(partOfDay)
     }, []);
 
     return (
@@ -253,7 +258,7 @@ const createJournal = () => {
 
                     </View>
                     <View style={styles.contentRow}>
-                        <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>Morning {userName}</Text>
+                        <Text style={[defaultStyles.titleHeader, styles.moodHeader]}>{partOfDay}</Text>
                         {/* first slider row : user interaction affects the sliderValue using a range from 0-1*/}
                         {!loading && (
                             <View style={styles.sliderRow}>

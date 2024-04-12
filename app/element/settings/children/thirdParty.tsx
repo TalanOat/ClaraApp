@@ -30,7 +30,7 @@ const ThirdParty = () => {
     }
 
     useEffect(() => {
-        const loadName = async () => {
+        const loadSettings = async () => {
             try {
                 const storedMaps = await SecureStore.getItemAsync('mapsEnabled');
                 const storedWeather = await SecureStore.getItemAsync('weatherEnabled');
@@ -48,7 +48,7 @@ const ThirdParty = () => {
             }
         };
 
-        loadName();
+        loadSettings();
     }, []);
 
     return (
