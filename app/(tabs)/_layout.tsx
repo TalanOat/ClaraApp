@@ -19,9 +19,6 @@ type NavigationProps = {
   navigate: (value: string) => void;
 }
 
-interface Props {
-  headerDate: Date
-}
 
 const Layout = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);

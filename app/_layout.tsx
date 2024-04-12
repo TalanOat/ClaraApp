@@ -101,7 +101,8 @@ function RootLayoutNav() {
                   name="(tabs)"
                   options={{
                     header: () => <ExpandedHeader />,
-                  }} />
+                  }} 
+                  />
                 <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />
                 <Stack.Screen name="element/introScreens/thirdScreen" options={{ headerShown: false }} />
