@@ -40,8 +40,6 @@ interface MoodJournal {
 }
 
 
-
-
 const createJournal = () => {
     const [loading, setLoading] = useState(false);
     const [flashNotification, setFlashNotification] = useState(false);

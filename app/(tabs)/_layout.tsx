@@ -15,15 +15,16 @@ import Animated, {
   SlideInUp,
 } from 'react-native-reanimated';
 
+
 type NavigationProps = {
   navigate: (value: string) => void;
 }
 
 
+
 const Layout = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const { navigate } = useNavigation<NavigationProps>()
-
 
   function handleAddNavigation(path: string) {
     setShowAddMenu(false)

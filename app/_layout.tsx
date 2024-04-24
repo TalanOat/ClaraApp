@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { Stack, router, useNavigation } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors'
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +15,7 @@ import { databaseService } from '@/model/databaseService';
 import DateProvider from '@/components/contexts/dateProvider';
 import { JournalsProvider } from '@/components/contexts/journalProvider';
 import { DetectionProvider } from '@/components/contexts/detectionContext';
+import AddColorProvider, { AddColorContext } from '@/components/contexts/addColorProvider';
 import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
 import * as SecureStore from 'expo-secure-store';
 
@@ -89,6 +90,7 @@ function RootLayoutNav() {
     checkOnboarding();
   }, [])
 
+
   return (
     <Fragment>
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.primary }}>
@@ -96,34 +98,35 @@ function RootLayoutNav() {
         <DateProvider>
           <JournalsProvider>
             <DetectionProvider>
-              <Stack>
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{
-                    header: () => <ExpandedHeader />,
-                  }} 
-                  />
-                <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
-                <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />
-                <Stack.Screen name="element/introScreens/thirdScreen" options={{ headerShown: false }} />
-                <Stack.Screen name="element/introScreens/fouthScreen" options={{ headerShown: false }} />
-                <Stack.Screen name="element/introScreens/finalScreen" options={{ headerShown: false }} />
-                
-                <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
 
-                <Stack.Screen name="element/settings/settingsMenu" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/trackingValues" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/userDetails" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/thirdParty" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/cloudSync" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/notificationSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/themeSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/onboardingSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-                <Stack.Screen name="element/settings/children/securitySettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
-              </Stack>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{
+                      header: () => <ExpandedHeader />,
+                    }} />
+                  <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
+                  <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />
+                  <Stack.Screen name="element/introScreens/thirdScreen" options={{ headerShown: false }} />
+                  <Stack.Screen name="element/introScreens/fouthScreen" options={{ headerShown: false }} />
+                  <Stack.Screen name="element/introScreens/finalScreen" options={{ headerShown: false }} />
+
+                  <Stack.Screen name="element/journal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/journal/createJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/moodJournal/createMoodJournal" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/moodJournal/[id]" options={{ header: SmallerHeader, headerBackButtonMenuEnabled: true }} />
+
+                  <Stack.Screen name="element/settings/settingsMenu" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/trackingValues" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/userDetails" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/thirdParty" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/cloudSync" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/notificationSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/themeSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/onboardingSettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                  <Stack.Screen name="element/settings/children/securitySettings" options={{ header: SmallerHeaderNoCog, headerBackButtonMenuEnabled: true }} />
+                </Stack>
+
             </DetectionProvider>
           </JournalsProvider>
         </DateProvider>
