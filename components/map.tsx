@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import MapView, { Callout, Marker, PROVIDER_GOOGLE, Circle } from 'react-native-maps'
 import Colors from '@/constants/Colors'
@@ -15,7 +15,6 @@ import { Image } from 'expo-image'
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from 'expo-router'
 import { Pedometer } from 'expo-sensors';
-import { Subscription } from 'expo-notifications'
 
 
 
@@ -170,49 +169,6 @@ const Page = () => {
     }
   };
 
-  //pedometer
-  const [initialStepCount, setInitialStepCount] = useState<number | null>(null);
-  const [previousStepCount, setPreviousStepCount] = useState<number | null>(null);
-  const [currentStepCount, setCurrentStepCount] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchStepCount = async () => {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(end.getDate() - 1);
-
-      const pastStepCountResult = await Pedometer.getStepCountAsync(start, end);
-      if (pastStepCountResult) {
-        setInitialStepCount(pastStepCountResult.steps);
-        setPreviousStepCount(pastStepCountResult.steps);
-      }
-    };
-
-    fetchStepCount();
-  }, []);
-
-  useEffect(() => {
-    const intervalId = setInterval(async () => {
-      if (initialStepCount !== null && previousStepCount !== null) {
-        const currentStepCountResult = await Pedometer.getStepCountAsync(
-          new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-          new Date()
-        );
-        if (currentStepCountResult) {
-          const newSteps = currentStepCountResult.steps - initialStepCount;
-          const incrementalSteps = currentStepCountResult.steps - previousStepCount;
-          if (newSteps >= 0 && incrementalSteps >= 0) {
-            setCurrentStepCount(prevCount => prevCount + incrementalSteps);
-            setPreviousStepCount(currentStepCountResult.steps);
-          }
-        }
-      }
-    }, 10 * 1000);
-
-    return () => clearInterval(intervalId);
-  }, [initialStepCount, previousStepCount]);
-
-
   useEffect(() => {
     handleGetLocation();
     loadThirdPartySettings();
@@ -288,10 +244,6 @@ const Page = () => {
           <TouchableOpacity style={styles.currentLocationButton} onPress={() => { console.log("Button Pressed"); handleGetLocation() }}>
             <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
           </TouchableOpacity>
-          <View style={styles.stepCountContainer}>
-            <Text>Steps (24 hours): {initialStepCount}</Text>
-            <Text>Steps (Now): {currentStepCount}</Text>
-          </View>
         </View>
       )}
       {!thirdPartyEnabled && (
@@ -316,18 +268,6 @@ const styles = StyleSheet.create({
   navAvoidingView: {
     flex: 1,
     marginBottom: 80
-  },
-  stepCountContainer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: Colors.pink,
-    padding: 12,
-    margin: 25,
-    elevation: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center'
   },
   currentLocationButton: {
     position: 'absolute',
