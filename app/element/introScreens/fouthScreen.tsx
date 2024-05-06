@@ -14,7 +14,7 @@ import Animated, {
     SlideInDown,
     ZoomIn,
     ZoomOut,
-  } from 'react-native-reanimated';
+} from 'react-native-reanimated';
 
 const FourthScreen = () => {
     const [pinInput, setPinInput] = useState('');
@@ -46,21 +46,27 @@ const FourthScreen = () => {
     }
 
     const handleRight = async () => {
-        if(pinInput === confirmPinInput){
+        if (pinInput === confirmPinInput) {
             handleSave();
         }
-        else{
+        else {
             setFlashNotification(true);
             setTimeout(() => {
-              setFlashNotification(false);
+                setFlashNotification(false);
             }, 1000);
         }
 
     }
+    // <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={40}></KeyboardAvoidingView>
 
     return (
 
-        <KeyboardAvoidingView style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', }} behavior="padding" enabled keyboardVerticalOffset={40}>
+        <KeyboardAvoidingView
+            style={{ flex: 1, flexDirection: 'column', justifyContent: 'center' }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled
+            keyboardVerticalOffset={40}
+        >
             <LinearGradient
                 style={styles.container}
                 colors={[Colors.primary, Colors.pink]}>
@@ -235,28 +241,28 @@ const styles = StyleSheet.create({
 
 const flashMessage = StyleSheet.create({
     container: {
-      flex: 1,
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-      //borderRadius: 10,
-      overflow: "hidden"
+        flex: 1,
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        //borderRadius: 10,
+        overflow: "hidden"
     },
     innerText: {
-      padding: 20,
-      color: "white",
-      fontFamily: "mon-b",
-      fontSize: 15,
-  
-      backgroundColor: Colors.pink,
-      borderRadius: 10,
-      //margin: 50
-      overflow: "hidden"
+        padding: 20,
+        color: "white",
+        fontFamily: "mon-b",
+        fontSize: 15,
+
+        backgroundColor: Colors.pink,
+        borderRadius: 10,
+        //margin: 50
+        overflow: "hidden"
     }
-  })
+})
 
 export default FourthScreen;

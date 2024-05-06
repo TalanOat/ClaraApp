@@ -1,4 +1,4 @@
-import { View, Text, Touchable, TouchableOpacity, KeyboardAvoidingView, Keyboard } from 'react-native'
+import { View, Text, Touchable, TouchableOpacity, KeyboardAvoidingView, Keyboard, Platform } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { Tabs, useNavigation, useSearchParams } from 'expo-router'
 import Colors from '@/constants/Colors';
@@ -34,7 +34,11 @@ const Layout = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}>
+    style={{ flex: 1, flexDirection: 'column', justifyContent: 'center' }}
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    enabled
+    keyboardVerticalOffset={40}
+>
       <View style={{ flex: 1 }}>
         <Tabs screenOptions={{
           tabBarActiveTintColor: Colors.primary,

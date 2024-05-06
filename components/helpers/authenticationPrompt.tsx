@@ -67,8 +67,8 @@ const AuthenticationPrompt = ({ onVisibilityChanged }: AuthenticationPromptProps
 
     return (
         <>
-            <BlurView style={styles.notificationContainer} intensity={10} tint="light" experimentalBlurMethod='dimezisBlurView'>
-                <BlurView style={styles.formContainer} intensity={50} tint="light" experimentalBlurMethod='dimezisBlurView'>
+            <BlurView style={styles.notificationContainer} intensity={10} tint="light" >
+                <BlurView style={styles.formContainer} intensity={50} tint="light" >
                     <View style={styles.formContent}>
                         <View style={styles.section}>
                             <Text style={styles.infoText}>Unlock Your Encrypted Content</Text>
