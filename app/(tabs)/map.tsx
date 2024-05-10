@@ -16,6 +16,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from 'expo-router'
 import { Pedometer } from 'expo-sensors';
 import { Subscription } from 'expo-notifications'
+import LeafletMap from '@/components/leaflet/leafletMap'
 
 
 
@@ -111,44 +112,44 @@ const Page = () => {
 
 
 
-  const handleGetLocation = async () => {
-    setIsLoading(true);
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.error('Location permission not granted');
-      return;
-    }
+  // const handleGetLocation = async () => {
+  //   setIsLoading(true);
+  //   let { status } = await Location.requestForegroundPermissionsAsync();
+  //   if (status !== 'granted') {
+  //     console.error('Location permission not granted');
+  //     return;
+  //   }
 
-    let location = await Location.getCurrentPositionAsync({});
-    setMapRegion({
-      ...mapRegion,
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    });
+  //   let location = await Location.getCurrentPositionAsync({});
+  //   setMapRegion({
+  //     ...mapRegion,
+  //     latitude: location.coords.latitude,
+  //     longitude: location.coords.longitude,
+  //   });
 
-    setOrigin({
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    })
+  //   setOrigin({
+  //     latitude: location.coords.latitude,
+  //     longitude: location.coords.longitude,
+  //   })
 
 
-    if (location && !randomPointsGenerated) {
-      const generatedPoints = generateRandomPoints(
-        location.coords,
-        0.01,
-        10
-      );
-      setRandomMarkers(generatedPoints);
-      setDestination(generatedPoints[0]);
-      setRandomPointsGenerated(true);
-    }
+  //   if (location && !randomPointsGenerated) {
+  //     const generatedPoints = generateRandomPoints(
+  //       location.coords,
+  //       0.01,
+  //       10
+  //     );
+  //     setRandomMarkers(generatedPoints);
+  //     setDestination(generatedPoints[0]);
+  //     setRandomPointsGenerated(true);
+  //   }
 
-    if (location) {
+  //   if (location) {
 
-      setIsLoading(false);
-      console.log(location.coords)
-    }
-  };
+  //     setIsLoading(false);
+  //     console.log(location.coords)
+  //   }
+  // };
 
   const switchDestination = (marker: Location) => {
     setDestination(marker);
@@ -213,14 +214,14 @@ const Page = () => {
   }, [initialStepCount, previousStepCount]);
 
 
-  useEffect(() => {
-    handleGetLocation();
-    loadThirdPartySettings();
-  }, [])
+  // useEffect(() => {
+  //   handleGetLocation();
+  //   loadThirdPartySettings();
+  // }, [])
 
   useEffect(() => {
     if (pageFocused) {
-      handleGetLocation();
+      //handleGetLocation();
       loadThirdPartySettings();
     }
   }, [pageFocused])
@@ -241,53 +242,16 @@ const Page = () => {
       colors={[Colors.primary, Colors.pink]}>
       {thirdPartyEnabled && (
         <View style={styles.navAvoidingView}>
-          <MapView
-            //onRegionChange={onRegionChange}
-            style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            region={mapRegion}
-            initialRegion={mapRegion
-            }
-          //customMapStyle={mapStyle}
-          >
-            <MapViewDirections
-              origin={origin}
-              destination={destination}
-              apikey={GOOGLE_MAPS_APIKEY}
-              strokeWidth={4}
-              strokeColor="red"
-            />
-            {origin && (
-              <Marker
-                coordinate={origin}>
-                <MaterialCommunityIcons name="pencil-circle" size={40} color="black" />
-              </Marker>
-            )}
+          
+          <LeafletMap />
 
-            {randomMarkers.map((marker, index) => (
-              <Marker
-                key={index}
-                coordinate={marker}
-                onPress={() => { setSelectedMarker(marker); }}
-              >
-                {selectedMarker && (
-                  <Callout key={index}
-                    onPress={() => switchDestination(selectedMarker)}>
-                    <Text>Navigate to marker</Text>
-                  </Callout>
-                )}
-              </Marker>
-            ))}
 
-          </MapView>
           {isLoading && (
             <View style={styles.loadingPopup}>
               <ActivityIndicator size="large" color={Colors.pink} />
             </View>
           )}
-          <TouchableOpacity style={styles.currentLocationButton} onPress={() => { console.log("Button Pressed"); handleGetLocation() }}>
-            <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
-          </TouchableOpacity>
+
           <View style={styles.stepCountContainer}>
             <Text>Steps (24 hours): {initialStepCount}</Text>
             <Text>Steps (Now): {currentStepCount}</Text>
