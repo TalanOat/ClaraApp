@@ -16,7 +16,9 @@ import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from 'expo-router'
 import { Pedometer } from 'expo-sensors';
 import { Subscription } from 'expo-notifications'
-import LeafletMap from '@/components/leaflet/leafletMap'
+import MapboxMap from '@/components/leaflet/mapboxMap'
+//import LeafletMap from '@/components/leaflet/leafletMap'
+//import MapboxMap from '@/components/leaflet/leafletMap'
 
 
 
@@ -242,8 +244,8 @@ const Page = () => {
       colors={[Colors.primary, Colors.pink]}>
       {thirdPartyEnabled && (
         <View style={styles.navAvoidingView}>
-          
-          <LeafletMap />
+
+          <MapboxMap />
 
 
           {isLoading && (
@@ -253,8 +255,15 @@ const Page = () => {
           )}
 
           <View style={styles.stepCountContainer}>
-            <Text>Steps (24 hours): {initialStepCount}</Text>
-            <Text>Steps (Now): {currentStepCount}</Text>
+            <Text style={styles.stepCountHeading}>Steps</Text>
+            <View style={styles.spacedContainer}>
+              <Text style={styles.stepCountText}>(24 hours):</Text>
+              <Text style={styles.stepCountText}>{initialStepCount}</Text>
+            </View>
+            <View style={styles.spacedContainer}>
+              <Text style={styles.stepCountText}>(Now):</Text>
+              <Text style={styles.stepCountText}>{currentStepCount}</Text>
+            </View>
           </View>
         </View>
       )}
@@ -287,19 +296,25 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: Colors.pink,
     padding: 12,
-    margin: 25,
+    margin: 20,
     elevation: 20,
     borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+
+  },
+  stepCountText: {
+    fontSize: 14,
+    fontFamily: "mon-sb",
+    color: "white"
   },
   currentLocationButton: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 80,
     right: 0,
     backgroundColor: Colors.pink,
     padding: 12,
-    margin: 25,
+    margin: 10,
     elevation: 20,
     borderRadius: 10,
     alignItems: 'center',
@@ -329,6 +344,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "mon-b",
     padding: 20
+  },
+  spacedContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: 'center',
+    width: 150
+  },
+  stepCountHeading: {
+    fontSize: 14,
+    fontFamily: "mon-b",
+    color: "white"
   }
 })
 

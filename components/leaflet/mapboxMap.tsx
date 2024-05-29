@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 
@@ -14,9 +14,17 @@ interface Coordinate {
   longitude: number
 }
 
-
-const LeafletMap = () => {
+const MapboxMap = () => {
   const mapRef = useRef<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onMessage = (event: any) => {
+    if (event.nativeEvent.data === 'mapLoaded') {
+      console.log('The map has been loaded successfully');
+      setMapLoaded(true)
+    }
+  };
 
   const handleGetLocation = async () => {
     //setIsLoading(true);
@@ -33,57 +41,39 @@ const LeafletMap = () => {
       longitude: location.coords.longitude,
     });
 
-    console.log("mapRegion", mapRegion)
-
     return mapRegion
-
-    //L.marker([${mapRegion.latitude}, ${mapRegion.longitude}]).addTo(map);
-
-    // if (mapRef.current) {
-    //   mapRef.current.injectJavaScript(`
-    //     map.setView([${mapRegion.latitude}, ${mapRegion.longitude}], 15);
-    //     L.marker([${mapRegion.latitude}, ${mapRegion.longitude}]).addTo(map);
-
-    //   `);
-    // }
   };
-
 
   const removeExistingMarkers = async () => {
     if (mapRef.current) {
+      const teststring = "ahsdas";
       mapRef.current.injectJavaScript(`
-        map.eachLayer((layer) => {
-          if (layer instanceof L.Marker) {
-            map.removeLayer(layer);
-          }
-        });
+        focusMapInstant(${teststring});
       `);
     }
   };
-
-  const focusMapToCoord = async (location: Coordinate) => {
-    if (mapRef.current) {
-      mapRef.current.injectJavaScript(`
-        map.setView([${location.latitude}, ${location.longitude}], 15);
-      `);
-    }
-  }
 
   const addMarkerToCoord = async (location: Coordinate) => {
     if (mapRef.current) {
       mapRef.current.injectJavaScript(`
-        L.marker([${location.latitude}, ${location.longitude}]).addTo(map);
+      const marker1 = new mapboxgl.Marker(({ color: 'purple'}))
+        .setLngLat([${location.longitude}, ${location.latitude}])
+        .addTo(map);
       `);
     }
   }
 
   const handleFocusMap = async () => {
-    removeExistingMarkers();
+    //removeExistingMarkers();
+
     const userLocation = await handleGetLocation();
 
     if (userLocation) {
-      focusMapToCoord(userLocation)
-      addMarkerToCoord(userLocation)
+
+
+      flyToCoord(userLocation);
+      //   focusMapToCoord(userLocation)
+      //   addMarkerToCoord(userLocation)
     }
 
   }
@@ -105,20 +95,39 @@ const LeafletMap = () => {
     return points;
   };
 
+  const setupMap = async () => {
+    const userLocation = await handleGetLocation();
+    if (userLocation) {
+      flyToCoord(userLocation)
+      addMarkerToCoord(userLocation)
+      //const test = generateRandomPoints(userLocation, 0.01, 10);
+    }
+  }
 
   useEffect(() => {
-    const initMapDelay = setTimeout(async () => {
-      const userLocation = await handleGetLocation();
-      if (userLocation) {
-        focusMapToCoord(userLocation)
-        addMarkerToCoord(userLocation)
-        const test = generateRandomPoints(userLocation, 0.01, 10);
-        console.log("test: ", test)
-      }
-    }, 1000);
+    if (mapLoaded == false) {
+      setIsLoading(true);
+    }
+    if (mapLoaded == true) {
+      setIsLoading(false);
+      setupMap();
+    }
 
-    return () => clearTimeout(initMapDelay);
-  }, []);
+  }, [mapLoaded])
+
+  const flyToCoord = (location: Coordinate) => {
+    if (mapRef.current) {
+      mapRef.current.injectJavaScript(`
+      map.flyTo({
+        center: [${location.longitude}, ${location.latitude}],
+        essential: true,
+        zoom: 14
+    });
+      `);
+    }
+  };
+
+
 
 
   return (
@@ -127,10 +136,16 @@ const LeafletMap = () => {
         style={styles.container}
         source={{ html: html_script }}
         ref={mapRef}
+        onMessage={onMessage}
       />
       <TouchableOpacity style={styles.currentLocationButton} onPress={() => { handleFocusMap() }}>
         <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
       </TouchableOpacity>
+      {isLoading && (
+        <View style={styles.loadingPopup}>
+          <ActivityIndicator size="large" color={Colors.pink} />
+        </View>
+      )}
     </>
   );
 };
@@ -151,12 +166,24 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: Colors.pink,
     padding: 12,
-    margin: 25,
+    margin: 20,
     elevation: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center'
   },
+  loadingPopup: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center'
+  },
 });
 
-export default LeafletMap;
+export default MapboxMap;

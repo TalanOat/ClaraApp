@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from 'expo-sqlite/legacy';
 
 
 interface TrackingName {
@@ -19,11 +19,9 @@ interface MoodJournal {
 const db = SQLite.openDatabase('journal.db');
 
 export class DatabaseService {
-
   public initDB() {
     //"tx" means transaction 
-    //ANCHOR journal table
-    db.transaction((tx) => {
+   db.transaction((tx) => {
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS journals (
           id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -706,8 +704,7 @@ export class DatabaseService {
       });
     });
   }
-
-
+  
 }
 
 export const databaseService = new DatabaseService();

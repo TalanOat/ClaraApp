@@ -47,16 +47,18 @@ const LeafletMap = () => {
     // }
   };
 
-  const handleFocusMap = async () => {
-    const userLocation = await handleGetLocation();
-    if (userLocation) {
-      if (mapRef.current) {
-        mapRef.current.injectJavaScript(`
-          map.setView([${userLocation.latitude}, ${userLocation.longitude}], 15);
-        `);
-      }
+
+  const removeExistingMarkers = async () => {
+    if (mapRef.current) {
+      mapRef.current.injectJavaScript(`
+        map.eachLayer((layer) => {
+          if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+          }
+        });
+      `);
     }
-  }
+  };
 
   const focusMapToCoord = async (location: Coordinate) => {
     if (mapRef.current) {
@@ -74,17 +76,49 @@ const LeafletMap = () => {
     }
   }
 
+  const handleFocusMap = async () => {
+    removeExistingMarkers();
+    const userLocation = await handleGetLocation();
+
+    if (userLocation) {
+      focusMapToCoord(userLocation)
+      addMarkerToCoord(userLocation)
+    }
+
+  }
+
+  const generateRandomPoints = (center: Coordinate, radius: number, count: number): Coordinate[] => {
+    const points = [];
+    // (1) loop the specified "count"
+    for (let i = 0; i < count; i++) {
+      // (2) generate random offsets for latitude and longitude, in random locations 
+      //  contained in the boundary of double the users radius
+      const randomOffsetX = (Math.random() * 2 * radius) - radius;
+      const randomOffsetY = (Math.random() * 2 * radius) - radius;
+
+      points.push({
+        latitude: center.latitude + randomOffsetX,
+        longitude: center.longitude + randomOffsetY
+      });
+    }
+    return points;
+  };
+
+
   useEffect(() => {
     const initMapDelay = setTimeout(async () => {
       const userLocation = await handleGetLocation();
       if (userLocation) {
         focusMapToCoord(userLocation)
         addMarkerToCoord(userLocation)
+        const test = generateRandomPoints(userLocation, 0.01, 10);
+        console.log("test: ", test)
       }
     }, 1000);
 
     return () => clearTimeout(initMapDelay);
   }, []);
+
 
   return (
     <>
