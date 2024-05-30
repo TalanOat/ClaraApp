@@ -27,7 +27,9 @@ export class DatabaseService {
           id INTEGER PRIMARY KEY AUTOINCREMENT, 
           title TEXT,
           body TEXT,
-          createdAt DATE)`
+          createdAt DATE,
+          location TEXT
+        )`
       );
       //ANCHOR mood Journal tables
       tx.executeSql(

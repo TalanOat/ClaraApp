@@ -18,6 +18,7 @@ import * as SecureStore from 'expo-secure-store';
 
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import { DetectionContext } from '@/components/contexts/detectionContext'
+import { adminDatabaseService } from '@/model/adminDatabaseService'
 
 enum usageTypes {
   JOURNAL_LOG = "journal_add",
@@ -71,14 +72,9 @@ const createJournal = () => {
 
   async function databaseCreateJournalEntry() {
     try {
-
-      //console.log("ciphertext: ", cipherText)
-
-      // let bytes = CryptoJS.AES.decrypt(ciphertext, userPin);
-      // let originalText = bytes.toString(CryptoJS.enc.Utf8);
-      //console.log("originalText: ", originalText);
-
-      //encrypt body first then send to the database
+      //adminDatabaseService.dropTable("journals");
+      
+      // encrypt body first then send to the database
       if(userPin !== "") {
         const currentTime = new Date().toISOString()
         //await databaseService.createJournalEntry("Journal Entry", text, currentTime);
