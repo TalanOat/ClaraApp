@@ -383,7 +383,7 @@ const emotionsStyles = StyleSheet.create({
         padding: 15,
         alignSelf: 'flex-start',
         borderRadius: 10,
-        elevation: 10,
+        //elevation: 10,
         opacity: 0.5
     },
     buttonText: {
@@ -406,7 +406,7 @@ const emotionsStyles = StyleSheet.create({
         padding: 11,
         alignSelf: 'flex-end',
         borderRadius: 10,
-        elevation: 10,
+        //elevation: 10,
         backgroundColor: Colors.primary
     },
     cancelButtonText: {}

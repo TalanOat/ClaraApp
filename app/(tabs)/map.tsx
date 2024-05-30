@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, Button, Pressable, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import MapView, { Callout, Marker, PROVIDER_GOOGLE, Circle } from 'react-native-maps'
@@ -17,6 +17,7 @@ import { useNavigation } from 'expo-router'
 import { Pedometer } from 'expo-sensors';
 import { Subscription } from 'expo-notifications'
 import MapboxMap from '@/components/leaflet/mapboxMap'
+import StepCounter from '@/components/stepCounter'
 //import LeafletMap from '@/components/leaflet/leafletMap'
 //import MapboxMap from '@/components/leaflet/leafletMap'
 
@@ -173,48 +174,6 @@ const Page = () => {
     }
   };
 
-  //pedometer
-  const [initialStepCount, setInitialStepCount] = useState<number | null>(null);
-  const [previousStepCount, setPreviousStepCount] = useState<number | null>(null);
-  const [currentStepCount, setCurrentStepCount] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchStepCount = async () => {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(end.getDate() - 1);
-
-      const pastStepCountResult = await Pedometer.getStepCountAsync(start, end);
-      if (pastStepCountResult) {
-        setInitialStepCount(pastStepCountResult.steps);
-        setPreviousStepCount(pastStepCountResult.steps);
-      }
-    };
-
-    fetchStepCount();
-  }, []);
-
-  useEffect(() => {
-    const intervalId = setInterval(async () => {
-      if (initialStepCount !== null && previousStepCount !== null) {
-        const currentStepCountResult = await Pedometer.getStepCountAsync(
-          new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-          new Date()
-        );
-        if (currentStepCountResult) {
-          const newSteps = currentStepCountResult.steps - initialStepCount;
-          const incrementalSteps = currentStepCountResult.steps - previousStepCount;
-          if (newSteps >= 0 && incrementalSteps >= 0) {
-            setCurrentStepCount(prevCount => prevCount + incrementalSteps);
-            setPreviousStepCount(currentStepCountResult.steps);
-          }
-        }
-      }
-    }, 10 * 1000);
-
-    return () => clearInterval(intervalId);
-  }, [initialStepCount, previousStepCount]);
-
 
   // useEffect(() => {
   //   handleGetLocation();
@@ -254,17 +213,7 @@ const Page = () => {
             </View>
           )}
 
-          <View style={styles.stepCountContainer}>
-            <Text style={styles.stepCountHeading}>Steps</Text>
-            <View style={styles.spacedContainer}>
-              <Text style={styles.stepCountText}>(24 hours):</Text>
-              <Text style={styles.stepCountText}>{initialStepCount}</Text>
-            </View>
-            <View style={styles.spacedContainer}>
-              <Text style={styles.stepCountText}>(Now):</Text>
-              <Text style={styles.stepCountText}>{currentStepCount}</Text>
-            </View>
-          </View>
+          {Platform.OS === 'ios' && <StepCounter />} 
         </View>
       )}
       {!thirdPartyEnabled && (
@@ -290,24 +239,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 80
   },
-  stepCountContainer: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: Colors.pink,
-    padding: 12,
-    margin: 20,
-    elevation: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-
-  },
-  stepCountText: {
-    fontSize: 14,
-    fontFamily: "mon-sb",
-    color: "white"
-  },
   currentLocationButton: {
     position: 'absolute',
     bottom: 80,
@@ -315,7 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pink,
     padding: 12,
     margin: 10,
-    elevation: 20,
+    //elevation: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center'
@@ -344,17 +275,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "mon-b",
     padding: 20
-  },
-  spacedContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: 'center',
-    width: 150
-  },
-  stepCountHeading: {
-    fontSize: 14,
-    fontFamily: "mon-b",
-    color: "white"
   }
 })
 

@@ -277,10 +277,12 @@ const MapboxMap = () => {
     console.log('Start:', start);
     console.log('End:', end);
   
-    const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_TOKEN}`)
+    const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/walking/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_TOKEN}`)
     const data = await response.json();
-    console.log('API Response:', data);
+    //console.log('API Response:', data);
   
+    const routeColor = Colors.primary;
+
     if (mapRef.current) {
       const route = data.routes[0].geometry.coordinates;
       console.log('Route:', route);
@@ -297,7 +299,6 @@ const MapboxMap = () => {
       mapRef.current.injectJavaScript(`
         mapboxgl.accessToken = '${MAPBOX_TOKEN}';
         
-        // Add a new source and layer to the map to display the route
         map.addSource('route', {
           type: 'geojson',
           data: ${JSON.stringify(routeGeoJSON)}
@@ -308,10 +309,9 @@ const MapboxMap = () => {
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#888', 'line-width': 8 }
+          paint: { 'line-color': '${routeColor}', 'line-width': 6 }
         });
   
-        // Fly to the start location
         map.flyTo({
           center: [${start.longitude}, ${start.latitude}],
           essential: true,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pink,
     padding: 12,
     margin: 20,
-    elevation: 20,
+    //elevation: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center'

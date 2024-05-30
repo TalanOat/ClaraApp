@@ -63,23 +63,29 @@ const Page = () => {
   const fetchMoodJournal = async (): Promise<MoodJournal | undefined> => {
     setLoading(true);
     try {
-      const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
-      if (tempMoodJournal) {
-        const returnedMoodJournal: MoodJournal = ({
-          id: tempMoodJournal.id,
-          createdAt: tempMoodJournal.created_at,
-          trackingName1: tempMoodJournal.tracking_name1,
-          figure1: tempMoodJournal.tracking_value1,
-          trackingName2: tempMoodJournal.tracking_name2,
-          figure2: tempMoodJournal.tracking_value2,
-          trackingName3: tempMoodJournal.tracking_name3,
-          figure3: tempMoodJournal.tracking_value3,
-        });
 
-        // console.log("returnedMoodJournal: ", returnedMoodJournal)
-        //console.log("tempMoodJournal: ", tempMoodJournal)
-        return returnedMoodJournal
+      if (id != undefined) {
+
+        const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
+        if (tempMoodJournal) {
+          const returnedMoodJournal: MoodJournal = ({
+            id: tempMoodJournal.id,
+            createdAt: tempMoodJournal.created_at,
+            trackingName1: tempMoodJournal.tracking_name1,
+            figure1: tempMoodJournal.tracking_value1,
+            trackingName2: tempMoodJournal.tracking_name2,
+            figure2: tempMoodJournal.tracking_value2,
+            trackingName3: tempMoodJournal.tracking_name3,
+            figure3: tempMoodJournal.tracking_value3,
+          });
+
+          // console.log("returnedMoodJournal: ", returnedMoodJournal)
+          //console.log("tempMoodJournal: ", tempMoodJournal)
+          return returnedMoodJournal
+        }
       }
+
+
     }
     catch (error) {
       console.error("error getting mood Journals:", error);
@@ -95,13 +101,16 @@ const Page = () => {
   const databaseUpdateMoodJournalEntry = async (figure1: number, figure2: number, figure3: number) => {
     try {
       console.log("figure1:", figure1, "figure2:", figure2, "figure3:", figure3)
-      const updatedMoodJournal = await databaseService.updateMoodJournalFigures(parseInt(id),
-        figure1,
-        figure2,
-        figure3);
-      if (updatedMoodJournal) {
-        console.log("success")
+      if (id != undefined) {
+        const updatedMoodJournal = await databaseService.updateMoodJournalFigures(parseInt(id),
+          figure1,
+          figure2,
+          figure3);
+        if (updatedMoodJournal) {
+          console.log("success")
+        }
       }
+
     }
     catch (error) {
       console.error(error, "there was an problem updating the mood Journal")
