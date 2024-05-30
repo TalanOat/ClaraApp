@@ -26,6 +26,14 @@ body { margin: 0; padding: 0; }
         zoom: 9 // starting zoom
     });
 
+    // map.addControl(
+    //     new MapboxGeocoder({
+    //         accessToken: mapboxgl.accessToken,
+    //         mapboxgl: mapboxgl,
+    //         reverseGeocode: true
+    //     })
+    // );
+
     // window.onload = function() {
     //     map.on('load', function() {
     //         alert('Map is loaded');
