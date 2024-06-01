@@ -19,11 +19,17 @@ import * as SecureStore from 'expo-secure-store';
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import { DetectionContext } from '@/components/contexts/detectionContext'
 import { adminDatabaseService } from '@/model/adminDatabaseService'
+import * as Location from 'expo-location';
 
 enum usageTypes {
   JOURNAL_LOG = "journal_add",
   MOOD_LOG = "mood_add",
   MAP_USE = "map_use"
+}
+
+interface Coordinate {
+  latitude: number,
+  longitude: number
 }
 
 const placeholderValues = [
@@ -72,19 +78,29 @@ const createJournal = () => {
 
   async function databaseCreateJournalEntry() {
     try {
-      //adminDatabaseService.dropTable("journals");
-      
+      let locationId = null;
+      if (locationToggle == true) {
+        const journalLocation = await fetchUserLocation();
+
+        if (journalLocation) {
+          locationId = await databaseService.createLocation(journalLocation.latitude, journalLocation.longitude, "null")
+        }
+      }
       // encrypt body first then send to the database
-      if(userPin !== "") {
+      if (userPin !== "") {
         const currentTime = new Date().toISOString()
         //await databaseService.createJournalEntry("Journal Entry", text, currentTime);
         let cipherText = CryptoJS.AES.encrypt(text, userPin).toString();
-        await databaseService.createJournalEntry("Journal Entry", cipherText, currentTime);
+        if (locationId != null) {
+          await databaseService.createJournalEntryWithLocation("Journal Entry", cipherText, currentTime, locationId);
+        }
+        else {
+          await databaseService.createJournalEntry("Journal Entry", cipherText, currentTime);
+        }
       }
-      else{
+      else {
         console.log("error no pin")
       }
-      
     }
     catch (error) {
       console.error("update error:", error);
@@ -113,6 +129,31 @@ const createJournal = () => {
     }, 1000);
   }
 
+  const fetchUserLocation = async () => {
+    //setIsLoading(true);
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      console.error('Location permission not granted');
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+
+    const mapRegion: Coordinate = ({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
+
+    return mapRegion
+  };
+
+  const [locationToggle, setLocationToggle] = useState(false);
+
+  const handleLocationToggle = () => {
+    setLocationToggle(!locationToggle);
+  };
+
+
   return (
     <LinearGradient
       style={styles.container}
@@ -122,8 +163,11 @@ const createJournal = () => {
         <View style={styles.topRow}>
           <MaterialCommunityIcons name="lead-pencil" size={40} color="white" style={styles.elementIcon} />
           <Text style={styles.elementTitle}>Add Journal</Text>
+          <TouchableOpacity onPress={() => { handleLocationToggle(); }} style={styles.locationPin} >
+            <MaterialCommunityIcons name={locationToggle ? "map-marker" : "map-marker-off"} size={35} color="white" />
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => { handleSubmit(); }} >
-            <MaterialCommunityIcons name="check" size={40} color="white" />
+            <MaterialCommunityIcons name="check" size={40} color={Colors.pink} />
           </TouchableOpacity>
 
         </View>
@@ -187,6 +231,9 @@ const styles = StyleSheet.create({
   },
   contentRow: {
     padding: 20
+  },
+  locationPin: {
+    paddingRight: 20
   },
 })
 

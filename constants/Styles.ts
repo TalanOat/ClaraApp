@@ -6,7 +6,7 @@ export const defaultStyles = StyleSheet.create({
         flex: 1,
     },
     defaultFontGrey: {
-        color: "#ABABAB",
+        color: Colors.offWhite,
         fontSize: 15,
         fontFamily: "mon-b",
     },

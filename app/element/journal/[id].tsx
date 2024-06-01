@@ -77,20 +77,25 @@ const Page = () => {
 
   const fetchEntry = async () => {
     try {
-      const entry = await databaseService.getJournalEntryByID(parseInt(id));
-      if (entry) {
-        const decryptedBody = decryptString(entry.body)
-        setJournalEntry({
-          id: entry.id,
-          title: entry.title,
-          body: decryptedBody,
-          time: moment(entry.createdAt).format('HH:mm')
-        });
+      if(id != undefined){
+        const entry = await databaseService.getJournalEntryByID(parseInt(id));
+        if (entry) {
+          const decryptedBody = decryptString(entry.body)
+          setJournalEntry({
+            id: entry.id,
+            title: entry.title,
+            body: decryptedBody,
+            time: moment(entry.createdAt).format('HH:mm')
+          });
 
-        setTextInputValue(decryptedBody);
-      } else {
-        // TODO: entry not found
+          console.log("entry: ", entry)
+  
+          setTextInputValue(decryptedBody);
+        } else {
+          // TODO: entry not found
+        }
       }
+      
     } catch (error) {
       console.error('error:', error);
     }

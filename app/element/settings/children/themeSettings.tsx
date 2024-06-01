@@ -15,47 +15,28 @@ import Animated, {
 
 
 const ThemeSettings = () => {
-    const [purpleTheme, setPurpleTheme] = useState<boolean>(true);
-    const [orangeTheme, setOrangeTheme] = useState<boolean>(true);
     const [activeTheme, setActiveTheme] = useState('purple');
     const [flashNotification, setFlashNotification] = useState(false);
-
-    const toggleSwitch1 = () => {
-        setPurpleTheme(!purpleTheme);
-        setActiveTheme('purple');
-    }
-
-    const toggleSwitch2 = () => {
-        setOrangeTheme(!orangeTheme);
-        setActiveTheme('orange');
-    }
-
-    async function reloadApp() {
-        try {
-            await Updates.reloadAsync();
-        }
-        catch (error) {
-            console.error(error)
-        }
+    
+    const toggleSwitch = (theme: string) => {
+        setActiveTheme(theme);
     }
 
     const handleThemeChange = async (theme: string) => {
         try {
             await SecureStore.setItemAsync('theme', theme);
             console.log('theme saved successfully');
-
         } catch (error) {
             console.error('Error saving name:', error);
         }
     }
-
+    
     const handleSave = () => {
         console.log("activeTheme: ", activeTheme)
         handleThemeChange(activeTheme).then(() => {
             setFlashNotification(true)
             reloadApp();
         })
-
     }
 
     const loadTheme = async () => {
@@ -69,6 +50,16 @@ const ThemeSettings = () => {
             console.error('Error loading name:', error);
         }
     };
+
+    async function reloadApp() {
+        try {
+            await Updates.reloadAsync();
+        }
+        catch (error) {
+            console.error(error)
+        }
+    }
+
 
     useEffect(() => {
         loadTheme();
@@ -101,7 +92,7 @@ const ThemeSettings = () => {
                                 trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
                                 thumbColor={activeTheme === 'purple' ? Colors.pink : Colors.primary}
                                 ios_backgroundColor={Colors.transparentWhite}
-                                onValueChange={toggleSwitch1}
+                                onValueChange={() => toggleSwitch('purple')}
                                 value={activeTheme === 'purple'}
                             />
 
@@ -116,8 +107,23 @@ const ThemeSettings = () => {
                                 trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
                                 thumbColor={activeTheme === 'orange' ? Colors.pink : Colors.primary}
                                 ios_backgroundColor={Colors.transparentWhite}
-                                onValueChange={toggleSwitch2}
+                                onValueChange={() => toggleSwitch('orange')}
                                 value={activeTheme === 'orange'}
+                            />
+
+                        </View>
+
+                    </View>
+                    <View style={styles.section}>
+                        <Text style={styles.sectionHeader}>Bright Theme</Text>
+                        <View style={styles.switchRow}>
+                            <Text style={styles.rowLabel}>Theme Enabled</Text>
+                            <Switch
+                                trackColor={{ false: Colors.transparentWhite, true: Colors.primary }}
+                                thumbColor={activeTheme === 'bright' ? Colors.pink : Colors.primary}
+                                ios_backgroundColor={Colors.transparentWhite}
+                                onValueChange={() => toggleSwitch('bright')}
+                                value={activeTheme === 'bright'}
                             />
 
                         </View>

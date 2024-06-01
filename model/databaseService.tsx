@@ -21,17 +21,25 @@ const db = SQLite.openDatabase('journal.db');
 export class DatabaseService {
   public initDB() {
     //"tx" means transaction 
-   db.transaction((tx) => {
+    db.transaction((tx) => {
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS journals (
           id INTEGER PRIMARY KEY AUTOINCREMENT, 
           title TEXT,
           body TEXT,
           createdAt DATE,
-          location TEXT
+          location_id INTEGER,
+          FOREIGN KEY (location_id) REFERENCES locations(id)
         )`
       );
-      //ANCHOR mood Journal tables
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS locations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          latitude REAL,
+          longitude REAL,
+          name TEXT
+        )`
+      );
       tx.executeSql(
         `CREATE TABLE IF NOT EXISTS tracking_names (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,6 +96,7 @@ export class DatabaseService {
           daily TEXT
         )`
       );
+
     }, (error) => {
       console.error('database init error:', error);
     });
@@ -116,6 +125,7 @@ export class DatabaseService {
       });
     });
   }
+  
 
   public getJournalEntryByID(id: number): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -162,6 +172,27 @@ export class DatabaseService {
     });
   }
 
+  public getAllJournalEntriesWithLocations(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT journals.*, locations.latitude, locations.longitude, locations.name 
+            FROM journals 
+            JOIN locations ON journals.location_id = locations.id
+            ORDER BY journals.createdAt DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
   public createJournalEntry(title: string, body: string, createdAt: string): Promise<void> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -174,6 +205,73 @@ export class DatabaseService {
           },
           (txObject, error) => {
             console.error('insert error:', error);
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public createJournalEntryWithLocation(title: string, body: string, createdAt: string, location_id: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO journals (title, body, createdAt, location_id) VALUES (?, ?, ?, ?)',
+          [title, body, createdAt, location_id],
+          (txObject, resultSet) => {
+            console.log('insert successful', resultSet);
+            resolve(true);
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error);
+            resolve(false);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public createLocation(latitude: number, longitude: number, name: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO locations (latitude, longitude, name) VALUES (?, ?, ?)',
+          [latitude, longitude, name],
+          (txObject, resultSet) => {
+            if (resultSet.insertId) {
+              resolve(resultSet.insertId);
+            } else {
+              reject(new Error("no insert ID"));
+            }
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getLocation(id: number): Promise<any> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'SELECT * FROM locations WHERE id = ?',
+          [id],
+          (txObject, resultSet) => {
+            if (resultSet.rows.length > 0) {
+              resolve(resultSet.rows.item(0));
+            } else {
+              reject(new Error("No location found with this ID"));
+            }
+          },
+          (txObject, error) => {
+            console.error('select error:', error);
             reject(error);
             return true;
           }
@@ -706,7 +804,7 @@ export class DatabaseService {
       });
     });
   }
-  
+
 }
 
 export const databaseService = new DatabaseService();

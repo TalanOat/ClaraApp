@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import { useNavigation } from 'expo-router';
 
 //import html_script from './leafletHTML'
 import html_script from './mapboxHTML'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors'
 import MapView from 'react-native-maps';
+import { databaseService } from '@/model/databaseService';
+import { NavigationProp } from '@react-navigation/native';
 
 interface Coordinate {
   latitude: number,
@@ -19,6 +22,39 @@ interface MarkerLocation {
   coords: Coordinate
 }
 
+// interface JournalMarker {
+//   name: string,
+//   journalId: number,
+//   type: string,
+//   date: string,
+//   coords: Coordinate
+// }
+
+interface Location {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+interface JournalEntry {
+  id: number;
+  title: string;
+  location_id: number;
+  createdAt: string;
+}
+
+interface JournalMarker {
+  name: string;
+  journalId: number;
+  date: string;
+  coords: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+
 const MapboxMap = () => {
   const mapRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -26,6 +62,7 @@ const MapboxMap = () => {
   const [userCoords, setUserCoords] = useState<Coordinate>();
 
   const MAPBOX_TOKEN = 'pk.eyJ1IjoidGFsYW5vIiwiYSI6ImNsd3A2M2xobjA5dWsyanFkNGE3aTc1NHYifQ.nKdkgfYCKT_zNUoGhDMhCQ';
+
 
   function parseStringToMarker(input: string) {
     const placeName = input.split(", Coordinates: ")[0].replace("Name: ", "");
@@ -41,6 +78,8 @@ const MapboxMap = () => {
     return returnMarker;
   }
 
+  const navigation = useNavigation<any>();
+
   const onMessage = (event: any) => {
     const message = event.nativeEvent.data;
     if (message === 'mapLoaded') {
@@ -48,15 +87,19 @@ const MapboxMap = () => {
       setMapLoaded(true)
     }
     else if (message.includes('Name:')) {
-      //console.log("message: ", message)
-      //TODO: navigate to point
-      //console.log(typeof message)
       const markerToNav = parseStringToMarker(message);
       if (userCoords != undefined) {
         drawRoute(userCoords, markerToNav.coords)
       }
     }
+    else if (message.includes('Navigate to journal entry:')) {
+      //console.log("post message: ", message)
+      const journalId = parseInt(message.split(':')[1].trim());
 
+      navigation.navigate('element/journal/[id]', { id: journalId });
+      //navigation.navigate(completeURL)
+
+    }
   };
 
   const handleGetLocation = async () => {
@@ -148,6 +191,32 @@ const MapboxMap = () => {
     }
   }
 
+
+  const fetchAllJournalLocations = async () => {
+    try {
+      const journals = await databaseService.getAllJournalEntriesWithLocations();
+      if (journals) {
+        const journalMarkers = journals.map(async (journal) => {
+          const location = await databaseService.getLocation(journal.location_id);
+          return {
+            name: journal.title,
+            journalId: journal.id,
+            type: "Journal Entry",
+            date: journal.createdAt,
+            coords: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
+          };
+        });
+        return Promise.all(journalMarkers);
+      }
+    } catch (error) {
+      console.error("error fetching journal locations: ", error);
+    }
+  };
+
+
   const setupMap = async () => {
     const userLocation = await handleGetLocation();
 
@@ -155,25 +224,146 @@ const MapboxMap = () => {
       setUserCoords(userLocation)
       flyToCoord(userLocation)
       addUserPinFromCoord(userLocation)
+      const journalLocations = await fetchAllJournalLocations();
+      if (journalLocations) {
+        console.log("journalLocations", journalLocations)
+        const coords = journalLocations.map(journal => journal.coords);
+        const names = journalLocations.map(journal => journal.name);
+        //addGroupedMarkers(coords, names);
+        addClusteredMarkers(coords, names)
+      }
+
       const randomPoints = generateRandomPoints(userLocation, 0.01, 10);
-      plot_POI_Markers(randomPoints);
+      //plot_POI_Markers(randomPoints);
     }
   }
+
+  const addClusteredMarkers = async (locations: Coordinate[], popupTexts: string[]) => {
+    console.log("locations: ", locations);
+    if (mapRef.current) {
+      const features = locations.map((location, index) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [location.longitude, location.latitude]
+        },
+        properties: {
+          popupText: popupTexts[index]
+        }
+      }));
+  
+      const sourceData = {
+        type: 'FeatureCollection',
+        features: features
+      };
+  
+      const jsCode = `
+        map.addSource('markers', {
+          type: 'geojson',
+          data: ${JSON.stringify(sourceData)},
+          cluster: true,
+          clusterMaxZoom: 14,
+          clusterRadius: 50
+        });
+  
+        map.addLayer({
+          id: 'clusters',
+          type: 'circle',
+          source: 'markers',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': '#51bbd6',
+            'circle-radius': 20
+          }
+        });
+  
+        map.addLayer({
+          id: 'cluster-count',
+          type: 'symbol',
+          source: 'markers',
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+            'text-size': 12
+          }
+        });
+  
+        map.addLayer({
+          id: 'unclustered-point',
+          type: 'circle',
+          source: 'markers',
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': '#11b4da',
+            'circle-radius': 10,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+          }
+        });
+  
+        map.on('click', 'unclustered-point', (e) => {
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          const popupText = e.features[0].properties.popupText;
+  
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(popupText)
+            .addTo(map);
+        });
+  
+        map.on('mouseenter', 'clusters', () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+  
+        map.on('mouseleave', 'clusters', () => {
+          map.getCanvas().style.cursor = '';
+        });
+      `;
+  
+      mapRef.current.injectJavaScript(jsCode);
+    }
+  }
+
+
+
+  // const addJournalMarkersFromCoord = async (location: Coordinate, popupText: string, journalMarkers: JournalMarker[]) => {
+  //   if (mapRef.current) {
+  //     let journalList = '';
+  //     for (let i = 0; i < journalMarkers.length; i++) {
+  //       journalList += `<a href="#" onclick="window.ReactNativeWebView.postMessage('Navigate to journal entry: ${journalMarkers[i].journalId}')">${journalMarkers[i].name}</a><br/>`;
+  //     }
+
+  //     const markerInfo = `Name: ${popupText}, Coordinates: [${location.longitude}, ${location.latitude}]`;
+  //     const html = `${popupText}<br/>${journalList}<button onclick="window.ReactNativeWebView.postMessage('${markerInfo}')">Navigate</button>`;
+  //     const jsCode = `
+  //       window.markers = window.markers || {};
+  //       window.markers['${markerId}'] = new mapboxgl.Marker(({ color: 'pink'}))
+  //         .setLngLat([${location.longitude}, ${location.latitude}])
+  //         .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('${html.replace(/'/g, "\\'")}'))
+  //         .addTo(map);
+  //     `;
+  //     mapRef.current.injectJavaScript(jsCode);
+
+  //     markerId++;
+  //   }
+  // }
 
   useEffect(() => {
     if (mapLoaded == false) {
       setIsLoading(true);
+
     }
     if (mapLoaded == true) {
       setIsLoading(false);
       setupMap();
+
     }
 
   }, [mapLoaded])
 
 
   // TODO: mapbox functions
-
   const addUserPinFromCoord = async (location: Coordinate) => {
     if (mapRef.current) {
       mapRef.current.injectJavaScript(`
@@ -210,23 +400,6 @@ const MapboxMap = () => {
     }
   }
 
-  // const addMarkerFromCoord = async (location: Coordinate, popupText: string) => {
-  //   if (mapRef.current) {
-  //     //const currentMarkerId = markerId;
-  //     //const popupText = "test";
-  //     mapRef.current.injectJavaScript(`
-  //       window.markers = window.markers || {};
-  //       //const popup = new mapboxgl.Popup({ offset: 25 }).setText('${popupText}');
-  //       window.markers['${markerId}'] = new mapboxgl.Marker(({ color: 'pink'}))
-  //         .setLngLat([${location.longitude}, ${location.latitude}])
-  //         .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('${popupText}'))
-  //         .addTo(map);
-  //     `);
-
-  //     markerId++;
-  //   }
-  // }
-
   const addMarkerFromCoord = async (location: Coordinate, popupText: string) => {
     if (mapRef.current) {
       const markerInfo = `Name: ${popupText}, Coordinates: [${location.longitude}, ${location.latitude}]`;
@@ -244,6 +417,8 @@ const MapboxMap = () => {
     }
   }
 
+
+
   const removeMarker = (id: number) => {
     if (mapRef.current) {
       mapRef.current.injectJavaScript(`
@@ -258,35 +433,30 @@ const MapboxMap = () => {
   const flyToCoord = (location: Coordinate) => {
     if (mapRef.current) {
       mapRef.current.injectJavaScript(`
-      map.flyTo({
-        center: [${location.longitude}, ${location.latitude}],
-        essential: true,
-        zoom: 14
-    });
+        // Move the map to the specified location with a zoom level of 14
+        map.flyTo({
+          center: [${location.longitude}, ${location.latitude}],
+          essential: true, // Make sure the map is essential for the app
+          zoom: 14 // Set the zoom level to 14
+        });
       `);
     }
   };
 
-  const requestDirectionAPI = async (start: Coordinate, end: Coordinate) => {
-    //const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${MAPBOX_TOKEN}&types=poi`);
-    //const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/walking/${lon},${lat};-84.512023,39.102779?geometries=geojson&access_token= <UserAccessToken />`)
-    //const data = await response.json();
-  }
-
   const drawRoute = async (start: Coordinate, end: Coordinate) => {
     console.log('Start:', start);
     console.log('End:', end);
-  
+
     const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/walking/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${MAPBOX_TOKEN}`)
     const data = await response.json();
     //console.log('API Response:', data);
-  
+
     const routeColor = Colors.primary;
 
     if (mapRef.current) {
       const route = data.routes[0].geometry.coordinates;
       console.log('Route:', route);
-  
+
       const routeGeoJSON = {
         type: 'Feature',
         properties: {},
@@ -295,7 +465,7 @@ const MapboxMap = () => {
           coordinates: route
         }
       };
-  
+
       mapRef.current.injectJavaScript(`
         mapboxgl.accessToken = '${MAPBOX_TOKEN}';
         
@@ -320,8 +490,6 @@ const MapboxMap = () => {
       `);
     }
   };
-
-
 
   return (
     <>
@@ -351,7 +519,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0,
-    bottom: 500
+    bottom: 500,
+    //backgroundColor:
   },
   currentLocationButton: {
     position: 'absolute',

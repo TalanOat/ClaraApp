@@ -18,6 +18,14 @@ const orangeTheme = {
   transparentPrimary: 'rgba(61, 61, 61, 0.15)',
 };
 
+const brightTheme = {
+  primary: '#FF7F50',
+  pink: '#9400D3',
+  white: '#FFFFFF',
+  offWhite: "#FFFFF0",
+  transparentWhite: 'rgba(255, 255, 255, 0.15)',
+  transparentPrimary: 'rgba(61, 61, 61, 0.15)',
+};
 
 const initializeTheme = () => {
   try {
@@ -28,6 +36,9 @@ const initializeTheme = () => {
     }
     if(theme === "orange"){
       return orangeTheme
+    }
+    if(theme === "bright"){
+      return brightTheme
     }
     else{
       return purpleTheme

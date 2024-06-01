@@ -67,8 +67,8 @@ const AuthenticationPrompt = ({ onVisibilityChanged }: AuthenticationPromptProps
 
     return (
         <>
-            <BlurView style={styles.notificationContainer} intensity={10} tint="light" >
-                <BlurView style={styles.formContainer} intensity={50} tint="light" >
+            <View style={styles.notificationContainer} >
+                <View style={styles.formContainer} >
                     <View style={styles.formContent}>
                         <View style={styles.section}>
                             <Text style={styles.infoText}>Unlock Your Encrypted Content</Text>
@@ -95,8 +95,8 @@ const AuthenticationPrompt = ({ onVisibilityChanged }: AuthenticationPromptProps
                         </View>
                     </View>
 
-                </BlurView>
-            </BlurView>
+                </View>
+            </View>
             {
                 flashNotification && (
                     <Animated.View entering={ZoomIn.delay(50)} exiting={ZoomOut.delay(50)} style={flashMessage.container}>
@@ -125,19 +125,19 @@ const styles = StyleSheet.create({
         alignItems: "center",
         //borderRadius: 20,
         overflow: 'hidden',
-        paddingVertical: 20
+       // paddingVertical: 20
 
     },
     formContainer: {
         flex: 1,
-        width: "90%",
-        height: "90%",
+        width: "100%",
+        height: "100%",
         backgroundColor: Colors.primary,
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "flex-start",
         padding: 20,
-        borderRadius: 20,
+        //borderRadius: 20,
         overflow: 'hidden'
 
     },

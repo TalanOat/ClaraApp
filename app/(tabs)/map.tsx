@@ -213,7 +213,7 @@ const Page = () => {
             </View>
           )}
 
-          {Platform.OS === 'ios' && <StepCounter />} 
+          {/* {Platform.OS === 'ios' && <StepCounter />}  */}
         </View>
       )}
       {!thirdPartyEnabled && (

@@ -200,7 +200,7 @@ const Page = () => {
               <View style={styles.topRow}>
                 <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
                 <Text style={styles.elementTitle}>Mood Journal</Text>
-                <Text style={defaultStyles.defaultFontGrey}>{item.time}</Text>
+                <Text style={styles.elementTime}>{item.time}</Text>
               </View>
               <View style={styles.remainingContent}>
                 <View style={styles.contentRow}>
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   elementTime: {
-    color: "#ABABAB",
+    color: Colors.offWhite,
     fontSize: 15,
     fontFamily: "mon-b",
   },
