@@ -14,6 +14,7 @@ interface MoodJournal {
   figure2: number;
   trackingNameId3: number;
   figure3: number;
+  locationId?: number;
 }
 
 const db = SQLite.openDatabase('journal.db');
@@ -63,6 +64,8 @@ export class DatabaseService {
           tracking_value2 INTEGER,
           tracking_name3_id INTEGER,
           tracking_value3 INTEGER,
+          location_id INTEGER,
+          FOREIGN KEY (location_id) REFERENCES locations(id),
           FOREIGN KEY (tracking_name1_id) REFERENCES tracking_names(id),
           FOREIGN KEY (tracking_name2_id) REFERENCES tracking_names(id),
           FOREIGN KEY (tracking_name3_id) REFERENCES tracking_names(id)
@@ -125,7 +128,7 @@ export class DatabaseService {
       });
     });
   }
-  
+
 
   public getJournalEntryByID(id: number): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -141,6 +144,29 @@ export class DatabaseService {
             } else {
               resolve(null);
             }
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getJournalEntriesByID(ids: number[]): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        const idList = ids.join(',');
+        tx.executeSql(
+          `SELECT * FROM journals WHERE id IN (${idList})`,
+          [],
+          (txObject, result) => {
+            const entries = [];
+            for (let i = 0; i < result.rows.length; i++) {
+              entries.push(result.rows.item(i));
+            }
+            resolve(entries);
           },
           (txObject, error) => {
             reject(error);
@@ -419,6 +445,37 @@ export class DatabaseService {
     });
   }
 
+  public createMoodJournalWithLocation(moodJournalData: MoodJournal, locationId: number): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          `INSERT INTO mood_journals 
+            (created_at, tracking_name1_id, tracking_value1, 
+             tracking_name2_id, tracking_value2, tracking_name3_id, 
+             tracking_value3, location_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            moodJournalData.createdAt,
+            moodJournalData.trackingNameId1,
+            moodJournalData.figure1,
+            moodJournalData.trackingNameId2,
+            moodJournalData.figure2,
+            moodJournalData.trackingNameId3,
+            moodJournalData.figure3,
+            locationId 
+          ],
+          (txObject, resultSet) => {
+            resolve(resultSet.insertId || -1);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
   public updateMoodJournalFigures(id: number, figure1: number, figure2: number, figure3: number): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       db.transaction((tx) => {
@@ -537,6 +594,37 @@ export class DatabaseService {
     });
   }
 
+  public getMoodJournalsByID(moodJournalIDs: number[]): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        const idList = moodJournalIDs.join(',');
+        tx.executeSql(
+          `SELECT mj.*,
+                        tn1.name AS tracking_name1, 
+                        tn2.name AS tracking_name2, 
+                        tn3.name AS tracking_name3
+                FROM mood_journals mj
+                LEFT JOIN tracking_names tn1 ON mj.tracking_name1_id = tn1.id
+                LEFT JOIN tracking_names tn2 ON mj.tracking_name2_id = tn2.id
+                LEFT JOIN tracking_names tn3 ON mj.tracking_name3_id = tn3.id 
+                WHERE mj.id IN (${idList})`,
+          [],
+          (txObject, resultSet) => {
+            const moodJournals = [];
+            for (let i = 0; i < resultSet.rows.length; i++) {
+              moodJournals.push(resultSet.rows.item(i));
+            }
+            resolve(moodJournals);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
   public getLatestMoodJournal(): Promise<any> {
     return new Promise((resolve, reject) => {
       db.transaction((tx) => {
@@ -617,6 +705,27 @@ export class DatabaseService {
           [startDate.toISOString().slice(0, 10), date],
           (txObject, resultSet) => {
             resolve(resultSet.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getAllMoodJournalsEntriesWithLocations(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT mood_journals.*, locations.latitude, locations.longitude, locations.name 
+            FROM mood_journals 
+            LEFT JOIN locations ON mood_journals.location_id = locations.id
+            ORDER BY mood_journals.created_at DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
           },
           (txObject, error) => {
             reject(error);

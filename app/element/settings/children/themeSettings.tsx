@@ -82,7 +82,6 @@ const ThemeSettings = () => {
                         <Text style={styles.buttonText}>Save</Text>
                     </TouchableOpacity>
                 </View>
-
                 <ScrollView >
                     <View style={styles.section}>
                         <Text style={styles.sectionHeader}>Purple Sunrise Theme (default)</Text>
@@ -95,9 +94,7 @@ const ThemeSettings = () => {
                                 onValueChange={() => toggleSwitch('purple')}
                                 value={activeTheme === 'purple'}
                             />
-
                         </View>
-
                     </View>
                     <View style={styles.section}>
                         <Text style={styles.sectionHeader}>Orange Sunset Theme</Text>
@@ -110,9 +107,7 @@ const ThemeSettings = () => {
                                 onValueChange={() => toggleSwitch('orange')}
                                 value={activeTheme === 'orange'}
                             />
-
                         </View>
-
                     </View>
                     <View style={styles.section}>
                         <Text style={styles.sectionHeader}>Bright Theme</Text>
@@ -125,12 +120,8 @@ const ThemeSettings = () => {
                                 onValueChange={() => toggleSwitch('bright')}
                                 value={activeTheme === 'bright'}
                             />
-
                         </View>
-
                     </View>
-
-
                 </ScrollView>
             </LinearGradient>
             {flashNotification && (

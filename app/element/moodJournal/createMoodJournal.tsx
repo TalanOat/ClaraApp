@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
 import { defaultStyles } from '@/constants/Styles'
 import emotionsData from '@/assets/data/emotionsUpdated.json';
+import * as Location from 'expo-location';
 
 import Animated, {
     FadeInDown,
@@ -18,6 +19,7 @@ import Slider from '@react-native-community/slider'
 import { JournalsContext } from '@/components/contexts/journalProvider'
 import * as SecureStore from 'expo-secure-store';
 import NegativeEmotionPrompt from '@/components/helpers/negativeEmotionPrompt'
+import { adminDatabaseService } from '@/model/adminDatabaseService'
 
 interface TrackingName {
     id: number;
@@ -37,6 +39,13 @@ interface MoodJournal {
     figure2: number;
     trackingNameId3: number;
     figure3: number;
+    location_id?: number;
+}
+
+
+interface Coordinate {
+    latitude: number,
+    longitude: number
 }
 
 
@@ -129,29 +138,52 @@ const createJournal = () => {
 
     //-----------------------------------------------------------------------------------------
 
-    //TODO check that this is only run after the create Tracking Data as it needs the trackingID
+    const fetchUserLocation = async () => {
+        //setIsLoading(true);
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            console.error('Location permission not granted');
+            return;
+        }
+
+        let location = await Location.getCurrentPositionAsync({});
+
+        const mapRegion: Coordinate = ({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+        });
+
+        return mapRegion
+    };
+
     const databaseCreateMoodJournal = async (inputMoodJournal: MoodJournal) => {
-        //console.log("in tracking set")
         try {
-            const returnedMoodJournalID = await databaseService.createMoodJournal(inputMoodJournal);
-            if (returnedMoodJournalID) {
-                return returnedMoodJournalID
-            }
-            else {
-                // TODO: - handle this
-                console.error("error getting returnedMoodJournalID");
-                return null;
+            let locationId = null;
+            if (locationToggle) {
+                locationId = await getLocationId();
             }
 
-        }
-        catch (error) {
-            console.error("error inserting mood Journal:", error);
-        }
-        finally {
-            //! TODO - move this to after the emotions have been linked?
+            let returnedMoodJournalID;
+            if (locationId) {
+                returnedMoodJournalID = await databaseService.createMoodJournalWithLocation(inputMoodJournal, locationId);
+            } else {
+                returnedMoodJournalID = await databaseService.createMoodJournal(inputMoodJournal);
+            }
+
+            return returnedMoodJournalID;
+        } catch (error) {
+            console.error("Error inserting mood Journal:", error);
+        } finally {
             fetchData();
         }
+    }
 
+    const getLocationId = async () => {
+        const journalLocation = await fetchUserLocation();
+        if (journalLocation) {
+            return await databaseService.createLocation(journalLocation.latitude, journalLocation.longitude, "null");
+        }
+        return null;
     }
 
     async function databaseCreateAndLinkEmotions(selectedEmotions: SelectedEmotion[], moodJournalID: number) {
@@ -189,6 +221,7 @@ const createJournal = () => {
         }
 
 
+
         setTimeout(() => {
             setFlashNotification(false);
         }, 1000);
@@ -221,14 +254,20 @@ const createJournal = () => {
         const currentHour = new Date().getHours()
         let partOfDay = "Morning"
 
-        if (currentHour >= 12 && currentHour < 18){
+        if (currentHour >= 12 && currentHour < 18) {
             partOfDay = "Afternoon"
         }
-        if (currentHour >= 18 && currentHour <= 24){
+        if (currentHour >= 18 && currentHour <= 24) {
             partOfDay = "Evening"
         }
         return partOfDay
     }
+
+    const [locationToggle, setLocationToggle] = useState(false);
+
+    const handleLocationToggle = () => {
+        setLocationToggle(!locationToggle);
+    };
 
 
     useEffect(() => {
@@ -250,8 +289,11 @@ const createJournal = () => {
                     <View style={styles.topRow}>
                         <MaterialCommunityIcons name="emoticon-happy" size={40} color="white" style={styles.elementIcon} />
                         <Text style={styles.elementTitle}>Check In</Text>
+                        <TouchableOpacity onPress={() => { handleLocationToggle(); }} style={styles.locationPin} >
+                            <MaterialCommunityIcons name={locationToggle ? "map-marker" : "map-marker-off"} size={35} color="white" />
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={() => { handleSubmit(); }} >
-                            <MaterialCommunityIcons name="check" size={40} color="white" />
+                            <MaterialCommunityIcons name="check" size={40} color={Colors.pink}/>
                         </TouchableOpacity>
 
                     </View>
@@ -409,7 +451,10 @@ const emotionsStyles = StyleSheet.create({
         //elevation: 10,
         backgroundColor: Colors.primary
     },
-    cancelButtonText: {}
+    cancelButtonText: {},
+    locationPin: {
+        paddingRight: 20
+    },
 
 })
 
@@ -452,7 +497,10 @@ const styles = StyleSheet.create({
     },
     moodHeader: {
         marginBottom: 15
-    }
+    },
+    locationPin: {
+        paddingRight: 20
+    },
 })
 
 const flashMessage = StyleSheet.create({

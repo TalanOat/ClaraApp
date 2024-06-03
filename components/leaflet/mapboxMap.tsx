@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
@@ -11,6 +11,10 @@ import Colors from '@/constants/Colors'
 import MapView from 'react-native-maps';
 import { databaseService } from '@/model/databaseService';
 import { NavigationProp } from '@react-navigation/native';
+import { semanticAnalyiseEncryptedJournal } from '../helpers/reusable/journalHelper';
+import moment from 'moment';
+import ClusterPrompt from '../helpers/clusterPrompt';
+import { JournalsContext } from '../contexts/journalProvider';
 
 interface Coordinate {
   latitude: number,
@@ -21,14 +25,6 @@ interface MarkerLocation {
   name: string,
   coords: Coordinate
 }
-
-// interface JournalMarker {
-//   name: string,
-//   journalId: number,
-//   type: string,
-//   date: string,
-//   coords: Coordinate
-// }
 
 interface Location {
   id: number;
@@ -44,14 +40,10 @@ interface JournalEntry {
   createdAt: string;
 }
 
-interface JournalMarker {
-  name: string;
-  journalId: number;
-  date: string;
-  coords: {
-    latitude: number;
-    longitude: number;
-  };
+interface ClusterJournalEntry {
+  id: number;
+  type: string;
+  clusterCoords: number[];
 }
 
 
@@ -60,9 +52,14 @@ const MapboxMap = () => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [userCoords, setUserCoords] = useState<Coordinate>();
+  const [showClusterPrompt, setShowClusterPrompt] = useState(false);
+  const { journals } = useContext(JournalsContext);
+  const initialRender = useRef(true);
 
   const MAPBOX_TOKEN = 'pk.eyJ1IjoidGFsYW5vIiwiYSI6ImNsd3A2M2xobjA5dWsyanFkNGE3aTc1NHYifQ.nKdkgfYCKT_zNUoGhDMhCQ';
+  const navigation = useNavigation<any>();
 
+  const [clusterData, setClusterData] = useState<ClusterJournalEntry[] | null>(null);
 
   function parseStringToMarker(input: string) {
     const placeName = input.split(", Coordinates: ")[0].replace("Name: ", "");
@@ -78,8 +75,6 @@ const MapboxMap = () => {
     return returnMarker;
   }
 
-  const navigation = useNavigation<any>();
-
   const onMessage = (event: any) => {
     const message = event.nativeEvent.data;
     if (message === 'mapLoaded') {
@@ -92,15 +87,41 @@ const MapboxMap = () => {
         drawRoute(userCoords, markerToNav.coords)
       }
     }
-    else if (message.includes('Navigate to journal entry:')) {
-      //console.log("post message: ", message)
-      const journalId = parseInt(message.split(':')[1].trim());
-
-      navigation.navigate('element/journal/[id]', { id: journalId });
-      //navigation.navigate(completeURL)
-
+    else if (message.includes('Navigate to journal:')) {
+      console.log("post message: ", message)
+      const data = message.split('Navigate to journal:')[1].trim();
+      const jsonData = JSON.parse(data);
+      
+      if (jsonData.type === "journal") { 
+        navigation.navigate('element/journal/[id]', { id: jsonData.journalId });
+      }
+      if (jsonData.type === "mood") { 
+        navigation.navigate('element/moodJournal/[id]', { id: jsonData.journalId });
+      }
     }
+    else if (message.includes('Display cluster popup:')) {
+      // parse the JSON data from the message
+      const data = message.split('Display cluster popup:')[1].trim();
+      const jsonData = JSON.parse(data);
+      console.log("jsonData: ", jsonData)
+      setClusterData(jsonData);
+    }
+
+      
+    
+
   };
+
+  useEffect(() => {
+    if (clusterData) {
+      setShowClusterPrompt(true);
+      //console.log("clusterData: ", clusterData)
+    }
+  }, [clusterData])
+
+  const handleClusterVisiblity = () => {
+    setShowClusterPrompt(!showClusterPrompt)
+  }
 
   const handleGetLocation = async () => {
     //setIsLoading(true);
@@ -192,29 +213,132 @@ const MapboxMap = () => {
   }
 
 
+  function fetchColorFromSentiment(score: number) {
+    let r, g, b = 0;
+    if (score < 0) {
+      // for negative scores, color between red and yellow
+      r = 255;
+      g = Math.round(255 * (score + 5) / 5);
+    }
+    else {
+      // for positive scores, color between yellow and green
+      r = Math.round(255 * (5 - score) / 5);
+      g = 255;
+    }
+    // Convert the RGB to hex
+    let hexColor = '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+
+    return hexColor;
+  }
+
+  function fetchColorFromTrackingValue(score: number) {
+    let r, g, b = 0;
+    if (score < 50) {
+      // for scores less than 50, color between red and yellow
+      r = 255;
+      g = Math.round(255 * (score / 50));
+    }
+    else {
+      // for scores greater than or equal to 50, color between yellow and green
+      r = Math.round(255 * ((100 - score) / 50));
+      g = 255;
+    }
+    // Convert the RGB to hex
+    let hexColor = '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+
+    return hexColor;
+  }
+
+  interface JournalMarker {
+    name?: string;
+    journalId: number;
+    type: string;
+    date: string;
+    color: string;
+    coords: {
+      latitude: number;
+      longitude: number;
+    };
+  }
+
+  const fetchLocationById = async (locationId: number) => {
+    if (locationId === null) {
+      console.log("Null locationId provided");
+      return;
+    }
+    try {
+      console.log("------------------------- locationId: ", locationId)
+      const location = await databaseService.getLocation(locationId);
+      return location;
+    } catch (error) {
+      console.error("error fetching location: ", error);
+    }
+  }
+
   const fetchAllJournalLocations = async () => {
     try {
       const journals = await databaseService.getAllJournalEntriesWithLocations();
       if (journals) {
+
         const journalMarkers = journals.map(async (journal) => {
-          const location = await databaseService.getLocation(journal.location_id);
-          return {
-            name: journal.title,
+          const location = await fetchLocationById(journal.location_id);
+          if (!location) {
+            return; // skip this if no location is found
+          }
+          const journalSemanticScore = await semanticAnalyiseEncryptedJournal(journal.body);
+          const hexColor = fetchColorFromSentiment(journalSemanticScore);
+          const formattedDate = moment(journal.createdAt).format('DD/MM/YY');
+          const marker: JournalMarker = ({
             journalId: journal.id,
-            type: "Journal Entry",
-            date: journal.createdAt,
+            type: "journal",
+            date: formattedDate,
+            color: hexColor,
             coords: {
               latitude: location.latitude,
               longitude: location.longitude,
             },
-          };
+          })
+          return marker;
         });
+
         return Promise.all(journalMarkers);
       }
     } catch (error) {
       console.error("error fetching journal locations: ", error);
     }
   };
+
+  const fetchAllMoodJournalLocations = async () => {
+    try {
+      const moodJournals = await databaseService.getAllMoodJournalsEntriesWithLocations();
+      if (moodJournals) {
+        const moodJournalMarkers = moodJournals.map(async (moodJournal) => {
+          const location = await fetchLocationById(moodJournal.location_id);
+          if (!location) {
+            return; // skip this if no location is found
+          }
+          const hexColor = fetchColorFromTrackingValue(moodJournal.tracking_value1);
+          const formattedDate = moment(moodJournal.created_at).format('DD/MM/YY');
+          const marker: JournalMarker = ({
+            journalId: moodJournal.id,
+            type: "mood",
+            date: formattedDate,
+            color: hexColor,
+            coords: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
+          })
+          return marker;
+        });
+        //console.log("moodJournalMarkers: ", moodJournalMarkers)
+        return Promise.all(moodJournalMarkers);
+      }
+    } catch (error) {
+      console.error("error fetching journal locations: ", error);
+    }
+  };
+
 
 
   const setupMap = async () => {
@@ -224,13 +348,14 @@ const MapboxMap = () => {
       setUserCoords(userLocation)
       flyToCoord(userLocation)
       addUserPinFromCoord(userLocation)
-      const journalLocations = await fetchAllJournalLocations();
-      if (journalLocations) {
-        console.log("journalLocations", journalLocations)
-        const coords = journalLocations.map(journal => journal.coords);
-        const names = journalLocations.map(journal => journal.name);
-        //addGroupedMarkers(coords, names);
-        addClusteredMarkers(coords, names)
+      const journalLocations = (await fetchAllJournalLocations()) || [];
+      const moodJournalLocations = (await fetchAllMoodJournalLocations()) || [];
+
+      const allLocations = [...journalLocations, ...moodJournalLocations];
+
+      if (allLocations.length > 0) {
+        const validLocations = allLocations.filter((location): location is JournalMarker => location !== undefined);
+        addClusteredMarkers(validLocations);
       }
 
       const randomPoints = generateRandomPoints(userLocation, 0.01, 10);
@@ -238,25 +363,49 @@ const MapboxMap = () => {
     }
   }
 
-  const addClusteredMarkers = async (locations: Coordinate[], popupTexts: string[]) => {
-    console.log("locations: ", locations);
+  const addClusteredMarkers = async (journalLocations: JournalMarker[]) => {
     if (mapRef.current) {
-      const features = locations.map((location, index) => ({
+      // Clear existing layers and sources
+      const removeClusterLayers = () => {
+        const jsCode = `
+        if (map.getLayer('clusters')) {
+            map.removeLayer('clusters');
+        }
+        if (map.getLayer('cluster-count')) {
+            map.removeLayer('cluster-count');
+        }
+        if (map.getLayer('unclustered-point')) {
+            map.removeLayer('unclustered-point');
+        }
+        if (map.getSource('markers')) {
+            map.removeSource('markers');
+        }
+    `;
+        mapRef.current.injectJavaScript(jsCode);
+      }
+
+      removeClusterLayers();
+
+      const features = journalLocations.map((location, index) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
-          coordinates: [location.longitude, location.latitude]
+          coordinates: [location.coords.longitude, location.coords.latitude]
         },
         properties: {
-          popupText: popupTexts[index]
+          popupText: location.name,
+          color: location.color,
+          date: location.date,
+          type: location.type,
+          journalId: location.journalId,
         }
       }));
-  
+
       const sourceData = {
         type: 'FeatureCollection',
         features: features
       };
-  
+
       const jsCode = `
         map.addSource('markers', {
           type: 'geojson',
@@ -295,7 +444,7 @@ const MapboxMap = () => {
           source: 'markers',
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': '#11b4da',
+            'circle-color': ['get', 'color'], // Use color property
             'circle-radius': 10,
             'circle-stroke-width': 1,
             'circle-stroke-color': '#fff'
@@ -304,50 +453,43 @@ const MapboxMap = () => {
   
         map.on('click', 'unclustered-point', (e) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
-          const popupText = e.features[0].properties.popupText;
-  
-          new mapboxgl.Popup()
-            .setLngLat(coordinates)
-            .setHTML(popupText)
-            .addTo(map);
+          const journalId = e.features[0].properties.journalId;
+          const type = e.features[0].properties.type;
+      
+          const message = {
+              messageType: 'navigation',
+              journalId: journalId,
+              type: type
+          };
+      
+          window.ReactNativeWebView.postMessage('Navigate to journal: ' + JSON.stringify(message));
         });
   
-        map.on('mouseenter', 'clusters', () => {
-          map.getCanvas().style.cursor = 'pointer';
-        });
-  
-        map.on('mouseleave', 'clusters', () => {
-          map.getCanvas().style.cursor = '';
+        map.on('click', 'clusters', function(e) {
+          var clusterId = e.features[0].properties.cluster_id;
+          var coordinates = e.features[0].geometry.coordinates.slice();
+        
+          map.getSource('markers').getClusterLeaves(clusterId, 10, 0, function(err, features) {
+            if (err) {
+              return console.error('Error while getting cluster leaves:', err);
+            }
+        
+            var journalData = features.map(function(feature) {
+              return {
+                id: feature.properties.journalId,
+                type: feature.properties.type,
+                clusterCoords: coordinates
+              };
+            });
+        
+            window.ReactNativeWebView.postMessage('Display cluster popup: ' + JSON.stringify(journalData));
+          });
         });
       `;
-  
+
       mapRef.current.injectJavaScript(jsCode);
     }
   }
-
-
-
-  // const addJournalMarkersFromCoord = async (location: Coordinate, popupText: string, journalMarkers: JournalMarker[]) => {
-  //   if (mapRef.current) {
-  //     let journalList = '';
-  //     for (let i = 0; i < journalMarkers.length; i++) {
-  //       journalList += `<a href="#" onclick="window.ReactNativeWebView.postMessage('Navigate to journal entry: ${journalMarkers[i].journalId}')">${journalMarkers[i].name}</a><br/>`;
-  //     }
-
-  //     const markerInfo = `Name: ${popupText}, Coordinates: [${location.longitude}, ${location.latitude}]`;
-  //     const html = `${popupText}<br/>${journalList}<button onclick="window.ReactNativeWebView.postMessage('${markerInfo}')">Navigate</button>`;
-  //     const jsCode = `
-  //       window.markers = window.markers || {};
-  //       window.markers['${markerId}'] = new mapboxgl.Marker(({ color: 'pink'}))
-  //         .setLngLat([${location.longitude}, ${location.latitude}])
-  //         .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML('${html.replace(/'/g, "\\'")}'))
-  //         .addTo(map);
-  //     `;
-  //     mapRef.current.injectJavaScript(jsCode);
-
-  //     markerId++;
-  //   }
-  // }
 
   useEffect(() => {
     if (mapLoaded == false) {
@@ -362,12 +504,23 @@ const MapboxMap = () => {
 
   }, [mapLoaded])
 
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return;
+
+    }
+    console.log("!!!!!called again")
+    //setMapLoaded(false);
+    setupMap();
+  }, [journals]);
 
   // TODO: mapbox functions
   const addUserPinFromCoord = async (location: Coordinate) => {
+    const pinColor = Colors.pink;
     if (mapRef.current) {
       mapRef.current.injectJavaScript(`
-        window.userMarker = new mapboxgl.Marker(({ color: 'purple'}))
+        window.userMarker = new mapboxgl.Marker(({ color: '${pinColor}'}))
           .setLngLat([${location.longitude}, ${location.latitude}])
           .addTo(map);
       `);
@@ -499,9 +652,14 @@ const MapboxMap = () => {
         ref={mapRef}
         onMessage={onMessage}
       />
+
       <TouchableOpacity style={styles.currentLocationButton} onPress={() => { handleFocusMap() }}>
         <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
       </TouchableOpacity>
+
+      {showClusterPrompt && clusterData && (
+        <ClusterPrompt data={clusterData} onVisibilityChanged={handleClusterVisiblity}></ClusterPrompt>
+      )}
       {isLoading && (
         <View style={styles.loadingPopup}>
           <ActivityIndicator size="large" color={Colors.pink} />

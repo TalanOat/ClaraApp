@@ -20,6 +20,7 @@ import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
 import * as SecureStore from 'expo-secure-store';
 
 
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -104,6 +105,7 @@ function RootLayoutNav() {
                     name="(tabs)"
                     options={{
                       header: () => <ExpandedHeader />,
+                      freezeOnBlur: true, 
                     }} />
                   <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
                   <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />

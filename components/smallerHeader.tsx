@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     },
     date: {
         fontSize: 20,
-        color: "grey",
+        color: Colors.offWhite,
         fontFamily: 'mon-b',
     },
     touchAreaButton: {
