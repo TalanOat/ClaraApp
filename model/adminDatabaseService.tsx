@@ -98,33 +98,37 @@ export class AdminDatabaseService {
 
   public dropAllTables() {
     const tableNames = [
-        'journals',
-        'tracking_names',
-        'emotions',
-        'mood_journals',
-        'mood_journal_emotions',
+      'journals',
+      'locations',
+      'tracking_names',
+      'emotions',
+      'mood_journals',
+      'mood_journal_emotions',
+      'usage_logs',
+      'goals',
+      'custom_words'
     ];
 
     return new Promise<void>((resolve, reject) => {
-        db.transaction(tx => {
-            tableNames.forEach(tableName => {
-                tx.executeSql(
-                    `DROP TABLE IF EXISTS ${tableName}`,
-                    [],
-                    () => {
-                      console.log("succesfully dropped all tables")
-                     },
-                    (_, error) => {
-                        console.error(`Error dropping table ${tableName}:`, error);
-                        reject(error); 
-                        return true; 
-                    } 
-                );
-            });
-            resolve(); // Signal success after all tables are processed
+      db.transaction(tx => {
+        tableNames.forEach(tableName => {
+          tx.executeSql(
+            `DROP TABLE IF EXISTS ${tableName}`,
+            [],
+            () => {
+              console.log("succesfully dropped all tables")
+            },
+            (_, error) => {
+              console.error(`Error dropping table ${tableName}:`, error);
+              reject(error);
+              return true;
+            }
+          );
         });
+        resolve(); // Signal success after all tables are processed
+      });
     });
-}
+  }
 
 
 }

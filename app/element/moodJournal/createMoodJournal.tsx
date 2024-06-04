@@ -204,7 +204,7 @@ const createJournal = () => {
     }
 
     const handleSubmit = async () => {
-
+        //const deleteMe = await adminDatabaseService.dropAllTables();
         setFlashNotification(true);
         //const currentTime = new Date().toISOString()
         const currentTime = headerDate.date.toISOString();
