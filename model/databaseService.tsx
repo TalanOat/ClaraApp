@@ -99,6 +99,13 @@ export class DatabaseService {
           daily TEXT
         )`
       );
+      tx.executeSql(
+        `CREATE TABLE IF NOT EXISTS custom_words (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          word TEXT,
+          score INTEGER
+        )`
+      );
 
     }, (error) => {
       console.error('database init error:', error);
@@ -462,7 +469,7 @@ export class DatabaseService {
             moodJournalData.figure2,
             moodJournalData.trackingNameId3,
             moodJournalData.figure3,
-            locationId 
+            locationId
           ],
           (txObject, resultSet) => {
             resolve(resultSet.insertId || -1);
@@ -901,6 +908,45 @@ export class DatabaseService {
         tx.executeSql(
           `SELECT * FROM goals 
             ORDER BY createdAt DESC`,
+          [],
+          (txObject, result) => {
+            resolve(result.rows._array);
+          },
+          (txObject, error) => {
+            reject(error);
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public createCustomWord(word: string, score: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'INSERT INTO custom_words (word, score) VALUES (?, ?)',
+          [word, score],
+          (txObject, resultSet) => {
+            console.log('insert successful', resultSet);
+            resolve(true);
+          },
+          (txObject, error) => {
+            console.error('insert error:', error);
+            reject(error);
+            resolve(false)
+            return true;
+          }
+        );
+      });
+    });
+  }
+
+  public getAllCustomWords(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT * FROM custom_words`,
           [],
           (txObject, result) => {
             resolve(result.rows._array);

@@ -22,6 +22,35 @@ function compareDescending(a: [string, number], b: [string, number]): number {
   return countB - countA;
 }
 
+const combineThemes = (themes: JournalTheme[]): JournalTheme => {
+  const combinedTheme: JournalTheme = {
+    peopleAndActorsAnalysis: [],
+    placesAnalysis: [],
+    activitiesAnalysis: []
+  };
+
+  themes.forEach(theme => {
+    combinedTheme.peopleAndActorsAnalysis = combineWordCounts(combinedTheme.peopleAndActorsAnalysis, theme.peopleAndActorsAnalysis);
+    combinedTheme.placesAnalysis = combineWordCounts(combinedTheme.placesAnalysis, theme.placesAnalysis);
+    combinedTheme.activitiesAnalysis = combineWordCounts(combinedTheme.activitiesAnalysis, theme.activitiesAnalysis);
+  });
+
+  return combinedTheme;
+}
+
+const combineWordCounts = (counts1: [string, number][], counts2: [string, number][]): [string, number][] => {
+  const wordCounts: WordCount = {};
+
+  counts1.concat(counts2).forEach(([word, count]) => {
+    if (!wordCounts[word]) {
+      wordCounts[word] = 0;
+    }
+    wordCounts[word] += count;
+  });
+
+  return Object.entries(wordCounts).sort(compareDescending);
+}
+
 const analyzeWordProbability = (text: string) => {
   const wordCounts: WordCount = {};
   const words = text.toLowerCase().split(/\s+/);
@@ -63,68 +92,66 @@ const applyThemeAnalysis = (journalBody: string) => {
 }
 
 
-
 const MultipleJournalThemesComponent = ({ journalBodies }: { journalBodies: string[] }) => {
-  const [journalThemes, setJournalThemes] = useState<JournalTheme[]>([]);
+  const [journalTheme, setJournalTheme] = useState<JournalTheme | null>(null);
 
   useEffect(() => {
-    //console.log("journalBodies in MultipleJournalThemesComponent: ", journalBodies)
     const allThemes = journalBodies.map(journalBody => applyThemeAnalysis(journalBody));
-    setJournalThemes(allThemes);
+    const combinedTheme = combineThemes(allThemes);
+    setJournalTheme(combinedTheme);
   }, [journalBodies]);
 
+  if (!journalTheme) {
+    return null;
+  }
+
   return (
-    <>
-      {journalThemes.map((journalTheme, index) => (
-        <View key={index}>
-          <Text style={[defaultStyles.subTitleHeader, styles.header]}>Journal {index + 1} Key Themes</Text>
-          <View style={styles.themesContainer}>
-            {journalTheme.activitiesAnalysis.length > 0 && (
-              <View style={styles.themeTypeContainer}>
-                <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Activities</Text>
-                <View style={styles.themeWordsContainer}>
-                  {journalTheme.activitiesAnalysis.map(([word, count]) => (
-                    <View key={word} style={styles.wordBubble}>
-                      <Text style={styles.buttonText}>
-                        {word} ({count})
-                      </Text>
-                    </View>
-                  ))}
+    <View>
+      <View style={styles.themesContainer}>
+        {journalTheme.activitiesAnalysis.length > 0 && (
+          <View style={styles.themeTypeContainer}>
+            <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Activities</Text>
+            <View style={styles.themeWordsContainer}>
+              {journalTheme.activitiesAnalysis.map(([word, count]) => (
+                <View key={word} style={styles.wordBubble}>
+                  <Text style={styles.buttonText}>
+                    {word} ({count})
+                  </Text>
                 </View>
-              </View>
-            )}
-            {journalTheme.peopleAndActorsAnalysis.length > 0 && (
-              <View style={styles.themeTypeContainer}>
-                <Text style={[defaultStyles.paragraph, styles.themeDescription]}>People</Text>
-                <View style={styles.themeWordsContainer}>
-                  {journalTheme.peopleAndActorsAnalysis.map(([word, count]) => (
-                    <View key={word} style={styles.wordBubble}>
-                      <Text style={styles.buttonText}>
-                        {word} ({count})
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-            {journalTheme.placesAnalysis.length > 0 && (
-              <View style={styles.themeTypeContainer}>
-                <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Places</Text>
-                <View style={styles.themeWordsContainer}>
-                  {journalTheme.placesAnalysis.map(([word, count]) => (
-                    <View key={word} style={styles.wordBubble}>
-                      <Text style={styles.buttonText}>
-                        {word} ({count})
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
-    </>
+        )}
+        {journalTheme.peopleAndActorsAnalysis.length > 0 && (
+          <View style={styles.themeTypeContainer}>
+            <Text style={[defaultStyles.paragraph, styles.themeDescription]}>People</Text>
+            <View style={styles.themeWordsContainer}>
+              {journalTheme.peopleAndActorsAnalysis.map(([word, count]) => (
+                <View key={word} style={styles.wordBubble}>
+                  <Text style={styles.buttonText}>
+                    {word} ({count})
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+        {journalTheme.placesAnalysis.length > 0 && (
+          <View style={styles.themeTypeContainer}>
+            <Text style={[defaultStyles.paragraph, styles.themeDescription]}>Places</Text>
+            <View style={styles.themeWordsContainer}>
+              {journalTheme.placesAnalysis.map(([word, count]) => (
+                <View key={word} style={styles.wordBubble}>
+                  <Text style={styles.buttonText}>
+                    {word} ({count})
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    </View>
   );
 }
 

@@ -30,6 +30,8 @@ import Animated, {
 import { calculateCompleteTrackingValues } from '@/components/helpers/statsHelpers/scoreTrackingValues';
 import { databaseService } from '@/model/databaseService';
 import moment from 'moment';
+import CustomScorePrompt from '../customScorePrompt';
+import { semanticSearch } from '../reusable/journalHelper';
 
 interface TrackingValue {
     name: string;
@@ -67,7 +69,7 @@ interface Journal {
 interface BarChartProps {
     journalParam: Journal
     moodJournalParam: MoodJournal
-    handleTimelineChanged: (selectedTimeline: string) => void; 
+    handleTimelineChanged: (selectedTimeline: string) => void;
 }
 
 
@@ -128,35 +130,7 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
         return filteredTrackingPoints;
     };
 
-    //looks for words in the inputed string that matches either positive/negative
-    const semanticSearch = async (stringInput: string, searchForPositive: boolean) => {
-        var Sentiment = require('sentiment');
-        var sentiment = new Sentiment();
-        var result = sentiment.analyze(stringInput);
-        const semanticCalculationArray = result.calculation;
-        const matchingKeys = [];
 
-        if (searchForPositive) {
-            for (const entry of semanticCalculationArray) {
-                for (const [key, value] of Object.entries(entry)) {
-                    if (typeof (value) === "number" && value >= 1) {
-                        matchingKeys.push(key);
-                    }
-                }
-            }
-        }
-        if (!searchForPositive) {
-            for (const entry of semanticCalculationArray) {
-                for (const [key, value] of Object.entries(entry)) {
-                    if (typeof (value) === "number" && value <= -1) {
-                        matchingKeys.push(key);
-                    }
-                }
-            }
-        }
-
-        return matchingKeys;
-    }
 
     const assignLinkingWords = async (journalEntryInput: Journal, inputTrackingPoints: TrackingValue) => {
         const inputTrackingScore = inputTrackingPoints.positiveScore;
@@ -309,6 +283,16 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
         }
     }, [journalParam, moodJournalParam])
 
+    const [showCustomScorePrompt, setShowCustomScorePrompt] = useState(false);
+
+    const handleCustomPromptVisibility = () => {
+        setShowCustomScorePrompt(!showCustomScorePrompt)
+    }
+
+    const handleWordSettings = () => {
+        setShowCustomScorePrompt(true)
+        console.log("word settings pressed")
+    }
 
 
     return (
@@ -405,9 +389,9 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
                     </View>
 
                     <View style={styles.textIconRow}>
-                        <Text style={[defaultStyles.subTitleHeader]}>Linking Word Analysis</Text>
+                        <Text style={[defaultStyles.subTitleHeader]}>Journal Word Analysis</Text>
                         <Animated.View  >
-                            <TouchableOpacity >
+                            <TouchableOpacity onPress={() => handleWordSettings()}>
                                 <MaterialCommunityIcons name='cog'
                                     color={"white"}
                                     size={30}>
@@ -426,6 +410,9 @@ const BarChartComponent = ({ journalParam, moodJournalParam, handleTimelineChang
                         ))}
                     </Animated.View>
                 </>
+            )}
+            {showCustomScorePrompt && (
+                <CustomScorePrompt onVisibilityChanged={handleCustomPromptVisibility} />
             )}
         </>
     );

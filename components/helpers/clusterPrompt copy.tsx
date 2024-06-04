@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, TextInput } from 'react-native'
 import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import Colors from '@/constants/Colors'
@@ -23,7 +23,6 @@ interface UserElement {
     trackingName1?: string,
     trackingValue1?: number,
 };
-
 interface ClusterJournalEntry {
     id: number;
     type: string;
@@ -40,27 +39,18 @@ interface Coordinate {
     longitude: number
 }
 
-interface State {
-    userJournals: UserElement[];
-    userMoodJournals: UserElement[];
-    generalPlaceName: string;
-    overallScore: number;
-    isLoading: boolean;
-    isDataLoaded: boolean;
-}
-
 const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
-    const [state, setState] = useState<State>({
-        userJournals: [],
-        userMoodJournals: [],
-        generalPlaceName: "",
-        overallScore: 0,
-        isLoading: false,
-        isDataLoaded: false,
-    });
+    const [userJournals, setUserJournals] = useState<UserElement[]>([]);
+    const [userMoodJournals, setUserMoodJournals] = useState<UserElement[]>([]);
+    const [generalPlaceName, setGeneralPlaceName] = useState("");
+    const [overallScore, setOverallScore] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isDataLoaded, setIsDataLoaded] = useState(false); 
     //const [userPin, setUserPin] = useState('');
     const initialRender = useRef(true);
     const MAPBOX_TOKEN = 'pk.eyJ1IjoidGFsYW5vIiwiYSI6ImNsd3A2M2xobjA5dWsyanFkNGE3aTc1NHYifQ.nKdkgfYCKT_zNUoGhDMhCQ';
+
+
     const { journals } = useContext(JournalsContext);
 
     const handleCloseNotification = () => {
@@ -85,6 +75,7 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
     }
 
     const fetchAllJournalEntries = async (journalIds: number[]): Promise<UserElement[]> => {
+        setIsLoading(true);
         try {
             const entries = await databaseService.getJournalEntriesByID(journalIds);
             let userPin = await loadPinSettings();
@@ -116,6 +107,9 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
             console.error(error);
             return [];
         }
+        finally {
+            setIsLoading(false);
+        }
     }
 
     function isValidUTF8(str: string) {
@@ -128,6 +122,7 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
     }
 
     const fetchAllMoodJournalEntries = async (moodIds: number[]): Promise<UserElement[]> => {
+        setIsLoading(true);
         try {
             const entries = await databaseService.getMoodJournalsByID(moodIds);
             const journalEntries: UserElement[] = [];
@@ -148,6 +143,9 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
         } catch (error) {
             console.error(error);
             return [];
+        }
+        finally {
+            setIsLoading(false);
         }
     }
 
@@ -210,7 +208,8 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
 
 
     const fetchData = async () => {
-        setState(prevState => ({ ...prevState, isLoading: true }));
+        setIsLoading(true);
+        setIsDataLoaded(false);
         if (data.length !== 0) {
             const point: Coordinate = {
                 latitude: (data[0].clusterCoords)[1],
@@ -219,7 +218,7 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
             try {
                 const placeName = await getNearestPOI(point);
                 const shortenedName = placeName.split(',').slice(0, 1).join(',');
-                setState(prevState => ({ ...prevState, generalPlaceName: shortenedName }));
+                setGeneralPlaceName(shortenedName);
             } catch (error) {
                 console.error("error getting nearest POI: ", error);
             }
@@ -236,8 +235,8 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
             return [];
         }
 
-        const fetchedJournals = await fetchEntries('journal', fetchAllJournalEntries);
-        const fetchedMoodJournals = await fetchEntries('mood', fetchAllMoodJournalEntries);
+        const fetchedJournals = await fetchEntries('journal', fetchAllJournalEntries)
+        const fetchedMoodJournals = await fetchEntries('mood', fetchAllMoodJournalEntries)
 
         const semanticArrayJournals = await calculateSemanticScoreForJournals(fetchedJournals);
         const semanticArrayMoodJournals = await calculateSemanticScoreForMoodJournals(fetchedMoodJournals);
@@ -246,89 +245,87 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
         const sum = joinedScores.reduce((a, b) => a + b, 0);
         const average = Math.round(sum / joinedScores.length);
 
-        setState(prevState => ({
-            ...prevState,
-            userJournals: fetchedJournals,
-            userMoodJournals: fetchedMoodJournals,
-            overallScore: average,
-            isLoading: false,
-            isDataLoaded: true,
-        }));
+        //setOverallScore(average)
+
+        setOverallScore(average)
+        setUserJournals(fetchedJournals);
+        setUserMoodJournals(fetchedMoodJournals);
+        setIsLoading(false);
+        setIsDataLoaded(true);  
     }
 
     useEffect(() => {
         fetchData();
     }, [])
 
-
     useEffect(() => {
         if (initialRender.current) {
             initialRender.current = false;
             return;
+
         }
         fetchData();
     }, [journals]);
 
-    const validJournalBodies = state.userJournals
-        .map(journal => journal.body)
-        .filter((body): body is string => body !== undefined);
+    const [validJournalBodies, setValidJournalBodies] = useState<string[]>([]);
+    useEffect(() => {
+        const validJournalBodies = userJournals
+            .map(journal => journal.body)
+            .filter((body): body is string => body !== undefined);
+        setValidJournalBodies(validJournalBodies);
+
+    }, [userJournals])
+
 
 
     return (
         <>
-            {state.isLoading === false && (
-                <LinearGradient style={styles.clusterPromptContainer} colors={[Colors.primary, Colors.pink]} >
-                    <View style={styles.navigationRow}>
-                        <Text style={styles.placeNameHeader}>{state.generalPlaceName}</Text>
-                        <TouchableOpacity style={styles.closeButton} onPress={(() => handleCloseNotification())}>
-                            <MaterialCommunityIcons name="close" size={30} color="white" />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.contentRow}>
-                        <Text style={styles.subHeader}>Journal Entries</Text>
-                        <ScrollView style={styles.journalsContainer}>
-                            {state.userJournals.map((journal, index) => (
-                                <Link href={`/element/journal/${journal.id}`} asChild key={journal.id}>
-                                    <TouchableOpacity key={index} style={styles.journalRow}>
-                                        <Text style={styles.journalIndex}>{(index + 1)}.</Text>
-                                        <Text style={styles.journalTitle}>{journal.date}</Text>
-                                        <MaterialCommunityIcons name="pencil" size={24} color="white" />
-                                    </TouchableOpacity>
-                                </Link>
-                            ))}
-                        </ScrollView>
-
-                        {state.userMoodJournals.length > 0 && (
-                            <ScrollView style={styles.journalsContainer}>
-                                <Text style={styles.subHeader}>Mood Journal Entries</Text>
-                                {state.userMoodJournals.map((moodJournal, index) => (
-                                    <Link href={`/element/moodJournal/${moodJournal.id}`} asChild key={moodJournal.id}>
-                                        <TouchableOpacity key={index} style={styles.journalRow}>
-                                            <Text style={styles.journalIndex}>{(index + 1)}.</Text>
-                                            <Text style={styles.journalTitle}>{moodJournal.date}</Text>
-                                            <MaterialCommunityIcons name="emoticon-happy" size={24} color="white" />
-                                        </TouchableOpacity>
-                                    </Link>
-                                ))}
-                            </ScrollView>
-                        )}
-                        {!state.isLoading && (  // Render the progress bar and themes component only after data is loaded
-                            <ScrollView style={styles.infoContainer}>
-                                <View style={styles.infoColumn}>
-                                    <Text style={styles.subHeader}>Overall Happiness Score</Text>
-                                    <ProgressBarWithColor step={state.overallScore} height={25} isAnimating={true} />
-                                </View>
-                                <MultipleJournalThemesComponent journalBodies={validJournalBodies} />
-                            </ScrollView>
-                        )}
-                    </View>
-                </LinearGradient>
-            )}
-            {state.isLoading === true && (
-                <View style={styles.loadingPopup}>
-                    <ActivityIndicator size="large" color={Colors.pink} />
+            <LinearGradient style={styles.clusterPromptContainer} colors={[Colors.primary, Colors.pink]} >
+                <View style={styles.navigationRow}>
+                    <Text style={styles.placeNameHeader}>{generalPlaceName}</Text>
+                    <TouchableOpacity style={styles.closeButton} onPress={(() => handleCloseNotification())}>
+                        <MaterialCommunityIcons name="close" size={30} color="white" />
+                    </TouchableOpacity>
                 </View>
-            )}
+                <View style={styles.contentRow}>
+                    <Text style={styles.subHeader}>Journal Entries</Text>
+                    <ScrollView style={styles.journalsContainer}>
+                        {userJournals.map((journal, index) => (
+                            <Link href={`/element/journal/${journal.id}`} asChild key={journal.id}>
+                                <TouchableOpacity key={index} style={styles.journalRow}>
+                                    <Text style={styles.journalIndex}>{(index + 1)}.</Text>
+                                    <Text style={styles.journalTitle}>{journal.date}</Text>
+                                    <MaterialCommunityIcons name="pencil" size={24} color="white" />
+                                </TouchableOpacity>
+                            </Link>
+                        ))}
+                    </ScrollView>
+                    <Text style={styles.subHeader}>Mood Journal Entries</Text>
+                    <ScrollView style={styles.journalsContainer}>
+                        {userMoodJournals.map((moodJournal, index) => (
+                            <Link href={`/element/moodJournal/${moodJournal.id}`} asChild key={moodJournal.id}>
+                                <TouchableOpacity key={index} style={styles.journalRow}>
+                                    <Text style={styles.journalIndex}>{(index + 1)}.</Text>
+                                    <Text style={styles.journalTitle}>{moodJournal.date}</Text>
+                                    <MaterialCommunityIcons name="emoticon-happy" size={24} color="white" />
+                                </TouchableOpacity>
+                            </Link>
+                        ))}
+                    </ScrollView>
+                    {isDataLoaded && (
+                        <ScrollView style={styles.infoContainer}>
+                            <View style={styles.infoColumn}>
+                                <ProgressBarWithColor step={overallScore} height={25} isAnimating={true} textLabel="Overall Score" />
+                                <Text style={styles.subHeader}>{overallScore}</Text>
+                            </View>
+
+                            <MultipleJournalThemesComponent journalBodies={validJournalBodies} />
+                        </ScrollView>
+                    )}
+
+
+                </View>
+            </LinearGradient>
         </>
     )
 }
@@ -410,19 +407,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontFamily: 'mon-sb',
         fontSize: 16
-    },
-    loadingPopup: {
-        alignSelf: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        flex: 1,
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        alignItems: 'center'
-      },
+    }
 })
 
 export default ClusterPrompt

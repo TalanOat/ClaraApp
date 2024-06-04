@@ -1,3 +1,4 @@
+import { databaseService } from '@/model/databaseService';
 import * as SecureStore from 'expo-secure-store';
 import CryptoJS from "react-native-crypto-js";
 
@@ -55,6 +56,16 @@ const loadSettingFromStorage = async (setting: string) => {
     }
 };
 
+const semanticAnalyiseJournal = async (stringInput: string) => {
+    const userPin = await loadSettingFromStorage("userPin");
+    if (userPin) {
+        const result = sentiment.analyze(stringInput);
+        //console.log("result.comparative: ", result.comparative)
+        return result.comparative
+    }
+
+}
+
 const semanticAnalyiseEncryptedJournal = async (stringInput: string) => {
     const userPin = await loadSettingFromStorage("userPin");
     if (userPin) {
@@ -66,4 +77,67 @@ const semanticAnalyiseEncryptedJournal = async (stringInput: string) => {
 
 }
 
-export { semanticAnalysis, decryptString, loadSettingFromStorage, semanticAnalyiseEncryptedJournal, decryptStringWithoutPin };
+const fetchCustomWords = async () => {
+    try {
+        const customWords = await databaseService.getAllCustomWords();
+        if (customWords) {
+            return customWords;
+        }
+    }
+    catch (error) {
+        console.log("error fetching custom words: ", error)
+    }
+
+
+}
+
+
+
+//looks for words in the inputed string that matches either positive/negative
+const semanticSearch = async (stringInput: string, searchForPositive: boolean) => {
+    //get the custom_words from the database
+    //convert to key value pair
+    const customWords = await fetchCustomWords();
+    if (customWords) {
+        const customWordsMap = customWords.reduce((acc, wordObj) => {
+            acc[wordObj.word.toLowerCase()] = wordObj.score;
+            return acc;
+        }, {});
+        
+        const options = {
+            extras: customWordsMap,
+        };
+        console.log("options: ", options)
+
+        var Sentiment = require('sentiment');
+        var sentiment = new Sentiment();
+        var result = sentiment.analyze(stringInput, options);
+        const semanticCalculationArray = result.calculation;
+        const matchingKeys = [];
+
+        if (searchForPositive) {
+            for (const entry of semanticCalculationArray) {
+                for (const [key, value] of Object.entries(entry)) {
+                    if (typeof (value) === "number" && value >= 1) {
+                        matchingKeys.push(key);
+                    }
+                }
+            }
+        }
+        if (!searchForPositive) {
+            for (const entry of semanticCalculationArray) {
+                for (const [key, value] of Object.entries(entry)) {
+                    if (typeof (value) === "number" && value <= -1) {
+                        matchingKeys.push(key);
+                    }
+                }
+            }
+        }
+
+        return matchingKeys;
+    }
+
+
+}
+
+export { semanticAnalysis, decryptString, loadSettingFromStorage, semanticAnalyiseEncryptedJournal, decryptStringWithoutPin, semanticAnalyiseJournal, semanticSearch };

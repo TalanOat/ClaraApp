@@ -267,7 +267,7 @@ const MapboxMap = () => {
       return;
     }
     try {
-      console.log("------------------------- locationId: ", locationId)
+      //console.log("------------------------- locationId: ", locationId)
       const location = await databaseService.getLocation(locationId);
       return location;
     } catch (error) {
@@ -510,7 +510,7 @@ const MapboxMap = () => {
       return;
 
     }
-    console.log("!!!!!called again")
+    //console.log("!!!!!called again")
     //setMapLoaded(false);
     setupMap();
   }, [journals]);
