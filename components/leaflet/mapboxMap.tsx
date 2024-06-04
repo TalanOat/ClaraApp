@@ -341,6 +341,16 @@ const MapboxMap = () => {
 
 
 
+  const handleDrawPOIs = async () => {
+    //removeMarker()
+    const userLocation = await handleGetLocation();
+
+    if (userLocation) { 
+      const randomPoints = generateRandomPoints(userLocation, 0.01, 10);
+      plot_POI_Markers(randomPoints);
+    }
+  }
+
   const setupMap = async () => {
     const userLocation = await handleGetLocation();
 
@@ -358,8 +368,8 @@ const MapboxMap = () => {
         addClusteredMarkers(validLocations);
       }
 
-      const randomPoints = generateRandomPoints(userLocation, 0.01, 10);
-      //plot_POI_Markers(randomPoints);
+      
+      //
     }
   }
 
@@ -657,6 +667,10 @@ const MapboxMap = () => {
         <MaterialCommunityIcons name="crosshairs-gps" size={26} color="white" />
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.drawPOIsButton} onPress={() => { handleDrawPOIs() }}>
+        <MaterialCommunityIcons name="map-marker-path" size={26} color="white" />
+      </TouchableOpacity>
+
       {showClusterPrompt && clusterData && (
         <ClusterPrompt data={clusterData} onVisibilityChanged={handleClusterVisiblity}></ClusterPrompt>
       )}
@@ -683,6 +697,18 @@ const styles = StyleSheet.create({
   currentLocationButton: {
     position: 'absolute',
     bottom: 100,
+    right: 0,
+    backgroundColor: Colors.pink,
+    padding: 12,
+    margin: 20,
+    //elevation: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  drawPOIsButton: { 
+    position: 'absolute',
+    bottom: 160,
     right: 0,
     backgroundColor: Colors.pink,
     padding: 12,
