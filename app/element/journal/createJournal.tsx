@@ -20,6 +20,7 @@ import { JournalsContext } from '@/components/contexts/journalProvider'
 import { DetectionContext } from '@/components/contexts/detectionContext'
 import { adminDatabaseService } from '@/model/adminDatabaseService'
 import * as Location from 'expo-location';
+import { DateContext } from '@/components/contexts/dateProvider';
 
 enum usageTypes {
   JOURNAL_LOG = "journal_add",
@@ -46,6 +47,7 @@ const createJournal = () => {
   const [userPin, setUserPin] = useState('');
 
   const { fetchData } = useContext(JournalsContext);
+  const {  headerDate } = useContext(DateContext);
   const { logWindowStart, logWindowEnd } = useContext(DetectionContext);
   const textInputRef = useRef<TextInput>(null);
 
@@ -88,7 +90,9 @@ const createJournal = () => {
       }
       // encrypt body first then send to the database
       if (userPin !== "") {
-        const currentTime = new Date().toISOString()
+      //console.log("headerDate: ", headerDate.date)
+        //const currentTime = new Date().toISOString()
+        const currentTime = headerDate.date.toDateString();
         //await databaseService.createJournalEntry("Journal Entry", text, currentTime);
         let cipherText = CryptoJS.AES.encrypt(text, userPin).toString();
         if (locationId != null) {

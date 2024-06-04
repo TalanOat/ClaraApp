@@ -631,6 +631,11 @@ const MapboxMap = () => {
 
       mapRef.current.injectJavaScript(`
         mapboxgl.accessToken = '${MAPBOX_TOKEN}';
+
+        if (map.getSource('route')) {
+          map.removeLayer('route');
+          map.removeSource('route');
+        }
         
         map.addSource('route', {
           type: 'geojson',

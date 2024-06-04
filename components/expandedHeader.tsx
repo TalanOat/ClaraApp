@@ -60,7 +60,7 @@ const ExpandedHeader = () => {
         <View style={styles.container}>
             <View style={styles.actionRow}>
                 {formatDate && Platform.OS === "ios" && (
-                    <Animated.View style={styles.dateRow}>
+                    <View style={styles.dateRow}>
                         <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
                         <DateTimePicker
                             value={date}
@@ -70,7 +70,7 @@ const ExpandedHeader = () => {
                             style={styles.iosDatePicker}
                         />
 
-                    </Animated.View>
+                    </View>
                 )}
                 {formatDate && Platform.OS === "android" && (
                     <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateRow}>

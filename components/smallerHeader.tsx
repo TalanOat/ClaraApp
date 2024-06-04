@@ -1,24 +1,88 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import React, { useEffect } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Link, useNavigation } from 'expo-router'
 import Colors from '@/constants/Colors'
 import moment from 'moment'
+import { DateContext } from './contexts/dateProvider'
+import DateTimePicker from '@react-native-community/datetimepicker';
+import Animated, {
+    ZoomIn,
+} from 'react-native-reanimated';
+
+
 
 const SmallerHeader = () => {
     const navigation = useNavigation();
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const { headerDate, setHeaderDate } = useContext(DateContext);
+  
+    // Initialize the date state with headerDate from context
+    const [date, setDate] = useState(headerDate.date);
+  
+    useEffect(() => {
+      // Update the state if headerDate changes
+      setDate(headerDate.date);
+    }, [headerDate]);
+
+    const toggleDatePicker = () => {
+        if (Platform.OS !== "ios") {
+            setShowDatePicker(!showDatePicker)
+        }
+    }
+
+    var times = 0;
+
+    const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+        const currentDate = selectedDate || date;
+        if (currentDate !== headerDate.date) {
+            setDate(currentDate);
+            setHeaderDate({
+                date: currentDate
+            })
+            //console.log("currentDate : ", currentDate, "headerDate.date: ", headerDate.date)
+        }
+        toggleDatePicker();
+
+
+    };
+
+    const formatDate = (date: Date) => moment(date).format("dddd, Do MMM");
 
     //const currentDate = moment(new Date())
     return (
-        <View style={styles.headerContainer}>
+        <View style={styles.container}>
             <View style={styles.actionRow}>
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <MaterialCommunityIcons name="arrow-left" color="white" size={35} />
                 </TouchableOpacity>
-                <View style={styles.dateRow}>
-                    <Text style={styles.day}>{moment().format('dddd')}</Text>
-                    <Text style={styles.date}>{moment().format('Do MMM')}</Text>
-                </View>
+                {formatDate && Platform.OS === "ios" && (
+                    <Animated.View style={styles.dateRow}>
+                        <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            onChange={handleDateChange}
+                            display={"calendar"}
+                            style={styles.iosDatePicker}
+                        />
+
+                    </Animated.View>
+                )}
+                {formatDate && Platform.OS === "android" && (
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateRow}>
+                        <Text style={styles.day}>{formatDate(date).split(',')[0]}</Text>
+                        <Text style={styles.date}>{formatDate(date).split(',')[1]}</Text>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={date}
+                                mode="date"
+                                onChange={handleDateChange}
+                                display="calendar"
+                            />
+                        )}
+                    </TouchableOpacity>
+                )}
                 <Link href={'/element/settings/settingsMenu'} asChild style={styles.touchAreaButton}>
                     <TouchableOpacity >
                         <MaterialCommunityIcons name='cog'
@@ -29,17 +93,16 @@ const SmallerHeader = () => {
                     </TouchableOpacity>
                 </Link>
             </View>
-
         </View>
     )
 }
 
 
 const styles = StyleSheet.create({
-    headerContainer: {
+    container: {
         backgroundColor: Colors.primary,
-        justifyContent: "center",
-        height: 80
+        height: 90,
+        justifyContent: "center"
     },
     actionRow: {
         flexDirection: 'row',
@@ -47,7 +110,7 @@ const styles = StyleSheet.create({
         paddingRight: 20,
         alignItems: "center",
         justifyContent: "space-evenly",
-        
+
     },
     dateRow: {
         backgroundColor: Colors.primary,
@@ -72,12 +135,15 @@ const styles = StyleSheet.create({
     touchAreaButton: {
         alignItems: "center",
         justifyContent: "center",
-        
+
     },
     settingsButton: {
 
     },
-    backButton: {}
+    backButton: {},
+    iosDatePicker: {
+        margin: 0
+    }
 })
 
 
