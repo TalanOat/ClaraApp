@@ -20,6 +20,7 @@ import { JournalsContext } from '@/components/contexts/journalProvider'
 import * as SecureStore from 'expo-secure-store';
 import NegativeEmotionPrompt from '@/components/helpers/negativeEmotionPrompt'
 import { adminDatabaseService } from '@/model/adminDatabaseService'
+import { DateContext } from '@/components/contexts/dateProvider'
 
 interface TrackingName {
     id: number;
@@ -59,6 +60,7 @@ const createJournal = () => {
     const [sliderValue3, setSliderValue3] = useState<number>(0);
 
     const { fetchData } = useContext(JournalsContext);
+    const {  headerDate } = useContext(DateContext);
 
 
     const fetchTrackingValues = async () => {
@@ -202,8 +204,10 @@ const createJournal = () => {
     }
 
     const handleSubmit = async () => {
+
         setFlashNotification(true);
-        const currentTime = new Date().toISOString()
+        //const currentTime = new Date().toISOString()
+        const currentTime = headerDate.date.toISOString();
         const inputMoodJournal: MoodJournal = ({
             createdAt: currentTime,
             trackingNameId1: userTrackingVals[2].id,

@@ -92,7 +92,7 @@ const createJournal = () => {
       if (userPin !== "") {
       //console.log("headerDate: ", headerDate.date)
         //const currentTime = new Date().toISOString()
-        const currentTime = headerDate.date.toDateString();
+        const currentTime = headerDate.date.toISOString();
         //await databaseService.createJournalEntry("Journal Entry", text, currentTime);
         let cipherText = CryptoJS.AES.encrypt(text, userPin).toString();
         if (locationId != null) {
