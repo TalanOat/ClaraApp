@@ -3,7 +3,7 @@ import Colors from '@/constants/Colors';
 import { defaultStyles } from '@/constants/Styles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import nlp from 'compromise';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import {
     LineChart,
@@ -512,4 +512,4 @@ const styles = StyleSheet.create({
 
 })
 
-export default BarChartComponent;
+export default memo(BarChartComponent);

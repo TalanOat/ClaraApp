@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
 import JournalThemesComponent from '@/components/helpers/statsHelpers/themesComponent';
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { memo, useContext, useEffect, useRef, useState } from 'react'
 import Colors from '@/constants/Colors'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { databaseService } from '@/model/databaseService';
@@ -96,7 +96,7 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
                     const decryptedBody = await decryptString(entry.body, userPin);
                     //console.log(decryptedBody);
 
-                    if (decryptedBody && isValidUTF8(decryptedBody)) {
+                    if (decryptedBody) {
                         const formattedDate = moment(entry.createdAt).format('DD/MM/YY');
 
                         const returnElement: UserElement = ({
@@ -106,9 +106,7 @@ const ClusterPrompt = ({ onVisibilityChanged, data }: ClusterPromptProps) => {
                             date: formattedDate
                         });
                         journalEntries.push(returnElement);
-                    } else {
-                        console.error('Invalid UTF-8 string:', decryptedBody);
-                    }
+                    } 
                 }
             }
             return journalEntries;
@@ -425,4 +423,4 @@ const styles = StyleSheet.create({
       },
 })
 
-export default ClusterPrompt
+export default memo(ClusterPrompt);

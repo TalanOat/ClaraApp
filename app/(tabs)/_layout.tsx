@@ -1,18 +1,12 @@
-import { View, Text, Touchable, TouchableOpacity, KeyboardAvoidingView, Keyboard, Platform } from 'react-native'
-import React, { useContext, useEffect, useState } from 'react'
-import { Tabs, useNavigation, useLocalSearchParams } from 'expo-router'
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+import React, {  memo, useCallback, useState } from 'react'
+import { Tabs, useNavigation, } from 'expo-router'
 import Colors from '@/constants/Colors';
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { Ionicons } from '@expo/vector-icons'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { StyleSheet } from 'react-native';
 
 import Animated, {
-  useSharedValue,
-  withTiming,
-  Easing,
-  SlideInDown,
-  SlideInUp,
+ SlideInDown,
 } from 'react-native-reanimated';
 
 
@@ -26,11 +20,10 @@ const Layout = () => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const { navigate } = useNavigation<NavigationProps>()
 
-  function handleAddNavigation(path: string) {
-    setShowAddMenu(false)
-    navigate(path)
-  }
-
+  const handleAddNavigation = useCallback((path: string) => {
+    setShowAddMenu(false);
+    navigate(path);
+  }, [navigate]); 
 
   return (
     <KeyboardAvoidingView
@@ -61,9 +54,11 @@ const Layout = () => {
             borderTopWidth: 0,
           },
           headerShown: false,
+          lazy: true,
         }}>
           <Tabs.Screen name="index" options={{
             tabBarLabel: "Home",
+            lazy: true,
             tabBarItemStyle: tabStyles.otherTabs,
             tabBarIcon: ({ color, size }) =>
               <MaterialCommunityIcons name='home'
@@ -74,6 +69,7 @@ const Layout = () => {
           </Tabs.Screen>
 
           <Tabs.Screen name="goals" options={{
+            lazy: true,
             tabBarLabel: "Goals",
             tabBarItemStyle: tabStyles.otherTabs,
             tabBarIcon: ({ color, size }) =>
@@ -91,6 +87,7 @@ const Layout = () => {
               },
             }}
             options={{
+              lazy: true,
               tabBarItemStyle: tabStyles.addButton,
               tabBarLabel: () => null,
               tabBarIcon: ({ color, size }) =>
@@ -106,6 +103,7 @@ const Layout = () => {
           </Tabs.Screen>
 
           <Tabs.Screen name="map" options={{
+            lazy: true,
             tabBarItemStyle: tabStyles.otherTabs,
             tabBarLabel: "Map",
             tabBarIcon: ({ color, size }) =>
@@ -116,6 +114,7 @@ const Layout = () => {
           </Tabs.Screen>
 
           <Tabs.Screen name="stats" options={{
+            lazy: true,
             tabBarItemStyle: tabStyles.otherTabs,
             tabBarLabel: "Stats",
             tabBarIcon: ({ color }) =>

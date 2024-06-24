@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { Stack, router, useNavigation } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { Fragment, useContext, useEffect, useState } from 'react';
+import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors'
 import { StatusBar } from 'expo-status-bar';
@@ -18,6 +18,10 @@ import { DetectionProvider } from '@/components/contexts/detectionContext';
 import AddColorProvider, { AddColorContext } from '@/components/contexts/addColorProvider';
 import SmallerHeaderNoCog from '@/components/smallerHeaderNoCog';
 import * as SecureStore from 'expo-secure-store';
+
+if (__DEV__) {
+  require("@/ReactotronConfig");
+}
 
 
 
@@ -74,6 +78,8 @@ function RootLayoutNav() {
     return <StatusBar style="light" backgroundColor={Colors.primary} />;
   }
 
+  // const CustomStatusBar = React.memo(() => <StatusBar style="light" backgroundColor={Colors.primary} />);
+
   const checkOnboarding = async () => {
     try {
       const onboardingCompleted = await SecureStore.getItemAsync("onboardingComplete")
@@ -99,13 +105,13 @@ function RootLayoutNav() {
         <DateProvider>
           <JournalsProvider>
             <DetectionProvider>
-
                 <Stack>
                   <Stack.Screen
                     name="(tabs)"
                     options={{
                       header: () => <ExpandedHeader />,
                       freezeOnBlur: true, 
+                      
                     }} />
                   <Stack.Screen name="element/introScreens/firstScreen" options={{ headerShown: false }} />
                   <Stack.Screen name="element/introScreens/secondScreen" options={{ headerShown: false }} />

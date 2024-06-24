@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
@@ -549,8 +549,8 @@ const MapboxMap = () => {
         // Move the map to the specified location with a zoom level of 14
         map.flyTo({
           center: [${location.longitude}, ${location.latitude}],
-          essential: true, // Make sure the map is essential for the app
-          zoom: 14 // Set the zoom level to 14
+          essential: true, 
+          zoom: 14 
         });
       `);
     }
@@ -611,7 +611,7 @@ const MapboxMap = () => {
 
   return (
     <>
-    
+
       <WebView
         style={styles.container}
         source={{ html: html_script }}
@@ -619,6 +619,7 @@ const MapboxMap = () => {
         onMessage={onMessage}
         originWhitelist={['*']}
         useWebKit={true}
+        cacheEnabled={false}
       />
 
 

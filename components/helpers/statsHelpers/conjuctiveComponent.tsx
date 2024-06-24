@@ -2,7 +2,7 @@
 import Colors from '@/constants/Colors';
 import { defaultStyles } from '@/constants/Styles';
 import nlp from 'compromise';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 const semanticScore = (textInput: string) => {
