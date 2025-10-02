@@ -62,8 +62,8 @@ const Page = () => {
 
   const fetchMoodJournal = async (): Promise<MoodJournal | undefined> => {
     setLoading(true);
-    try {
 
+    try {
       if (id != undefined) {
 
         const tempMoodJournal = await databaseService.getMoodJournalByID(parseInt(id));
@@ -79,14 +79,11 @@ const Page = () => {
             figure3: tempMoodJournal.tracking_value3,
           });
 
-          // console.log("returnedMoodJournal: ", returnedMoodJournal)
-          //console.log("tempMoodJournal: ", tempMoodJournal)
           return returnedMoodJournal
         }
       }
-
-
     }
+    
     catch (error) {
       console.error("error getting mood Journals:", error);
     }

@@ -114,46 +114,6 @@ const Page = () => {
   };
 
 
-
-  // const handleGetLocation = async () => {
-  //   setIsLoading(true);
-  //   let { status } = await Location.requestForegroundPermissionsAsync();
-  //   if (status !== 'granted') {
-  //     console.error('Location permission not granted');
-  //     return;
-  //   }
-
-  //   let location = await Location.getCurrentPositionAsync({});
-  //   setMapRegion({
-  //     ...mapRegion,
-  //     latitude: location.coords.latitude,
-  //     longitude: location.coords.longitude,
-  //   });
-
-  //   setOrigin({
-  //     latitude: location.coords.latitude,
-  //     longitude: location.coords.longitude,
-  //   })
-
-
-  //   if (location && !randomPointsGenerated) {
-  //     const generatedPoints = generateRandomPoints(
-  //       location.coords,
-  //       0.01,
-  //       10
-  //     );
-  //     setRandomMarkers(generatedPoints);
-  //     setDestination(generatedPoints[0]);
-  //     setRandomPointsGenerated(true);
-  //   }
-
-  //   if (location) {
-
-  //     setIsLoading(false);
-  //     console.log(location.coords)
-  //   }
-  // };
-
   const switchDestination = (marker: Location) => {
     setDestination(marker);
     console.log(marker)

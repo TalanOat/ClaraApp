@@ -11,11 +11,10 @@ const SmallerHeader = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const { headerDate, setHeaderDate } = useContext(DateContext);
   
-    // Initialize the date state with headerDate from context
     const [date, setDate] = useState(headerDate.date);
   
     useEffect(() => {
-      // Update the state if headerDate changes
+      // update the state if headerDate changes
       setDate(headerDate.date);
     }, [headerDate]);
 

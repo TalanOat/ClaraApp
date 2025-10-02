@@ -29,7 +29,6 @@ export class AdminDatabaseService {
   //   });
   // }
 
-  //TODO: add code to protect against SQL injection
   public getAllJournalEntries() {
     //"tx" means transaction 
     db.transaction((tx) => {
@@ -39,7 +38,6 @@ export class AdminDatabaseService {
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public createJournalEntry(title: string, body: string, createdAt: string) {
     console.log("title", title)
     console.log("body", body)
@@ -60,7 +58,6 @@ export class AdminDatabaseService {
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public dropTable(tableName: string) {
     db.transaction((tx) => {
       tx.executeSql(
@@ -77,14 +74,13 @@ export class AdminDatabaseService {
     });
   }
 
-  //TODO: add code to protect against SQL injection
   public selectAllFromTable(tableName: string) {
     //"tx" means transaction 
     console.log(tableName)
     db.transaction((tx) => {
       tx.executeSql(
         `SELECT * FROM ${tableName};`,
-        [tableName], // Parameterized query
+        [tableName], 
         (trans, result) => {
           console.log('Rows:', result.rows._array);
         },
@@ -125,7 +121,7 @@ export class AdminDatabaseService {
             }
           );
         });
-        resolve(); // Signal success after all tables are processed
+        resolve(); 
       });
     });
   }

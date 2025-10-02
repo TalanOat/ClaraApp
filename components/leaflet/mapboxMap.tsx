@@ -187,10 +187,10 @@ const MapboxMap = () => {
 
   const plot_POI_Markers = async (points: Coordinate[]) => {
     for (const point of points) {
-      const test = await getNearestPOI(point);
-      if (test) {
+      const poi = await getNearestPOI(point);
+      if (poi) {
         //addPinFromCoord(test?.coords)
-        addMarkerFromCoord(test?.coords, test.name)
+        addMarkerFromCoord(poi?.coords, poi.name)
       }
 
     }
